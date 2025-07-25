@@ -52,7 +52,7 @@ export default function UserSidebar() {
       title: "Chit Fund",
       items: [
         { name: "My Schemes", href: "/user/schemes", icon: CreditCard },
-        { name: "UCFIN Card", href: "/user/card", icon: CreditCard },
+        { name: "UCFSIN Card", href: "/user/card", icon: CreditCard },
         { name: "Chit Score", href: "/user/score", icon: Star },
       ],
     },
@@ -184,15 +184,15 @@ export default function UserSidebar() {
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">UCFIN</label>
+                <label className="text-sm font-medium text-gray-700">UCFSIN</label>
                 <div className="flex items-center gap-2 mt-1">
                   <input
                     type="text"
-                    value="UCFIN-2024-001234"
+                    value="UCFSIN-2024-001234"
                     readOnly
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                   />
-                  <Button size="sm" variant="outline" onClick={() => copyToClipboard("UCFIN-2024-001234")}>
+                  <Button size="sm" variant="outline" onClick={() => copyToClipboard("UCFSIN-2024-001234")}>
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>

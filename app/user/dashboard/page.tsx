@@ -10,13 +10,13 @@ import {
   Calendar,
   Bell,
   Settings,
-  Eye,
   Download,
   Plus,
   ArrowUpRight,
   Shield,
   Wallet,
 } from "lucide-react"
+import Link from "next/link"
 
 export default function UserDashboard() {
   return (
@@ -143,46 +143,6 @@ export default function UserDashboard() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
-            {/* UCFSIN Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Your UCFSIN Card</span>
-                  <Button variant="outline" size="sm">
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Details
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] rounded-lg p-6 text-white">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <div className="text-sm opacity-75">UCFSIN Card</div>
-                      <div className="text-xl font-bold">John Doe</div>
-                    </div>
-                    <CreditCard className="h-8 w-8" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-2xl font-mono tracking-wider">KA-EMD62-9391</div>
-                    <div className="flex justify-between text-sm">
-                      <span>Valid From: 01/24</span>
-                      <span>Status: Active</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 flex space-x-2">
-                  <Button size="sm" variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Digital Card
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    Request Physical Card
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Recent Activity */}
             <Card>
               <CardHeader>
@@ -216,6 +176,12 @@ export default function UserDashboard() {
                   <Plus className="h-4 w-4 mr-2" />
                   Join New Scheme
                 </Button>
+                <Link href="/user/card">
+                  <Button variant="outline" className="w-full justify-start bg-transparent">
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    UCFSIN Card
+                  </Button>
+                </Link>
                 <Button variant="outline" className="w-full justify-start bg-transparent">
                   <Users className="h-4 w-4 mr-2" />
                   Invite Friends
