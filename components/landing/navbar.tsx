@@ -75,9 +75,6 @@ export default function Navbar() {
 
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/register">
-              <Button className="bg-[#1e3a8a] hover:bg-[#3b82f6] text-white">UCFSIN Registration</Button>
-            </Link>
             <Link href="/login">
               <Button
                 variant="outline"
@@ -85,6 +82,9 @@ export default function Navbar() {
               >
                 Login
               </Button>
+            </Link>
+            <Link href="/register">
+              <Button className="bg-[#1e3a8a] hover:bg-[#3b82f6] text-white">UCFSIN Registration</Button>
             </Link>
           </div>
 
@@ -133,9 +133,6 @@ export default function Navbar() {
                   </Link>
 
                   <div className="border-t pt-4 space-y-2">
-                    <Link href="/register" onClick={() => setIsOpen(false)}>
-                      <Button className="w-full bg-[#1e3a8a] hover:bg-[#3b82f6] text-white">UCFSIN Registration</Button>
-                    </Link>
                     <Link href="/login" onClick={() => setIsOpen(false)}>
                       <Button
                         variant="outline"
@@ -143,6 +140,9 @@ export default function Navbar() {
                       >
                         Login
                       </Button>
+                    </Link>
+                    <Link href="/register" onClick={() => setIsOpen(false)}>
+                      <Button className="w-full bg-[#1e3a8a] hover:bg-[#3b82f6] text-white">UCFSIN Registration</Button>
                     </Link>
                   </div>
                 </div>
