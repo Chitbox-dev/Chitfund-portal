@@ -22,18 +22,38 @@ import {
   FileText,
   Clock,
   Edit,
+  Package,
+  Truck,
+  LocateIcon as LocationIcon,
 } from "lucide-react"
 import Link from "next/link"
+
+const trackingStatuses = [
+  { value: "payment_confirmed", label: "Payment Confirmed", color: "bg-blue-100 text-blue-800", icon: CheckCircle },
+  { value: "card_printed", label: "Card Printed", color: "bg-purple-100 text-purple-800", icon: FileText },
+  { value: "dispatched", label: "Dispatched", color: "bg-orange-100 text-orange-800", icon: Package },
+  { value: "in_transit", label: "In Transit", color: "bg-yellow-100 text-yellow-800", icon: Truck },
+  { value: "out_for_delivery", label: "Out for Delivery", color: "bg-indigo-100 text-indigo-800", icon: Truck },
+  { value: "delivered", label: "Delivered", color: "bg-green-100 text-green-800", icon: CheckCircle },
+  { value: "failed_delivery", label: "Failed Delivery", color: "bg-red-100 text-red-800", icon: AlertCircle },
+  { value: "returned", label: "Returned", color: "bg-gray-100 text-gray-800", icon: AlertCircle },
+]
 
 export default function UCFSINCardPage() {
   const [copied, setCopied] = useState(false)
   const [pendingRequest, setPendingRequest] = useState(null)
+  const [physicalCardOrder, setPhysicalCardOrder] = useState(null)
 
-  // Check for pending change requests
+  // Check for pending change requests and physical card orders
   useEffect(() => {
     const changeRequests = JSON.parse(localStorage.getItem("changeRequests") || "[]")
     const pending = changeRequests.find((req) => req.status === "pending")
     setPendingRequest(pending)
+
+    // Check for physical card order
+    const cardOrders = JSON.parse(localStorage.getItem("physicalCardOrders") || "[]")
+    const userOrder = cardOrders.find((order) => order.ucfsinNumber === cardData.ucfsinNumber)
+    setPhysicalCardOrder(userOrder)
   }, [])
 
   const cardData = {
@@ -57,6 +77,42 @@ export default function UCFSINCardPage() {
     navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const getStatusInfo = (status) => {
+    return trackingStatuses.find((s) => s.value === status) || trackingStatuses[0]
+  }
+
+  const handleRequestPhysicalCard = () => {
+    // Create a new physical card order
+    const newOrder = {
+      orderId: `ORD-${Date.now()}`,
+      ucfsinNumber: cardData.ucfsinNumber,
+      holderName: cardData.holderName,
+      email: cardData.email,
+      phone: cardData.phone,
+      address: cardData.address,
+      currentStatus: "payment_confirmed",
+      orderDate: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+      trackingHistory: [
+        {
+          id: Date.now().toString(),
+          status: "payment_confirmed",
+          description: "Payment confirmed and card order placed",
+          timestamp: new Date().toISOString(),
+          location: "Processing Center",
+        },
+      ],
+    }
+
+    // Add to localStorage
+    const existingOrders = JSON.parse(localStorage.getItem("physicalCardOrders") || "[]")
+    existingOrders.push(newOrder)
+    localStorage.setItem("physicalCardOrders", JSON.stringify(existingOrders))
+
+    setPhysicalCardOrder(newOrder)
+    alert("Physical card order placed successfully! You can track its progress below.")
   }
 
   return (
@@ -102,6 +158,81 @@ export default function UCFSINCardPage() {
                   </Badge>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Physical Card Tracking */}
+        {physicalCardOrder && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Package className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-900">Physical Card Tracking</h3>
+                  <p className="text-sm text-blue-700">Order ID: {physicalCardOrder.orderId}</p>
+                </div>
+              </div>
+              <Badge className={getStatusInfo(physicalCardOrder.currentStatus).color}>
+                {getStatusInfo(physicalCardOrder.currentStatus).label}
+              </Badge>
+            </div>
+
+            {/* Tracking Timeline */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-blue-900">Tracking History</h4>
+              <div className="space-y-3">
+                {physicalCardOrder.trackingHistory?.map((track, index) => {
+                  const statusInfo = getStatusInfo(track.status)
+                  const StatusIcon = statusInfo.icon
+                  return (
+                    <div key={track.id} className="flex items-start gap-3">
+                      <div
+                        className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                          index === 0 ? "bg-blue-500" : "bg-gray-300"
+                        }`}
+                      >
+                        <StatusIcon className={`h-4 w-4 ${index === 0 ? "text-white" : "text-gray-600"}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-sm font-medium text-gray-900">{statusInfo.label}</p>
+                          <span className="text-xs text-gray-500">
+                            {new Date(track.timestamp).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">{track.description}</p>
+                        {track.location && (
+                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                            <LocationIcon className="h-3 w-3" />
+                            {track.location}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {physicalCardOrder.trackingNumber && (
+                <div className="bg-white rounded-lg p-3 border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Tracking Number</p>
+                      <p className="text-sm font-mono text-gray-900">{physicalCardOrder.trackingNumber}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(physicalCardOrder.trackingNumber)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -296,10 +427,11 @@ export default function UCFSINCardPage() {
                 <Button
                   variant="outline"
                   className="w-full justify-start gap-2 bg-transparent"
-                  disabled={pendingRequest}
+                  disabled={pendingRequest || physicalCardOrder}
+                  onClick={handleRequestPhysicalCard}
                 >
                   <CreditCard className="h-4 w-4" />
-                  Request Physical Card
+                  {physicalCardOrder ? "Physical Card Ordered" : "Request Physical Card"}
                 </Button>
               </CardContent>
             </Card>

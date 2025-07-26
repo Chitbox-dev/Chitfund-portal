@@ -23,6 +23,7 @@ import {
   Download,
   Eye,
 } from "lucide-react"
+import { DocumentReviewPanel } from "./document-review-panel"
 
 interface SchemeApprovalPanelProps {
   scheme: any
@@ -40,6 +41,72 @@ export function SchemeApprovalPanel({
   const [comments, setComments] = useState("")
   const [rejectionReason, setRejectionReason] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
+
+  const handleDocumentApprove = async (documentIndex: number, comments: string) => {
+    try {
+      const updatedScheme = { ...scheme }
+      if (updatedScheme.documents && updatedScheme.documents[documentIndex]) {
+        updatedScheme.documents[documentIndex].reviewStatus = "approved"
+        updatedScheme.documents[documentIndex].reviewHistory = [
+          ...(updatedScheme.documents[documentIndex].reviewHistory || []),
+          {
+            action: "approved",
+            comments: comments,
+            reviewer: "Admin",
+            date: new Date().toISOString(),
+          },
+        ]
+      }
+
+      // Update localStorage
+      const pendingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
+      const schemeIndex = pendingSchemes.findIndex((s: any) => s.schemeId === scheme.schemeId)
+      if (schemeIndex >= 0) {
+        pendingSchemes[schemeIndex] = updatedScheme
+        localStorage.setItem("pendingSchemes", JSON.stringify(pendingSchemes))
+      }
+
+      alert("Document approved successfully!")
+      // Force re-render by updating the scheme object
+      Object.assign(scheme, updatedScheme)
+    } catch (error) {
+      console.error("Error approving document:", error)
+      alert("Error approving document. Please try again.")
+    }
+  }
+
+  const handleDocumentReject = async (documentIndex: number, reason: string) => {
+    try {
+      const updatedScheme = { ...scheme }
+      if (updatedScheme.documents && updatedScheme.documents[documentIndex]) {
+        updatedScheme.documents[documentIndex].reviewStatus = "rejected"
+        updatedScheme.documents[documentIndex].reviewHistory = [
+          ...(updatedScheme.documents[documentIndex].reviewHistory || []),
+          {
+            action: "rejected",
+            comments: reason,
+            reviewer: "Admin",
+            date: new Date().toISOString(),
+          },
+        ]
+      }
+
+      // Update localStorage
+      const pendingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
+      const schemeIndex = pendingSchemes.findIndex((s: any) => s.schemeId === scheme.schemeId)
+      if (schemeIndex >= 0) {
+        pendingSchemes[schemeIndex] = updatedScheme
+        localStorage.setItem("pendingSchemes", JSON.stringify(pendingSchemes))
+      }
+
+      alert("Document rejected successfully!")
+      // Force re-render by updating the scheme object
+      Object.assign(scheme, updatedScheme)
+    } catch (error) {
+      console.error("Error rejecting document:", error)
+      alert("Error rejecting document. Please try again.")
+    }
+  }
 
   const handleApprove = async () => {
     if (!comments.trim()) {
@@ -143,21 +210,30 @@ export function SchemeApprovalPanel({
               <DollarSign className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Value</p>
-                <p className="text-lg font-bold text-gray-900">₹{scheme.totalValue?.toLocaleString() || "N/A"}</p>
+                <p className="text-lg font-bold text-gray-900">
+                  ₹
+                  {scheme.chitValue
+                    ? Number.parseFloat(scheme.chitValue).toLocaleString()
+                    : scheme.totalValue?.toLocaleString() || "N/A"}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Subscribers</p>
-                <p className="text-lg font-bold text-gray-900">{scheme.totalSubscribers || "N/A"}</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {scheme.numberOfSubscribers || scheme.totalSubscribers || "N/A"}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Calendar className="h-5 w-5 text-purple-600" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Duration</p>
-                <p className="text-lg font-bold text-gray-900">{scheme.duration || "N/A"} months</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {scheme.chitDuration || scheme.duration || "N/A"} months
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -165,7 +241,11 @@ export function SchemeApprovalPanel({
               <div>
                 <p className="text-sm font-medium text-gray-600">Submitted</p>
                 <p className="text-lg font-bold text-gray-900">
-                  {scheme.submittedDate ? new Date(scheme.submittedDate).toLocaleDateString() : "N/A"}
+                  {scheme.submittedAt
+                    ? new Date(scheme.submittedAt).toLocaleDateString()
+                    : scheme.submittedDate
+                      ? new Date(scheme.submittedDate).toLocaleDateString()
+                      : "N/A"}
                 </p>
               </div>
             </div>
@@ -251,38 +331,13 @@ export function SchemeApprovalPanel({
         </CardContent>
       </Card>
 
-      {/* Documents */}
+      {/* Enhanced Document Review System */}
       {scheme.documents && scheme.documents.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Submitted Documents
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {scheme.documents.map((doc: any, index: number) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium text-gray-900">{doc.name || `Document ${index + 1}`}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-1" />
-                      Download
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <DocumentReviewPanel
+          scheme={scheme}
+          onDocumentApprove={handleDocumentApprove}
+          onDocumentReject={handleDocumentReject}
+        />
       )}
 
       {/* PSO Certificate (if approved) */}

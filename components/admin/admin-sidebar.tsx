@@ -58,6 +58,7 @@ import {
   Activity,
   Target,
   Zap,
+  CreditCard,
 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -141,6 +142,14 @@ const navigationItems = [
   {
     title: "Operations",
     items: [
+      {
+        title: "Card Tracking",
+        url: "/admin/card-tracking",
+        icon: CreditCard,
+        badge: "156",
+        badgeVariant: "secondary",
+        description: "Physical card management",
+      },
       {
         title: "Auctions",
         url: "/admin/auctions",

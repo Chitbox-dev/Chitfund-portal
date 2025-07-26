@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { SubscriberGenerator } from "./subscriber-generator"
 import {
   CheckCircle,
   Upload,
@@ -27,6 +28,13 @@ import {
   Lightbulb,
   Lock,
   RefreshCw,
+  Wand2,
+  Edit,
+  Trash2,
+  Phone,
+  MapPin,
+  CreditCard,
+  User,
 } from "lucide-react"
 
 const STEPS = [
@@ -100,7 +108,7 @@ const STEPS = [
       "Ensure all subscriber details are accurate",
       "UCFSIN verification is mandatory",
       "Assign tickets sequentially for fairness",
-      "Aadhaar field has been removed as per new requirements",
+      "Use the generator to create sample subscribers with proper UCFSIN format",
     ],
   },
   {
@@ -205,7 +213,10 @@ const INITIAL_FORM_DATA = {
   commencementCertificate: null,
 }
 
-export function CreateSchemeForm({ onCancel, onSuccess }) {
+export function CreateSchemeForm({
+  onCancel = () => {},
+  onSuccess = () => {},
+}: { onCancel?: () => void; onSuccess?: () => void }) {
   const searchParams = useSearchParams()
   const schemeIdFromUrl = searchParams?.get("schemeId")
   const stepFromUrl = searchParams?.get("step")
@@ -224,6 +235,8 @@ export function CreateSchemeForm({ onCancel, onSuccess }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [lastRefresh, setLastRefresh] = useState(Date.now())
+  const [showSubscriberGenerator, setShowSubscriberGenerator] = useState(false)
+  const [editingSubscriber, setEditingSubscriber] = useState(null)
 
   // Ref to persist auto-refresh interval
   const autoRefreshInterval = useRef(null)
@@ -409,15 +422,20 @@ export function CreateSchemeForm({ onCancel, onSuccess }) {
     const newErrors = {}
 
     // Step 1 validation
-    if (!formData.chitValue) newErrors.chitValue = "Chit value is required"
-    if (!formData.chitDuration) newErrors.chitDuration = "Duration is required"
-    if (!formData.numberOfSubscribers) newErrors.numberOfSubscribers = "Number of subscribers is required"
-    if (!formData.chitStartDate) newErrors.chitStartDate = "Start date is required"
-
-    if (formData.chitValue && Number.parseFloat(formData.chitValue) <= 0) {
-      newErrors.chitValue = "Chit value must be greater than 0"
+    if (!formData.chitValue || Number.parseFloat(formData.chitValue) <= 0) {
+      newErrors.chitValue = "Valid chit value is required"
+    }
+    if (!formData.chitDuration || Number.parseInt(formData.chitDuration) <= 0) {
+      newErrors.chitDuration = "Valid duration is required"
+    }
+    if (!formData.numberOfSubscribers || Number.parseInt(formData.numberOfSubscribers) <= 0) {
+      newErrors.numberOfSubscribers = "Valid number of subscribers is required"
+    }
+    if (!formData.chitStartDate) {
+      newErrors.chitStartDate = "Start date is required"
     }
 
+    // Validate that subscribers equal duration
     if (formData.numberOfSubscribers && formData.chitDuration) {
       const subscribers = Number.parseInt(formData.numberOfSubscribers)
       const duration = Number.parseInt(formData.chitDuration)
@@ -427,33 +445,61 @@ export function CreateSchemeForm({ onCancel, onSuccess }) {
     }
 
     // Step 2 validation
-    if (!formData.auctionFrequency) newErrors.auctionFrequency = "Auction frequency is required"
-    if (!formData.auctionStartDate) newErrors.auctionStartDate = "Auction start date is required"
-    if (!formData.auctionStartTime) newErrors.auctionStartTime = "Auction start time is required"
-    if (!formData.auctionDuration) newErrors.auctionDuration = "Auction duration is required"
-
+    if (!formData.auctionFrequency) {
+      newErrors.auctionFrequency = "Auction frequency is required"
+    }
+    if (!formData.auctionStartDate) {
+      newErrors.auctionStartDate = "Auction start date is required"
+    }
+    if (!formData.auctionStartTime) {
+      newErrors.auctionStartTime = "Auction start time is required"
+    }
     if (
-      formData.auctionDuration &&
-      (Number.parseInt(formData.auctionDuration) < 1 || Number.parseInt(formData.auctionDuration) > 8)
+      !formData.auctionDuration ||
+      Number.parseInt(formData.auctionDuration) < 1 ||
+      Number.parseInt(formData.auctionDuration) > 8
     ) {
       newErrors.auctionDuration = "Auction duration must be between 1-8 hours"
     }
 
     // Step 3 validation
-    if (formData.bidIncrement === "manual" && !formData.manualIncrement) {
-      newErrors.manualIncrement = "Manual increment value is required"
+    if (
+      formData.bidIncrement === "manual" &&
+      (!formData.manualIncrement || Number.parseFloat(formData.manualIncrement) <= 0)
+    ) {
+      newErrors.manualIncrement = "Valid manual increment value is required"
     }
 
-    // Step 4 validation
-    if (!formData.commissionStructure) newErrors.commissionStructure = "Commission structure document is required"
-    if (!formData.termsOfWithdrawal) newErrors.termsOfWithdrawal = "Terms of withdrawal document is required"
-    if (!formData.liabilitiesDocument) newErrors.liabilitiesDocument = "Liabilities document is required"
-    if (!formData.subscriberRights) newErrors.subscriberRights = "Subscriber rights document is required"
-    if (!formData.fdrDocument) newErrors.fdrDocument = "FDR document is required"
-    if (!formData.draftAgreement) newErrors.draftAgreement = "Draft agreement is required"
+    // Step 4 validation - Check all required documents
+    const requiredDocuments = [
+      { field: "commissionStructure", name: "Commission structure document" },
+      { field: "termsOfWithdrawal", name: "Terms of withdrawal document" },
+      { field: "liabilitiesDocument", name: "Liabilities document" },
+      { field: "subscriberRights", name: "Subscriber rights document" },
+      { field: "fdrDocument", name: "FDR document" },
+      { field: "draftAgreement", name: "Draft agreement" },
+    ]
+
+    requiredDocuments.forEach((doc) => {
+      if (!formData[doc.field]) {
+        newErrors[doc.field] = `${doc.name} is required`
+      }
+    })
 
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    const isValid = Object.keys(newErrors).length === 0
+
+    if (!isValid) {
+      console.log("Validation errors:", newErrors)
+      // Scroll to first error
+      const firstErrorField = Object.keys(newErrors)[0]
+      const errorElement = document.getElementById(firstErrorField)
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: "smooth", block: "center" })
+      }
+    }
+
+    return isValid
   }
 
   const validateStep = (step) => {
@@ -534,27 +580,67 @@ export function CreateSchemeForm({ onCancel, onSuccess }) {
         schemeStatus: SchemeStatus.Submitted,
         lastUpdated: new Date().toISOString(),
         submittedAt: new Date().toISOString(),
+        // Add additional required fields for admin review
+        schemeName: `Scheme ${formData.schemeId}`,
+        totalValue: Number.parseFloat(formData.chitValue),
+        totalSubscribers: Number.parseInt(formData.numberOfSubscribers),
+        duration: Number.parseInt(formData.chitDuration),
+        installmentAmount: Number.parseFloat(formData.monthlyPremium),
+        commissionRate: "5", // Default commission rate
+        foremanName: "Current Foreman", // This should come from logged in user
+        foremanEmail: "foreman@example.com", // This should come from logged in user
+        foremanPhone: "+91 9876543210", // This should come from logged in user
+        foremanCompany: "Foreman Company", // This should come from logged in user
+        submittedDate: new Date().toISOString(),
+        documents: [
+          formData.commissionStructure,
+          formData.termsOfWithdrawal,
+          formData.liabilitiesDocument,
+          formData.subscriberRights,
+          formData.fdrDocument,
+          formData.draftAgreement,
+        ].filter(Boolean), // Remove null documents
       }
 
       console.log("Submitting steps 1-4:", updatedFormData)
 
       setFormData(updatedFormData)
+
+      // Save to draft first
       localStorage.setItem("schemeDraft", JSON.stringify(updatedFormData))
 
-      // Save to schemes list for admin review
+      // Save to pending schemes for admin review
       const existingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
       const schemeIndex = existingSchemes.findIndex((s) => s.schemeId === formData.schemeId)
 
       if (schemeIndex >= 0) {
+        // Update existing scheme
         existingSchemes[schemeIndex] = updatedFormData
       } else {
+        // Add new scheme
         existingSchemes.push(updatedFormData)
       }
 
       localStorage.setItem("pendingSchemes", JSON.stringify(existingSchemes))
       console.log("Saved to pendingSchemes:", existingSchemes)
 
-      alert("Steps 1-4 submitted for admin approval successfully!")
+      // Also save to allSchemes for the admin schemes page
+      const allSchemes = JSON.parse(localStorage.getItem("allSchemes") || "[]")
+      const allSchemeIndex = allSchemes.findIndex((s) => s.schemeId === formData.schemeId)
+
+      if (allSchemeIndex >= 0) {
+        allSchemes[allSchemeIndex] = updatedFormData
+      } else {
+        allSchemes.push(updatedFormData)
+      }
+      localStorage.setItem("allSchemes", JSON.stringify(allSchemes))
+
+      alert(
+        "Steps 1-4 submitted for admin approval successfully! You will be notified once the admin reviews your submission.",
+      )
+
+      // Optionally redirect to schemes list
+      // window.location.href = "/foreman/schemes"
     } catch (error) {
       console.error("Error submitting steps:", error)
       alert("Error submitting steps. Please try again.")
@@ -693,18 +779,24 @@ export function CreateSchemeForm({ onCancel, onSuccess }) {
   }
 
   const handleAddSubscriber = () => {
+    const existingSubscribers = formData.subscribers || []
+    const nextTicketNumber = existingSubscribers.length + 1
+
     const newSubscriber = {
       id: Date.now(),
-      ticketNumber: formData.subscribers.length + 1,
+      ticketNumber: nextTicketNumber,
       name: "",
       mobile: "",
       ucfsin: "",
       address: "",
       paymentStatus: "pending",
+      isGenerated: false,
+      joinedDate: new Date().toISOString(),
     }
+
     setFormData((prev) => ({
       ...prev,
-      subscribers: [...(prev.subscribers || []), newSubscriber],
+      subscribers: [...existingSubscribers, newSubscriber],
     }))
   }
 
@@ -720,6 +812,42 @@ export function CreateSchemeForm({ onCancel, onSuccess }) {
       ...prev,
       subscribers: (prev.subscribers || []).filter((sub) => sub.id !== id),
     }))
+  }
+
+  const handleEditSubscriber = (subscriber) => {
+    setEditingSubscriber(subscriber)
+  }
+
+  const handleSaveEditSubscriber = () => {
+    if (editingSubscriber) {
+      handleUpdateSubscriber(editingSubscriber.id, "name", editingSubscriber.name)
+      handleUpdateSubscriber(editingSubscriber.id, "mobile", editingSubscriber.mobile)
+      handleUpdateSubscriber(editingSubscriber.id, "ucfsin", editingSubscriber.ucfsin)
+      handleUpdateSubscriber(editingSubscriber.id, "address", editingSubscriber.address)
+      setEditingSubscriber(null)
+    }
+  }
+
+  // Handle adding generated subscribers
+  const handleAddGeneratedSubscribers = (generatedSubscribers) => {
+    const existingSubscribers = formData.subscribers || []
+    const nextTicketNumber = existingSubscribers.length + 1
+
+    // Update ticket numbers for generated subscribers
+    const subscribersWithTickets = generatedSubscribers.map((sub, index) => ({
+      ...sub,
+      ticketNumber: nextTicketNumber + index,
+      id: Date.now() + index + Math.random(), // Ensure unique IDs
+      joinedDate: new Date().toISOString(),
+    }))
+
+    setFormData((prev) => ({
+      ...prev,
+      subscribers: [...existingSubscribers, ...subscribersWithTickets],
+    }))
+
+    // Show success message
+    alert(`Successfully added ${generatedSubscribers.length} subscribers to the enrollment list!`)
   }
 
   const getStatusBadge = () => {
@@ -1369,94 +1497,228 @@ export function CreateSchemeForm({ onCancel, onSuccess }) {
         return (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Subscriber Enrollment</h3>
-              <Button onClick={handleAddSubscriber} className="bg-blue-600 hover:bg-blue-700 text-white">
-                <Users className="h-4 w-4 mr-2" />
-                Add Subscriber
-              </Button>
+              <div>
+                <h3 className="text-lg font-semibold">Subscriber Enrollment</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  {formData.subscribers?.length || 0} of {formData.numberOfSubscribers || 0} subscribers enrolled
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setShowSubscriberGenerator(true)}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Generate Random Subscribers
+                </Button>
+                <Button onClick={handleAddSubscriber} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Users className="h-4 w-4 mr-2" />
+                  Add Subscriber Manually
+                </Button>
+              </div>
             </div>
 
+            {/* Subscribers List */}
             <div className="space-y-4">
               {formData.subscribers?.map((subscriber, index) => (
-                <Card key={subscriber.id} className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div>
-                      <Label className="text-sm">Ticket #{subscriber.ticketNumber}</Label>
-                      <div className="mt-1 p-2 bg-gray-100 rounded text-center font-mono">
-                        {subscriber.ticketNumber.toString().padStart(2, "0")}
+                <Card
+                  key={subscriber.id}
+                  className={`p-4 transition-all duration-200 ${
+                    subscriber.isGenerated ? "border-purple-200 bg-purple-50" : "border-gray-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    {/* Ticket Number */}
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">
+                        #{subscriber.ticketNumber.toString().padStart(2, "0")}
+                      </span>
+                    </div>
+
+                    {/* Subscriber Details */}
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <Label className="text-xs text-gray-500">Name</Label>
+                          {editingSubscriber?.id === subscriber.id ? (
+                            <Input
+                              value={editingSubscriber.name}
+                              onChange={(e) => setEditingSubscriber({ ...editingSubscriber, name: e.target.value })}
+                              className="h-8 text-sm"
+                            />
+                          ) : (
+                            <p className="font-semibold text-gray-900">{subscriber.name || "Not provided"}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <Label className="text-xs text-gray-500">Mobile</Label>
+                          {editingSubscriber?.id === subscriber.id ? (
+                            <Input
+                              value={editingSubscriber.mobile}
+                              onChange={(e) => setEditingSubscriber({ ...editingSubscriber, mobile: e.target.value })}
+                              className="h-8 text-sm font-mono"
+                            />
+                          ) : (
+                            <p className="font-mono text-gray-900">{subscriber.mobile || "Not provided"}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <Label className="text-xs text-gray-500">UCFSIN</Label>
+                          {editingSubscriber?.id === subscriber.id ? (
+                            <Input
+                              value={editingSubscriber.ucfsin}
+                              onChange={(e) => setEditingSubscriber({ ...editingSubscriber, ucfsin: e.target.value })}
+                              className="h-8 text-sm font-mono"
+                            />
+                          ) : (
+                            <p className="font-mono text-sm text-gray-900">{subscriber.ucfsin || "Not provided"}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <Label className="text-xs text-gray-500">Address</Label>
+                          {editingSubscriber?.id === subscriber.id ? (
+                            <Input
+                              value={editingSubscriber.address}
+                              onChange={(e) => setEditingSubscriber({ ...editingSubscriber, address: e.target.value })}
+                              className="h-8 text-sm"
+                            />
+                          ) : (
+                            <p className="text-sm text-gray-600 truncate max-w-[200px]" title={subscriber.address}>
+                              {subscriber.address || "Not provided"}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <Label htmlFor={`name-${subscriber.id}`} className="text-sm">
-                        Name *
-                      </Label>
-                      <Input
-                        id={`name-${subscriber.id}`}
-                        value={subscriber.name}
-                        onChange={(e) => handleUpdateSubscriber(subscriber.id, "name", e.target.value)}
-                        placeholder="Full name"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`mobile-${subscriber.id}`} className="text-sm">
-                        Mobile *
-                      </Label>
-                      <Input
-                        id={`mobile-${subscriber.id}`}
-                        value={subscriber.mobile}
-                        onChange={(e) => handleUpdateSubscriber(subscriber.id, "mobile", e.target.value)}
-                        placeholder="10-digit mobile"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`ucfsin-${subscriber.id}`} className="text-sm">
-                        UCFSIN *
-                      </Label>
-                      <Input
-                        id={`ucfsin-${subscriber.id}`}
-                        value={subscriber.ucfsin}
-                        onChange={(e) => handleUpdateSubscriber(subscriber.id, "ucfsin", e.target.value)}
-                        placeholder="UCFSIN number"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <Button
-                        onClick={() => handleRemoveSubscriber(subscriber.id)}
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 border-red-200 hover:bg-red-50"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2">
+                      {subscriber.isGenerated && (
+                        <Badge className="bg-purple-100 text-purple-800 border-purple-200">Generated</Badge>
+                      )}
+
+                      {editingSubscriber?.id === subscriber.id ? (
+                        <div className="flex gap-1">
+                          <Button
+                            onClick={handleSaveEditSubscriber}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white h-8 px-2"
+                          >
+                            <CheckCircle className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            onClick={() => setEditingSubscriber(null)}
+                            size="sm"
+                            variant="outline"
+                            className="h-8 px-2"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-1">
+                          <Button
+                            onClick={() => handleEditSubscriber(subscriber)}
+                            size="sm"
+                            variant="outline"
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50 h-8 px-2"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            onClick={() => handleRemoveSubscriber(subscriber.id)}
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 border-red-200 hover:bg-red-50 h-8 px-2"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="mt-3">
-                    <Label htmlFor={`address-${subscriber.id}`} className="text-sm">
-                      Address *
-                    </Label>
-                    <Input
-                      id={`address-${subscriber.id}`}
-                      value={subscriber.address}
-                      onChange={(e) => handleUpdateSubscriber(subscriber.id, "address", e.target.value)}
-                      placeholder="Complete address"
-                      className="mt-1"
-                    />
+
+                  {/* Additional Info Row */}
+                  <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between items-center text-xs text-gray-500">
+                    <span>Added: {new Date(subscriber.joinedDate).toLocaleDateString()}</span>
+                    <Badge
+                      variant="outline"
+                      className={
+                        subscriber.paymentStatus === "paid"
+                          ? "border-green-200 text-green-700"
+                          : "border-yellow-200 text-yellow-700"
+                      }
+                    >
+                      {subscriber.paymentStatus === "paid" ? "Payment Complete" : "Payment Pending"}
+                    </Badge>
                   </div>
                 </Card>
               ))}
             </div>
 
-            {formData.subscribers?.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No subscribers added yet. Click "Add Subscriber" to start.</p>
+            {/* Empty State */}
+            {(!formData.subscribers || formData.subscribers.length === 0) && (
+              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+                <Users className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">No Subscribers Added Yet</h3>
+                <p className="text-gray-500 mb-4">
+                  Start by generating random subscribers for testing or add subscribers manually.
+                </p>
+                <div className="flex justify-center gap-3">
+                  <Button
+                    onClick={() => setShowSubscriberGenerator(true)}
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    <Wand2 className="h-4 w-4 mr-2" />
+                    Generate Random Subscribers
+                  </Button>
+                  <Button onClick={handleAddSubscriber} variant="outline">
+                    <Users className="h-4 w-4 mr-2" />
+                    Add Manually
+                  </Button>
+                </div>
               </div>
             )}
 
-            {formData.subscribers?.length > 0 && (
+            {/* Progress Summary */}
+            {formData.subscribers && formData.subscribers.length > 0 && (
+              <Card className="p-4 bg-blue-50 border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-blue-900">Enrollment Progress</h4>
+                    <p className="text-sm text-blue-700">
+                      {formData.subscribers.length} of {formData.numberOfSubscribers || 0} subscribers enrolled
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-blue-900">
+                      {Math.round((formData.subscribers.length / (Number(formData.numberOfSubscribers) || 1)) * 100)}%
+                    </div>
+                    <div className="text-xs text-blue-600">Complete</div>
+                  </div>
+                </div>
+                <Progress
+                  value={(formData.subscribers.length / (Number(formData.numberOfSubscribers) || 1)) * 100}
+                  className="mt-3 h-2"
+                />
+              </Card>
+            )}
+
+            {/* Save Button */}
+            {formData.subscribers && formData.subscribers.length > 0 && (
               <div className="flex justify-center pt-4">
                 <Button
                   onClick={handleSaveSubscribers}
@@ -1471,7 +1733,7 @@ export function CreateSchemeForm({ onCancel, onSuccess }) {
                   ) : (
                     <>
                       <Save className="h-4 w-4 mr-2" />
-                      Save Subscribers & Continue
+                      Save {formData.subscribers.length} Subscribers & Continue
                     </>
                   )}
                 </Button>
@@ -1822,7 +2084,15 @@ export function CreateSchemeForm({ onCancel, onSuccess }) {
         </div>
       </div>
 
-      {/* Document-preview dialog (unchanged) */}
+      {/* Subscriber Generator Dialog */}
+      <SubscriberGenerator
+        isOpen={showSubscriberGenerator}
+        onClose={() => setShowSubscriberGenerator(false)}
+        onSelectSubscribers={handleAddGeneratedSubscribers}
+        schemeDetails={formData}
+      />
+
+      {/* Document-preview dialog */}
       <Dialog open={showPreview !== null} onOpenChange={(o) => !o && setShowPreview(null)}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
