@@ -1,11 +1,10 @@
 "use client"
 
 import React from "react"
-
 import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
-import { ForemanSidebar } from "@/components/foreman/foreman-sidebar"
+import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -17,19 +16,13 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
-export default function ForemanLayout({ children }: { children: ReactNode }) {
+export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [isLoading, setIsLoading] = useState(true)
-  const [foremanData, setForemanData] = useState({
-    name: "Aakash Savant",
-    id: "FM001",
-    status: "Active",
-    successRate: "98.5%",
-  })
 
   useEffect(() => {
     // Check authentication
-    const token = localStorage.getItem("foremanToken")
+    const token = localStorage.getItem("adminToken")
     if (!token && !pathname.includes("/auth/")) {
       window.location.href = "/auth/login"
       return
@@ -41,28 +34,28 @@ export default function ForemanLayout({ children }: { children: ReactNode }) {
     const segments = pathname.split("/").filter(Boolean)
     const breadcrumbs = []
 
-    // Always start with Foreman Portal
+    // Always start with Admin Portal
     breadcrumbs.push({
-      title: "Foreman Portal",
-      href: "/foreman",
+      title: "Admin Portal",
+      href: "/admin",
       isLast: segments.length <= 1,
     })
 
     if (segments.length > 1) {
       const pathMap = {
         dashboard: "Dashboard",
-        schemes: "My Schemes",
-        "create-scheme": "Create Scheme",
+        users: "Users",
+        foremen: "Foremen",
+        schemes: "Schemes",
+        approvals: "Approvals",
+        "card-tracking": "Card Tracking",
         analytics: "Analytics",
-        subscribers: "Subscribers",
-        auctions: "Auctions",
-        payments: "Payments",
-        performance: "Performance",
         settings: "Settings",
-        profile: "Profile",
-        preferences: "Preferences",
-        credentials: "Credentials",
-        help: "Help & Support",
+        reports: "Reports",
+        auctions: "Auctions",
+        transactions: "Transactions",
+        alerts: "Alerts",
+        database: "Database",
       }
 
       for (let i = 1; i < segments.length; i++) {
@@ -85,7 +78,7 @@ export default function ForemanLayout({ children }: { children: ReactNode }) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
           <p className="text-sm sm:text-base">Loading...</p>
         </div>
       </div>
@@ -94,7 +87,7 @@ export default function ForemanLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <ForemanSidebar />
+      <AdminSidebar />
       <SidebarInset>
         <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex h-14 sm:h-16 items-center gap-4 px-4 sm:px-6">

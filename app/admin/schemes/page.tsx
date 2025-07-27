@@ -1,429 +1,327 @@
-"use client"
+```typescriptreact file="components/admin/admin-sidebar.tsx"
+[v0-no-op-code-block-prefix]"use client"
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from "@/components/ui/sidebar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { AdminSidebar } from "@/components/admin/admin-sidebar"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { FileText, Search, Filter, Eye, CheckCircle, Clock, DollarSign, BarChart3 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { LayoutDashboard, Users, UserCheck, FileCheck, CreditCard, BarChart3, Settings, FileText, Gavel, Receipt, AlertTriangle, Database, Shield, LogOut, ChevronDown, Mail, Phone, MapPin, Calendar, Crown } from 'lucide-react'
 
-const mockSchemes = [
+const navigation = [
   {
-    id: "SCH-001",
-    schemeId: "SCH-1736859597000",
-    name: "Gold Savings 50K",
-    chitValue: "₹10,00,000",
-    duration: "20 months",
-    subscribers: 20,
-    maxSubscribers: 20,
-    monthlyPremium: "₹50,000",
-    status: "live",
-    foremanName: "Rajesh Kumar",
-    foremanId: "FM001",
-    startDate: "2025-01-01",
-    endDate: "2025-08-01",
-    currentMonth: 1,
-    totalMonths: 20,
-    psoNumber: "PSO-2025-001",
-    form7Number: "FORM7-2025-001",
-    createdDate: "2024-12-15",
-    lastUpdated: "2025-01-14T10:30:00Z",
+    title: "Overview",
+    items: [
+      { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+      { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+    ],
   },
   {
-    id: "SCH-002",
-    schemeId: "SCH-1736859598000",
-    name: "Business Growth 100K",
-    chitValue: "₹30,00,000",
-    duration: "30 months",
-    subscribers: 25,
-    maxSubscribers: 30,
-    monthlyPremium: "₹1,00,000",
-    status: "submitted",
-    foremanName: "Priya Sharma",
-    foremanId: "FM002",
-    startDate: "2025-02-01",
-    endDate: "2027-07-01",
-    currentMonth: 0,
-    totalMonths: 30,
-    createdDate: "2025-01-10",
-    lastUpdated: "2025-01-14T09:15:00Z",
+    title: "User Management",
+    items: [
+      { name: "Users", href: "/admin/users", icon: Users },
+      { name: "Foremen", href: "/admin/foremen", icon: UserCheck },
+      { name: "Card Tracking", href: "/admin/card-tracking", icon: CreditCard },
+    ],
   },
   {
-    id: "SCH-003",
-    schemeId: "SCH-1736859599000",
-    name: "Dream Home 200K",
-    chitValue: "₹80,00,000",
-    duration: "40 months",
-    subscribers: 35,
-    maxSubscribers: 40,
-    monthlyPremium: "₹2,00,000",
-    status: "live",
-    foremanName: "Amit Patel",
-    foremanId: "FM003",
-    startDate: "2024-06-01",
-    endDate: "2028-09-01",
-    currentMonth: 8,
-    totalMonths: 40,
-    psoNumber: "PSO-2024-003",
-    form7Number: "FORM7-2024-003",
-    createdDate: "2024-05-15",
-    lastUpdated: "2025-01-14T11:45:00Z",
+    title: "Scheme Management",
+    items: [
+      { name: "Schemes", href: "/admin/schemes", icon: FileCheck },
+      { name: "Approvals", href: "/admin/approvals", icon: Gavel, badge: "5" },
+      { name: "Auctions", href: "/admin/auctions", icon: Receipt },
+    ],
+  },
+  {
+    title: "System",
+    items: [
+    { name: "Workflow Management", href: "/admin/workflow-management", icon: Settings },
+      { name: "Reports", href: "/admin/reports", icon: FileText },
+      { name: "Transactions", href: "/admin/transactions", icon: Receipt },
+      { name: "Alerts", href: "/admin/alerts", icon: AlertTriangle, badge: "3" },
+      { name: "Database", href: "/admin/database", icon: Database },
+      { name: "Settings", href: "/admin/settings", icon: Settings },
+    ],
   },
 ]
 
-export default function AllSchemesPage() {
-  const [schemes, setSchemes] = useState(mockSchemes)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [selectedScheme, setSelectedScheme] = useState(null)
-  const [activeTab, setActiveTab] = useState("all")
+// Mock admin data
+const adminData = {
+  id: "ADM001",
+  name: "System Administrator",
+  email: "admin@chitfundportal.com",
+  phone: "+91 98765 43210",
+  address: "Mumbai, Maharashtra",
+  joinDate: "2023-01-01",
+  role: "Super Admin",
+  status: "Active",
+  avatar: "/placeholder.svg?height=40&width=40",
+  stats: {
+    totalUsers: 1247,
+    activeSchemes: 89,
+    pendingApprovals: 12,
+  },
+}
 
-  useEffect(() => {
-    // Load schemes from localStorage
-    const storedSchemes = localStorage.getItem("allSchemes")
-    if (storedSchemes) {
-      try {
-        const parsedSchemes = JSON.parse(storedSchemes)
-        setSchemes([...mockSchemes, ...parsedSchemes])
-      } catch (error) {
-        console.error("Error parsing schemes:", error)
-      }
-    }
-  }, [])
+export function AdminSidebar() {
+  const router = useRouter()
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false)
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "live":
-        return "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300"
-      case "submitted":
-        return "bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 border-yellow-300"
-      case "pso_approved":
-        return "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border-blue-300"
-      case "rejected":
-        return "bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border-red-300"
-      default:
-        return "bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border-gray-300"
-    }
-  }
-
-  const filteredSchemes = schemes.filter((scheme) => {
-    const matchesSearch =
-      scheme.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      scheme.schemeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      scheme.foremanName.toLowerCase().includes(searchTerm.toLowerCase())
-
-    let matchesStatus = true
-    if (activeTab === "pending") {
-      matchesStatus = ["submitted", "pso_approved"].includes(scheme.status)
-    } else if (activeTab === "active") {
-      matchesStatus = scheme.status === "live"
-    }
-
-    const matchesFilter = statusFilter === "all" || scheme.status === statusFilter
-    return matchesSearch && matchesStatus && matchesFilter
-  })
-
-  const handleViewDetails = (scheme) => {
-    setSelectedScheme(scheme)
-  }
-
-  const handleApproveScheme = (schemeId) => {
-    const updatedSchemes = schemes.map((scheme) =>
-      scheme.id === schemeId
-        ? { ...scheme, status: "live", psoNumber: `PSO-2025-${Date.now().toString().slice(-6)}` }
-        : scheme,
-    )
-    setSchemes(updatedSchemes)
-    alert("Scheme approved successfully!")
-  }
-
-  const handleRejectScheme = (schemeId) => {
-    const updatedSchemes = schemes.map((scheme) =>
-      scheme.id === schemeId ? { ...scheme, status: "rejected" } : scheme,
-    )
-    setSchemes(updatedSchemes)
-    alert("Scheme rejected.")
-  }
-
-  const stats = {
-    total: schemes.length,
-    live: schemes.filter((s) => s.status === "live").length,
-    pending: schemes.filter((s) => ["submitted", "pso_approved"].includes(s.status)).length,
-    rejected: schemes.filter((s) => s.status === "rejected").length,
+  const handleLogout = () => {
+    localStorage.removeItem("adminToken")
+    localStorage.removeItem("userType")
+    router.push("/auth/login")
+    setShowLogoutDialog(false)
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <SidebarProvider defaultOpen={true}>
-        <AdminSidebar />
-        <SidebarInset className="content-area">
-          {/* Header */}
-          <div className="bg-white shadow-sm border-b">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-16">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">All Schemes</h1>
-                  <p className="text-sm text-gray-500">Manage and monitor all chit fund schemes</p>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    Total: {stats.total}
+    <>
+      <Sidebar collapsible="offcanvas" className="border-r bg-white">
+        <SidebarHeader className="border-b bg-gradient-to-r from-slate-800 to-slate-900 text-white">
+          <div className="flex items-center gap-3 px-3 py-4 group-data-[collapsible=icon]:px-2">
+            <div className="flex items-center gap-2 w-full">
+              <Shield className="h-6 w-6 flex-shrink-0" />
+              <div className="group-data-[collapsible=icon]:hidden flex-1 min-w-0">
+                <h2 className="text-lg font-semibold truncate">Admin Portal</h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="secondary" className="bg-white/20 text-white text-xs">
+                    <Crown className="h-3 w-3 mr-1" />
+                    Super Admin
                   </Badge>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    Live: {stats.live}
-                  </Badge>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-xs opacity-90">Online</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </SidebarHeader>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Schemes</p>
-                      <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
-                    </div>
-                    <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <FileText className="h-6 w-6 text-blue-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Live Schemes</p>
-                      <p className="text-3xl font-bold text-gray-900">{stats.live}</p>
-                    </div>
-                    <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                      <CheckCircle className="h-6 w-6 text-green-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Pending Approval</p>
-                      <p className="text-3xl font-bold text-gray-900">{stats.pending}</p>
-                    </div>
-                    <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                      <Clock className="h-6 w-6 text-yellow-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Value</p>
-                      <p className="text-3xl font-bold text-gray-900">₹120L</p>
-                    </div>
-                    <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <DollarSign className="h-6 w-6 text-purple-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="all" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  All Schemes ({stats.total})
-                </TabsTrigger>
-                <TabsTrigger value="pending" className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Pending Approval ({stats.pending})
-                </TabsTrigger>
-                <TabsTrigger value="active" className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4" />
-                  Active Schemes ({stats.live})
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value={activeTab} className="space-y-6">
-                {/* Search and Filter Controls */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search schemes by name, ID, or foreman..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-48">
-                      <Filter className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="live">Live</SelectItem>
-                      <SelectItem value="submitted">Submitted</SelectItem>
-                      <SelectItem value="pso_approved">PSO Approved</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Schemes Table */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>Schemes ({filteredSchemes.length})</span>
-                    </CardTitle>
-                  </CardHeader>
+        <SidebarContent className="px-2 py-4 bg-white">
+          {/* Quick Stats */}
+          <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+            <SidebarGroupLabel className="text-xs font-medium text-gray-500 mb-3">System Overview</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <Card className="p-3 bg-white border border-gray-200">
                   <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Scheme Details</TableHead>
-                          <TableHead>Foreman</TableHead>
-                          <TableHead>Value & Duration</TableHead>
-                          <TableHead>Subscribers</TableHead>
-                          <TableHead>Progress</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredSchemes.map((scheme) => (
-                          <TableRow key={scheme.id}>
-                            <TableCell>
-                              <div className="flex items-center space-x-3">
-                                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                  <FileText className="h-5 w-5 text-blue-600" />
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-900">{scheme.name}</p>
-                                  <p className="text-sm text-gray-500">ID: {scheme.schemeId}</p>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium text-gray-900">{scheme.foremanName}</p>
-                                <p className="text-sm text-gray-500">{scheme.foremanId}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium text-gray-900">{scheme.chitValue}</p>
-                                <p className="text-sm text-gray-500">{scheme.duration}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium text-gray-900">
-                                  {scheme.subscribers}/{scheme.maxSubscribers}
-                                </p>
-                                <p className="text-sm text-gray-500">Monthly: {scheme.monthlyPremium}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {scheme.status === "live" ? (
-                                <div>
-                                  <p className="font-medium text-gray-900">
-                                    {scheme.currentMonth}/{scheme.totalMonths}
-                                  </p>
-                                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                                    <div
-                                      className="bg-blue-600 h-2 rounded-full"
-                                      style={{ width: `${(scheme.currentMonth / scheme.totalMonths) * 100}%` }}
-                                    ></div>
-                                  </div>
-                                </div>
-                              ) : (
-                                <p className="text-sm text-gray-500">Not started</p>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={getStatusColor(scheme.status)}>
-                                {scheme.status.replace(/_/g, " ").toUpperCase()}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleViewDetails(scheme)}
-                                  className="gap-1"
-                                >
-                                  <Eye className="h-3 w-3" />
-                                  View
-                                </Button>
-                                {scheme.status === "submitted" && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleApproveScheme(scheme.id)}
-                                      className="gap-1 bg-green-600 hover:bg-green-700 text-white"
-                                    >
-                                      <CheckCircle className="h-3 w-3" />
-                                      Approve
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleRejectScheme(scheme.id)}
-                                      className="gap-1 text-red-600 hover:text-red-700"
-                                    >
-                                      Reject
-                                    </Button>
-                                  </>
-                                )}
-                                {scheme.status === "live" && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => (window.location.href = `/admin/schemes/${scheme.schemeId}/reports`)}
-                                    className="gap-1"
-                                  >
-                                    <BarChart3 className="h-3 w-3" />
-                                    Reports
-                                  </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                    <div className="flex flex-col items-center text-center">
+                      <div className="p-1 bg-blue-100 rounded flex-shrink-0 mb-1">
+                        <Users className="h-3 w-3 text-blue-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium">{adminData.stats.totalUsers}</p>
+                        <p className="text-xs text-gray-500">Users</p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
+                <Card className="p-3 bg-white border border-gray-200">
+                  <CardContent className="p-0">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="p-1 bg-green-100 rounded flex-shrink-0 mb-1">
+                        <FileCheck className="h-3 w-3 text-green-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium">{adminData.stats.activeSchemes}</p>
+                        <p className="text-xs text-gray-500">Schemes</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="p-3 bg-white border border-gray-200">
+                  <CardContent className="p-0">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="p-1 bg-orange-100 rounded flex-shrink-0 mb-1">
+                        <Gavel className="h-3 w-3 text-orange-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium">{adminData.stats.pendingApprovals}</p>
+                        <p className="text-xs text-gray-500">Pending</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-                {filteredSchemes.length === 0 && (
-                  <div className="text-center py-12">
-                    <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-600 mb-2">No Schemes Found</h3>
-                    <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
+          {/* Navigation */}
+          {navigation.map((section) => (
+            <SidebarGroup key={section.title}>
+              <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden text-xs font-medium text-gray-500 mb-2">
+                {section.title}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {section.items.map((item) => (
+                    <SidebarMenuItem key={item.name}>
+                      <SidebarMenuButton asChild tooltip={item.name} className="w-full">
+                        <a
+                          href={item.href}
+                          className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
+                        >
+                          <item.icon className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{item.name}</span>
+                          {item.badge && (
+                            <Badge variant="secondary" className="bg-red-100 text-red-800 text-xs ml-auto">
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
+        </SidebarContent>
+
+        <SidebarFooter className="border-t p-2 bg-white">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton className="w-full p-2">
+                    <div className="flex items-center gap-3 w-full min-w-0">
+                      <Avatar className="h-8 w-8 flex-shrink-0">
+                        <AvatarImage src={adminData.avatar || "/placeholder.svg"} alt={adminData.name} />
+                        <AvatarFallback className="bg-slate-100 text-slate-600 text-sm">
+                          {adminData.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 text-left group-data-[collapsible=icon]:hidden min-w-0">
+                        <p className="text-sm font-medium truncate">{adminData.name}</p>
+                        <p className="text-xs text-gray-500 truncate">ID: {adminData.id}</p>
+                      </div>
+                      <ChevronDown className="h-4 w-4 group-data-[collapsible=icon]:hidden flex-shrink-0" />
+                    </div>
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="top" align="end" className="w-64 z-50">
+                  <div className="p-3 border-b">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={adminData.avatar || "/placeholder.svg"} alt={adminData.name} />
+                        <AvatarFallback className="bg-slate-100 text-slate-600">
+                          {adminData.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{adminData.name}</p>
+                        <p className="text-sm text-gray-500 truncate">Admin ID: {adminData.id}</p>
+                        <Badge variant="outline" className="text-xs mt-1">
+                          <Crown className="h-3 w-3 mr-1" />
+                          {adminData.role}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+
+                  <div className="p-3 border-b">
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-600 truncate">{adminData.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-600 truncate">{adminData.phone}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-600 truncate">{adminData.address}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-600 truncate">
+                          Since {new Date(adminData.joinDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <DropdownMenuItem asChild>
+                    <a href="/admin/settings" className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      System Settings
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setShowLogoutDialog(true)}
+                    className="flex items-center gap-2 text-red-600 focus:text-red-600"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+
+        <SidebarRail />
+      </Sidebar>
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <DialogContent className="z-50">
+          <DialogHeader>
+            <DialogTitle>Confirm Logout</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to logout from the admin portal? You will need to login again to access the system.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLogoutDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleLogout}>
+              Logout
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
+
+export default AdminSidebar

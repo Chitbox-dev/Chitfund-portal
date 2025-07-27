@@ -35,75 +35,75 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  Home,
+  LayoutDashboard,
   FileText,
-  Users,
-  Settings,
   Plus,
+  Users,
+  Gavel,
+  Receipt,
   BarChart3,
-  Shield,
+  Settings,
+  HelpCircle,
+  Bell,
   LogOut,
-  User,
+  ChevronDown,
   Mail,
   Phone,
   MapPin,
   Calendar,
-  TrendingUp,
-  DollarSign,
-  CheckCircle,
-  ChevronDown,
+  Briefcase,
+  Shield,
 } from "lucide-react"
 
 const navigation = [
   {
-    title: "Dashboard",
-    url: "/foreman/dashboard",
-    icon: Home,
+    title: "Overview",
+    items: [
+      { name: "Dashboard", href: "/foreman/dashboard", icon: LayoutDashboard },
+      { name: "Analytics", href: "/foreman/analytics", icon: BarChart3 },
+    ],
   },
   {
-    title: "My Schemes",
-    url: "/foreman/schemes",
-    icon: FileText,
+    title: "Scheme Management",
+    items: [
+      { name: "My Schemes", href: "/foreman/schemes", icon: FileText },
+      { name: "Create Scheme", href: "/foreman/create-scheme", icon: Plus },
+      { name: "Subscribers", href: "/foreman/subscribers", icon: Users },
+    ],
   },
   {
-    title: "Create Scheme",
-    url: "/foreman/create-scheme",
-    icon: Plus,
+    title: "Operations",
+    items: [
+      { name: "Auctions", href: "/foreman/auctions", icon: Gavel },
+      { name: "Payments", href: "/foreman/payments", icon: Receipt },
+      { name: "Performance", href: "/foreman/performance", icon: BarChart3 },
+    ],
   },
   {
-    title: "Subscribers",
-    url: "/foreman/subscribers",
-    icon: Users,
-  },
-  {
-    title: "Analytics",
-    url: "/foreman/analytics",
-    icon: BarChart3,
-  },
-  {
-    title: "Settings",
-    url: "/foreman/settings",
-    icon: Settings,
+    title: "Support",
+    items: [
+      { name: "Settings", href: "/foreman/settings", icon: Settings },
+      { name: "Help & Support", href: "/foreman/help", icon: HelpCircle },
+      { name: "Notifications", href: "/foreman/notifications", icon: Bell, badge: "2" },
+    ],
   },
 ]
 
-// Mock foreman data - in real app, this would come from authentication context
+// Mock foreman data
 const foremanData = {
   id: "FM001",
-  name: "Rajesh Kumar",
-  email: "rajesh.kumar@chitfund.com",
+  name: "Aakash Savant",
+  email: "aakash.savant@email.com",
   phone: "+91 98765 43210",
   address: "Mumbai, Maharashtra",
-  joinDate: "2023-01-15",
-  licenseNumber: "CF-LIC-2023-001",
+  joinDate: "2023-06-15",
+  role: "Senior Foreman",
   status: "Active",
   avatar: "/placeholder.svg?height=40&width=40",
   stats: {
-    totalSchemes: 12,
     activeSchemes: 8,
-    completedSchemes: 4,
-    totalAmount: "₹2,50,00,000",
-    successRate: "95%",
+    totalSubscribers: 156,
+    successRate: "98.5%",
   },
 }
 
@@ -112,11 +112,8 @@ export function ForemanSidebar() {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
 
   const handleLogout = () => {
-    // Clear session data
-    localStorage.removeItem("foremanSession")
-    localStorage.removeItem("schemeDraft")
-
-    // Redirect to login
+    localStorage.removeItem("foremanToken")
+    localStorage.removeItem("userType")
     router.push("/auth/login")
     setShowLogoutDialog(false)
   }
@@ -124,7 +121,7 @@ export function ForemanSidebar() {
   return (
     <>
       <Sidebar collapsible="offcanvas" className="border-r bg-white">
-        <SidebarHeader className="border-b bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+        <SidebarHeader className="border-b bg-gradient-to-r from-green-600 to-emerald-700 text-white">
           <div className="flex items-center gap-3 px-3 py-4 group-data-[collapsible=icon]:px-2">
             <div className="flex items-center gap-2 w-full">
               <Shield className="h-6 w-6 flex-shrink-0" />
@@ -132,11 +129,12 @@ export function ForemanSidebar() {
                 <h2 className="text-lg font-semibold truncate">Foreman Portal</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary" className="bg-white/20 text-white text-xs">
-                    Licensed
+                    <Briefcase className="h-3 w-3 mr-1" />
+                    Foreman
                   </Badge>
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-xs opacity-90">System Online</span>
+                    <span className="text-xs opacity-90">Active</span>
                   </div>
                 </div>
               </div>
@@ -147,31 +145,46 @@ export function ForemanSidebar() {
         <SidebarContent className="px-2 py-4 bg-white">
           {/* Quick Stats */}
           <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-            <SidebarGroupLabel className="text-xs font-medium text-gray-500 mb-3">Quick Overview</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-xs font-medium text-gray-500 mb-3">
+              Performance Overview
+            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="grid grid-cols-3 gap-2 mb-4">
                 <Card className="p-3 bg-white border border-gray-200">
                   <CardContent className="p-0">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1 bg-blue-100 rounded flex-shrink-0">
-                        <FileText className="h-3 w-3 text-blue-600" />
+                    <div className="flex flex-col items-center text-center">
+                      <div className="p-1 bg-green-100 rounded flex-shrink-0 mb-1">
+                        <FileText className="h-3 w-3 text-green-600" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs font-medium">{foremanData.stats.activeSchemes}</p>
-                        <p className="text-xs text-gray-500">Active</p>
+                        <p className="text-xs text-gray-500">Schemes</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
                 <Card className="p-3 bg-white border border-gray-200">
                   <CardContent className="p-0">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1 bg-green-100 rounded flex-shrink-0">
-                        <CheckCircle className="h-3 w-3 text-green-600" />
+                    <div className="flex flex-col items-center text-center">
+                      <div className="p-1 bg-blue-100 rounded flex-shrink-0 mb-1">
+                        <Users className="h-3 w-3 text-blue-600" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-medium">{foremanData.stats.completedSchemes}</p>
-                        <p className="text-xs text-gray-500">Complete</p>
+                        <p className="text-xs font-medium">{foremanData.stats.totalSubscribers}</p>
+                        <p className="text-xs text-gray-500">Members</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="p-3 bg-white border border-gray-200">
+                  <CardContent className="p-0">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="p-1 bg-purple-100 rounded flex-shrink-0 mb-1">
+                        <BarChart3 className="h-3 w-3 text-purple-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium">{foremanData.stats.successRate}</p>
+                        <p className="text-xs text-gray-500">Success</p>
                       </div>
                     </div>
                   </CardContent>
@@ -181,28 +194,35 @@ export function ForemanSidebar() {
           </SidebarGroup>
 
           {/* Navigation */}
-          <SidebarGroup>
-            <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden text-xs font-medium text-gray-500 mb-2">
-              Navigation
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {navigation.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild tooltip={item.title} className="w-full">
-                      <a
-                        href={item.url}
-                        className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
-                      >
-                        <item.icon className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">{item.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          {navigation.map((section) => (
+            <SidebarGroup key={section.title}>
+              <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden text-xs font-medium text-gray-500 mb-2">
+                {section.title}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {section.items.map((item) => (
+                    <SidebarMenuItem key={item.name}>
+                      <SidebarMenuButton asChild tooltip={item.name} className="w-full">
+                        <a
+                          href={item.href}
+                          className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
+                        >
+                          <item.icon className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{item.name}</span>
+                          {item.badge && (
+                            <Badge variant="secondary" className="bg-red-100 text-red-800 text-xs ml-auto">
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
         </SidebarContent>
 
         <SidebarFooter className="border-t p-2 bg-white">
@@ -214,7 +234,7 @@ export function ForemanSidebar() {
                     <div className="flex items-center gap-3 w-full min-w-0">
                       <Avatar className="h-8 w-8 flex-shrink-0">
                         <AvatarImage src={foremanData.avatar || "/placeholder.svg"} alt={foremanData.name} />
-                        <AvatarFallback className="bg-blue-100 text-blue-600 text-sm">
+                        <AvatarFallback className="bg-green-100 text-green-600 text-sm">
                           {foremanData.name
                             .split(" ")
                             .map((n) => n[0])
@@ -234,7 +254,7 @@ export function ForemanSidebar() {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={foremanData.avatar || "/placeholder.svg"} alt={foremanData.name} />
-                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                        <AvatarFallback className="bg-green-100 text-green-600">
                           {foremanData.name
                             .split(" ")
                             .map((n) => n[0])
@@ -245,7 +265,8 @@ export function ForemanSidebar() {
                         <p className="font-medium truncate">{foremanData.name}</p>
                         <p className="text-sm text-gray-500 truncate">Foreman ID: {foremanData.id}</p>
                         <Badge variant="outline" className="text-xs mt-1">
-                          {foremanData.status}
+                          <Briefcase className="h-3 w-3 mr-1" />
+                          {foremanData.role}
                         </Badge>
                       </div>
                     </div>
@@ -274,30 +295,10 @@ export function ForemanSidebar() {
                     </div>
                   </div>
 
-                  <div className="p-3 border-b">
-                    <h4 className="text-sm font-medium mb-2">Performance</h4>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="h-3 w-3 text-green-500 flex-shrink-0" />
-                        <span className="truncate">{foremanData.stats.totalAmount}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <TrendingUp className="h-3 w-3 text-blue-500 flex-shrink-0" />
-                        <span className="truncate">{foremanData.stats.successRate}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <DropdownMenuItem asChild>
-                    <a href="/foreman/profile" className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      View Profile
-                    </a>
-                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <a href="/foreman/settings" className="flex items-center gap-2">
                       <Settings className="h-4 w-4" />
-                      Settings
+                      Profile Settings
                     </a>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -322,7 +323,10 @@ export function ForemanSidebar() {
         <DialogContent className="z-50">
           <DialogHeader>
             <DialogTitle>Confirm Logout</DialogTitle>
-            <DialogDescription>Are you sure you want to logout? Any unsaved changes will be lost.</DialogDescription>
+            <DialogDescription>
+              Are you sure you want to logout from the foreman portal? You will need to login again to access your
+              schemes.
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLogoutDialog(false)}>
@@ -337,3 +341,5 @@ export function ForemanSidebar() {
     </>
   )
 }
+
+export default ForemanSidebar
