@@ -104,42 +104,46 @@ export default function RegisterPage() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Link href="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Home
+                <Button variant="ghost" size="sm" className="text-xs sm:text-sm">
+                  <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Back to Home</span>
+                  <span className="sm:hidden">Back</span>
                 </Button>
               </Link>
               <div className="flex items-center space-x-2">
-                <Shield className="h-6 w-6 text-[#1e3a8a]" />
-                <span className="text-lg font-semibold text-[#1e3a8a]">UCFSIN Registration</span>
+                <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-[#1e3a8a]" />
+                <span className="text-sm sm:text-lg font-semibold text-[#1e3a8a]">
+                  <span className="hidden sm:inline">UCFSIN Registration</span>
+                  <span className="sm:hidden">Registration</span>
+                </span>
               </div>
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-xs sm:text-sm text-gray-500">
               Step {currentStep} of {steps.length}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Progress Section */}
-        <Card className="mb-8">
-          <CardHeader>
-            <div className="flex items-center justify-between mb-4">
-              <CardTitle className="text-xl">Registration Progress</CardTitle>
-              <span className="text-sm font-medium text-[#1e3a8a]">{Math.round(progress)}% Complete</span>
+        <Card className="mb-6 sm:mb-8">
+          <CardHeader className="pb-3 sm:pb-4">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <CardTitle className="text-lg sm:text-xl">Registration Progress</CardTitle>
+              <span className="text-xs sm:text-sm font-medium text-[#1e3a8a]">{Math.round(progress)}% Complete</span>
             </div>
             <Progress value={progress} className="h-2" />
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4">
               {steps.map((step) => (
                 <div
                   key={step.id}
-                  className={`text-center p-3 rounded-lg transition-colors ${
+                  className={`text-center p-2 sm:p-3 rounded-lg transition-colors ${
                     step.id === currentStep
                       ? "bg-[#1e3a8a] text-white"
                       : step.id < currentStep
@@ -147,8 +151,8 @@ export default function RegisterPage() {
                         : "bg-gray-100 text-gray-500"
                   }`}
                 >
-                  <div className="font-semibold text-sm">{step.title}</div>
-                  <div className="text-xs mt-1 opacity-75">{step.description}</div>
+                  <div className="font-semibold text-xs sm:text-sm">{step.title}</div>
+                  <div className="text-xs mt-1 opacity-75 hidden sm:block">{step.description}</div>
                 </div>
               ))}
             </div>
@@ -157,21 +161,21 @@ export default function RegisterPage() {
 
         {/* Step Content */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">{steps[currentStep - 1].title}</CardTitle>
-            <p className="text-gray-600">{steps[currentStep - 1].description}</p>
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="text-xl sm:text-2xl">{steps[currentStep - 1].title}</CardTitle>
+            <p className="text-gray-600 text-sm sm:text-base">{steps[currentStep - 1].description}</p>
           </CardHeader>
-          <CardContent>{renderStep()}</CardContent>
+          <CardContent className="p-4 sm:p-6">{renderStep()}</CardContent>
         </Card>
 
         {/* Navigation */}
         {currentStep > 1 && currentStep < 7 && (
-          <div className="flex justify-between mt-8">
-            <Button variant="outline" onClick={prevStep}>
+          <div className="flex flex-col sm:flex-row justify-between items-center mt-6 sm:mt-8 space-y-4 sm:space-y-0">
+            <Button variant="outline" onClick={prevStep} className="w-full sm:w-auto bg-transparent">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Previous Step
             </Button>
-            <div className="text-sm text-gray-500 flex items-center">
+            <div className="text-xs sm:text-sm text-gray-500 flex items-center text-center sm:text-left">
               Need help?{" "}
               <a href="/support" className="text-[#1e3a8a] hover:underline ml-1">
                 Contact Support

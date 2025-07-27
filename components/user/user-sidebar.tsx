@@ -24,7 +24,7 @@ import {
   EyeOff,
 } from "lucide-react"
 
-export default function UserSidebar() {
+export function UserSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [showCredentials, setShowCredentials] = useState(false)
@@ -214,3 +214,5 @@ export default function UserSidebar() {
     </div>
   )
 }
+
+export default UserSidebar

@@ -72,31 +72,31 @@ const features = [
 
 export default function FeatureCard() {
   return (
-    <section id="features" className="py-16 bg-gray-50">
+    <section id="features" className="py-12 sm:py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose UCFSIN?</h2>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose UCFSIN?</h2>
+          <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto px-4">
             Experience the future of chit fund management with our comprehensive platform designed for transparency,
             security, and ease of use.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {features.map((feature, index) => (
-            <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-none bg-white">
-              <CardHeader className="pb-4">
+            <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-none bg-white h-full">
+              <CardHeader className="pb-3 sm:pb-4">
                 <div className="flex items-center justify-between mb-3">
                   <div
-                    className={`p-3 rounded-lg bg-gray-50 group-hover:bg-gray-100 transition-colors ${feature.color}`}
+                    className={`p-2 sm:p-3 rounded-lg bg-gray-50 group-hover:bg-gray-100 transition-colors ${feature.color}`}
                   >
-                    <feature.icon className="h-6 w-6" />
+                    <feature.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
                   <Badge variant="secondary" className="text-xs">
                     {feature.badge}
                   </Badge>
                 </div>
-                <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                <CardTitle className="text-base sm:text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                   {feature.title}
                 </CardTitle>
               </CardHeader>
