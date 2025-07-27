@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -81,6 +81,47 @@ export default function AccessRequestPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false)
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [existingRequest, setExistingRequest] = useState<AccessRequest | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Check if user already has access
+    const checkExistingAccess = () => {
+      const adminAccess = document.cookie.includes("admin_access=true")
+      const portalAccess = document.cookie.includes("portal_access=true")
+
+      if (adminAccess) {
+        // Admin has access, redirect to admin dashboard
+        router.push("/admin/dashboard")
+        return
+      }
+
+      if (portalAccess) {
+        // User has portal access, redirect to landing page
+        router.push("/")
+        return
+      }
+
+      // Check for existing request
+      const requestId = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("request_id="))
+        ?.split("=")[1]
+
+      if (requestId) {
+        // Check request status from localStorage
+        const existingRequests = JSON.parse(localStorage.getItem("accessRequests") || "[]")
+        const request = existingRequests.find((req: AccessRequest) => req.id === requestId)
+
+        if (request) {
+          setExistingRequest(request)
+        }
+      }
+
+      setIsLoading(false)
+    }
+
+    checkExistingAccess()
+  }, [router])
 
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -101,14 +142,14 @@ export default function AccessRequestPage() {
       document.cookie = `user_email=${encodeURIComponent(requestFormData.email)}; path=/; expires=${expires}; SameSite=Lax`
       document.cookie = `user_type=${requestFormData.userType}; path=/; expires=${expires}; SameSite=Lax`
 
-      // Create mock request
+      // Create request with PENDING status (not auto-approved)
       const newRequest: AccessRequest = {
         id: requestId,
         email: requestFormData.email,
         userType: requestFormData.userType,
         companyName: requestFormData.companyName,
         reason: requestFormData.reason,
-        status: "approved", // Auto-approve for demo
+        status: "pending", // Requires admin approval
         submittedAt: new Date().toISOString(),
       }
 
@@ -116,9 +157,6 @@ export default function AccessRequestPage() {
       const existingRequests = JSON.parse(localStorage.getItem("accessRequests") || "[]")
       existingRequests.push(newRequest)
       localStorage.setItem("accessRequests", JSON.stringify(existingRequests))
-
-      // Set portal access for approved request
-      document.cookie = `portal_access=true; path=/; expires=${expires}; SameSite=Lax`
 
       setExistingRequest(newRequest)
       setShowSuccessDialog(true)
@@ -151,8 +189,8 @@ export default function AccessRequestPage() {
         // Set localStorage token
         localStorage.setItem("adminToken", "admin-token-123")
 
-        // Redirect to admin dashboard
-        window.location.href = "/admin/dashboard"
+        // Redirect to landing page for admin
+        window.location.href = "/"
       } else {
         alert("Invalid admin credentials. Please check your email and password.")
       }
@@ -164,16 +202,28 @@ export default function AccessRequestPage() {
     }
   }
 
-  const handleAccessPortal = () => {
-    // Redirect to landing page for approved users
-    window.location.href = "/"
+  const checkRequestStatus = () => {
+    if (existingRequest) {
+      // Check if request has been approved by admin
+      const existingRequests = JSON.parse(localStorage.getItem("accessRequests") || "[]")
+      const updatedRequest = existingRequests.find((req: AccessRequest) => req.id === existingRequest.id)
+
+      if (updatedRequest && updatedRequest.status === "approved") {
+        // Set portal access for approved request
+        const maxAge = 60 * 60 * 24 * 30 // 30 days
+        const expires = new Date(Date.now() + maxAge * 1000).toUTCString()
+        document.cookie = `portal_access=true; path=/; expires=${expires}; SameSite=Lax`
+
+        setExistingRequest(updatedRequest)
+      }
+    }
   }
 
-  const fillDemoCredentials = () => {
-    setAdminFormData({
-      email: ADMIN_CREDENTIALS.email,
-      password: ADMIN_CREDENTIALS.password,
-    })
+  const handleAccessPortal = () => {
+    // Only allow access if request is approved
+    if (existingRequest?.status === "approved") {
+      window.location.href = "/"
+    }
   }
 
   const getStatusIcon = (status: string) => {
@@ -217,6 +267,17 @@ export default function AccessRequestPage() {
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking access status...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
@@ -229,20 +290,48 @@ export default function AccessRequestPage() {
           <p className="text-gray-600">Request access or login to the Chit Fund Management System</p>
         </div>
 
-        {existingRequest && existingRequest.status === "approved" ? (
-          /* Approved Request Status */
+        {existingRequest ? (
+          /* Existing Request Status */
           <Card className="shadow-xl border-0">
-            <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-t-lg">
+            <CardHeader
+              className={`text-white rounded-t-lg ${
+                existingRequest.status === "approved"
+                  ? "bg-gradient-to-r from-green-500 to-green-600"
+                  : existingRequest.status === "rejected"
+                    ? "bg-gradient-to-r from-red-500 to-red-600"
+                    : "bg-gradient-to-r from-yellow-500 to-yellow-600"
+              }`}
+            >
               <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-6 w-6" />
-                Access Approved!
+                {getStatusIcon(existingRequest.status)}
+                {existingRequest.status === "approved" && "Access Approved!"}
+                {existingRequest.status === "rejected" && "Access Denied"}
+                {existingRequest.status === "pending" && "Request Under Review"}
               </CardTitle>
-              <CardDescription className="text-green-100">
-                Your access request has been approved and you can now access the portal
+              <CardDescription
+                className={
+                  existingRequest.status === "approved"
+                    ? "text-green-100"
+                    : existingRequest.status === "rejected"
+                      ? "text-red-100"
+                      : "text-yellow-100"
+                }
+              >
+                {existingRequest.status === "approved" && "Your access request has been approved"}
+                {existingRequest.status === "rejected" && "Your access request has been rejected"}
+                {existingRequest.status === "pending" && "Your request is being reviewed by our admin team"}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
+              <div
+                className={`border rounded-lg p-4 space-y-3 ${
+                  existingRequest.status === "approved"
+                    ? "bg-green-50 border-green-200"
+                    : existingRequest.status === "rejected"
+                      ? "bg-red-50 border-red-200"
+                      : "bg-yellow-50 border-yellow-200"
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">Request ID:</span>
                   <span className="text-sm text-gray-900 font-mono">{existingRequest.id}</span>
@@ -260,27 +349,76 @@ export default function AccessRequestPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">Status:</span>
-                  <Badge className="bg-green-100 text-green-800">Approved</Badge>
+                  <Badge className={getStatusColor(existingRequest.status)}>
+                    {existingRequest.status.charAt(0).toUpperCase() + existingRequest.status.slice(1)}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Submitted:</span>
+                  <span className="text-sm text-gray-900">
+                    {new Date(existingRequest.submittedAt).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
 
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  Congratulations! Your access has been approved. You can now access the chit fund portal and explore
-                  all available features.
-                </AlertDescription>
-              </Alert>
+              {existingRequest.status === "pending" && (
+                <Alert className="border-yellow-200 bg-yellow-50">
+                  <Clock className="h-4 w-4 text-yellow-600" />
+                  <AlertDescription className="text-yellow-800">
+                    Your request is being reviewed by our admin team. You will receive an email notification once it's
+                    processed. Typical review time is 1-2 business days.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {existingRequest.status === "approved" && (
+                <Alert className="border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    Congratulations! Your access request has been approved. You can now access the portal.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {existingRequest.status === "rejected" && (
+                <Alert className="border-red-200 bg-red-50">
+                  <XCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">
+                    Your access request has been rejected. Please contact support for more information.
+                    {existingRequest.comments && (
+                      <div className="mt-2 text-sm">
+                        <strong>Reason:</strong> {existingRequest.comments}
+                      </div>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
 
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => window.location.reload()} className="flex-1">
+                {existingRequest.status === "pending" && (
+                  <Button onClick={checkRequestStatus} variant="outline" className="flex-1 bg-transparent">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Check Status
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // Clear request cookies to allow new request
+                    document.cookie = "request_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+                    window.location.reload()
+                  }}
+                  className="flex-1"
+                >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
+                  New Request
                 </Button>
-                <Button onClick={handleAccessPortal} className="flex-1 bg-green-600 hover:bg-green-700">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Access Portal
-                </Button>
+                {existingRequest.status === "approved" && (
+                  <Button onClick={handleAccessPortal} className="flex-1 bg-green-600 hover:bg-green-700">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Access Portal
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -470,24 +608,6 @@ export default function AccessRequestPage() {
                       </div>
                     </div>
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={fillDemoCredentials}
-                      className="w-full bg-transparent"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Fill Demo Credentials
-                    </Button>
-
-                    <div className="bg-gray-50 p-4 rounded-lg text-sm">
-                      <div className="font-medium text-gray-700 mb-2">Demo Admin Credentials:</div>
-                      <div className="text-gray-600 space-y-1">
-                        <div>Email: admin@chitfundportal.com</div>
-                        <div>Password: Admin@123</div>
-                      </div>
-                    </div>
-
                     <Button type="submit" disabled={isLoggingIn} className="w-full bg-red-600 hover:bg-red-700">
                       {isLoggingIn ? (
                         <>
@@ -513,27 +633,27 @@ export default function AccessRequestPage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                Access Request Approved!
+                <Clock className="h-5 w-5 text-yellow-600" />
+                Request Submitted Successfully
               </DialogTitle>
               <DialogDescription>
-                Great news! Your access request has been automatically approved for demo purposes.
+                Your access request has been submitted and is now pending admin approval.
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h4 className="font-medium text-green-800 mb-2">You now have access to:</h4>
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>• Full chit fund portal functionality</li>
-                  <li>• Dashboard and reporting features</li>
-                  <li>• User management tools</li>
-                  <li>• All available system features</li>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="font-medium text-yellow-800 mb-2">What happens next?</h4>
+                <ul className="text-sm text-yellow-700 space-y-1">
+                  <li>• Your request will be reviewed by our admin team</li>
+                  <li>• You'll receive an email notification with the decision</li>
+                  <li>• If approved, you'll get access to the portal</li>
+                  <li>• You can check your request status anytime on this page</li>
                 </ul>
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={() => setShowSuccessDialog(false)} className="bg-green-600 hover:bg-green-700">
-                Access Portal Now
+              <Button onClick={() => setShowSuccessDialog(false)} className="bg-yellow-600 hover:bg-yellow-700">
+                Got it, thanks!
               </Button>
             </DialogFooter>
           </DialogContent>
