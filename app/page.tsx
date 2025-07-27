@@ -9,6 +9,8 @@ import StatsCounter from "@/components/landing/stats-counter"
 import ClientBrandsSlider from "@/components/landing/client-brands-slider"
 import TestimonialSlider from "@/components/landing/testimonial-slider"
 import Footer from "@/components/landing/footer"
+import ProtectedRoute from "@/components/auth/protected-route"
+import AccessStatus from "@/components/auth/access-status"
 
 const newsUpdates = [
   {
@@ -51,16 +53,19 @@ const helpTopics = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
-      <Navbar />
-      <HeroSection />
-      <DashboardSlider />
-      <FeatureCard />
-      <HowItWorks />
-      <StatsCounter />
-      <ClientBrandsSlider />
-      <TestimonialSlider />
-      <Footer />
-    </main>
+    <ProtectedRoute allowedUserTypes={["company", "user", "foreman"]}>
+      <main className="min-h-screen">
+        <AccessStatus />
+        <Navbar />
+        <HeroSection />
+        <DashboardSlider />
+        <FeatureCard />
+        <HowItWorks />
+        <StatsCounter />
+        <ClientBrandsSlider />
+        <TestimonialSlider />
+        <Footer />
+      </main>
+    </ProtectedRoute>
   )
 }

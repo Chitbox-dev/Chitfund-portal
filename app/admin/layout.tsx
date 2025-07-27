@@ -1,121 +1,24 @@
 "use client"
 
-import React from "react"
-import type { ReactNode } from "react"
-import { useEffect, useState } from "react"
-import { usePathname } from "next/navigation"
+import type React from "react"
+
+import { SidebarProvider } from "@/components/ui/sidebar"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import ProtectedRoute from "@/components/auth/protected-route"
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname()
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    // Check authentication
-    const token = localStorage.getItem("adminToken")
-    if (!token && !pathname.includes("/auth/")) {
-      window.location.href = "/auth/login"
-      return
-    }
-    setIsLoading(false)
-  }, [pathname])
-
-  const getBreadcrumbs = () => {
-    const segments = pathname.split("/").filter(Boolean)
-    const breadcrumbs = []
-
-    // Always start with Admin Portal
-    breadcrumbs.push({
-      title: "Admin Portal",
-      href: "/admin",
-      isLast: segments.length <= 1,
-    })
-
-    if (segments.length > 1) {
-      const pathMap = {
-        dashboard: "Dashboard",
-        users: "Users",
-        foremen: "Foremen",
-        schemes: "Schemes",
-        approvals: "Approvals",
-        "card-tracking": "Card Tracking",
-        analytics: "Analytics",
-        settings: "Settings",
-        reports: "Reports",
-        auctions: "Auctions",
-        transactions: "Transactions",
-        alerts: "Alerts",
-        database: "Database",
-      }
-
-      for (let i = 1; i < segments.length; i++) {
-        const segment = segments[i]
-        const isLast = i === segments.length - 1
-        const href = "/" + segments.slice(0, i + 1).join("/")
-
-        breadcrumbs.push({
-          title: pathMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1),
-          href: href,
-          isLast: isLast,
-        })
-      }
-    }
-
-    return breadcrumbs
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
-          <p className="text-sm sm:text-base">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <SidebarProvider defaultOpen={true}>
-      <AdminSidebar />
-      <SidebarInset>
-        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex h-14 sm:h-16 items-center gap-4 px-4 sm:px-6">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb className="hidden sm:flex">
-              <BreadcrumbList>
-                {getBreadcrumbs().map((breadcrumb, index) => (
-                  <React.Fragment key={breadcrumb.href}>
-                    <BreadcrumbItem className={breadcrumb.isLast ? "" : "hidden md:block"}>
-                      {breadcrumb.isLast ? (
-                        <BreadcrumbPage className="text-sm sm:text-base">{breadcrumb.title}</BreadcrumbPage>
-                      ) : (
-                        <BreadcrumbLink href={breadcrumb.href} className="text-sm sm:text-base">
-                          {breadcrumb.title}
-                        </BreadcrumbLink>
-                      )}
-                    </BreadcrumbItem>
-                    {!breadcrumb.isLast && <BreadcrumbSeparator className="hidden md:block" />}
-                  </React.Fragment>
-                ))}
-              </BreadcrumbList>
-            </Breadcrumb>
-            <div className="flex-1" />
-          </div>
-        </header>
-        <div className="flex-1 overflow-auto p-4 sm:p-6">{children}</div>
-      </SidebarInset>
-    </SidebarProvider>
+    <ProtectedRoute allowedUserTypes={["company"]} redirectTo="/access-denied">
+      <div className="min-h-screen bg-gray-50">
+        <SidebarProvider defaultOpen={true}>
+          <AdminSidebar />
+          <main className="flex-1">{children}</main>
+        </SidebarProvider>
+      </div>
+    </ProtectedRoute>
   )
 }

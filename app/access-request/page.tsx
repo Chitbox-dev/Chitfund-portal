@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { AlertCircle, Building, Users, UserCheck, Shield, CheckCircle, Clock, Send } from "lucide-react"
+import { Building, Users, UserCheck, Shield, CheckCircle, Clock, Send, FileText } from "lucide-react"
 
 interface AccessRequest {
   id: string
@@ -32,7 +32,7 @@ interface AccessRequest {
   adminComments?: string
 }
 
-// MCQ Questions for different user types
+// Enhanced MCQ Questions with PSO focus
 const companyMCQs = [
   {
     id: "q1",
@@ -42,9 +42,9 @@ const companyMCQs = [
   },
   {
     id: "q2",
-    question: "How long has your company been in operation?",
-    options: ["Less than 1 year", "1-3 years", "3-5 years", "More than 5 years"],
-    correct: 3,
+    question: "What is PSO in chit fund context?",
+    options: ["Personal Security Officer", "Prior Sanction Order", "Public Safety Order", "Payment Security Option"],
+    correct: 1,
   },
   {
     id: "q3",
@@ -63,9 +63,9 @@ const userMCQs = [
   },
   {
     id: "q2",
-    question: "In a chit fund, who receives the money in each auction?",
-    options: ["The foreman always", "The highest bidder", "The lowest bidder", "Random selection"],
-    correct: 2,
+    question: "What does PSO stand for in chit fund regulations?",
+    options: ["Personal Security Officer", "Prior Sanction Order", "Public Safety Order", "Payment Security Option"],
+    correct: 1,
   },
   {
     id: "q3",
@@ -80,20 +80,42 @@ const userMCQs = [
   },
   {
     id: "q4",
-    question: "What happens if you miss a chit fund installment?",
+    question: "When is PSO required in chit fund operations?",
     options: [
-      "Nothing happens",
-      "You get extra benefits",
-      "You may face penalties and affect your chit score",
-      "You automatically win the auction",
+      "Only for large chit funds",
+      "Before starting any chit fund business",
+      "After completing the first chit",
+      "Only for online chit funds",
     ],
-    correct: 2,
+    correct: 1,
   },
 ]
 
 const foremanMCQs = [
   {
     id: "q1",
+    question: "What is PSO (Prior Sanction Order) in chit fund regulations?",
+    options: [
+      "A payment method",
+      "Mandatory approval required before starting chit fund business",
+      "A type of chit fund scheme",
+      "A security deposit",
+    ],
+    correct: 1,
+  },
+  {
+    id: "q2",
+    question: "Which authority issues PSO for chit funds?",
+    options: [
+      "Reserve Bank of India",
+      "State Government/Registrar of Chit Funds",
+      "Securities and Exchange Board of India",
+      "Ministry of Finance",
+    ],
+    correct: 1,
+  },
+  {
+    id: "q3",
     question: "What is the primary responsibility of a chit fund foreman?",
     options: [
       "Only collecting money",
@@ -104,32 +126,20 @@ const foremanMCQs = [
     correct: 1,
   },
   {
-    id: "q2",
-    question: "What is PSO in chit fund regulations?",
-    options: [
-      "Personal Security Officer",
-      "Promoter's Security Obligation",
-      "Public Safety Order",
-      "Payment Security Option",
-    ],
-    correct: 1,
-  },
-  {
-    id: "q3",
-    question: "Which act primarily governs chit funds in India?",
-    options: ["Banking Regulation Act", "Companies Act", "Chit Funds Act, 1982", "SEBI Act"],
-    correct: 2,
-  },
-  {
     id: "q4",
-    question: "What is Form 7 in chit fund operations?",
-    options: ["Registration form", "Commencement certificate", "Audit report", "Member application"],
+    question: "What percentage of chit amount must be deposited as security by foreman?",
+    options: ["5%", "10%", "15%", "20%"],
     correct: 1,
   },
   {
     id: "q5",
-    question: "What percentage of chit amount must be deposited as security by foreman?",
-    options: ["5%", "10%", "15%", "20%"],
+    question: "What documents are typically required for PSO application?",
+    options: [
+      "Only business registration",
+      "Business plan, financial statements, security deposit proof",
+      "Just identity proof",
+      "Only address proof",
+    ],
     correct: 1,
   },
 ]
@@ -210,11 +220,33 @@ export default function AccessRequestPage() {
     existingRequests.push(request)
     localStorage.setItem("accessRequests", JSON.stringify(existingRequests))
 
+    // For demo purposes, auto-approve certain requests
+    if (requestType === "company" || (score && score >= passThreshold)) {
+      // Set access cookies
+      const maxAge = 60 * 60 * 24 * 30 // 30 days
+      const expires = new Date(Date.now() + maxAge * 1000).toUTCString()
+
+      document.cookie = `access_approved=true; path=/; expires=${expires}; SameSite=Lax`
+      document.cookie = `user_type=${requestType}; path=/; expires=${expires}; SameSite=Lax`
+      document.cookie = `user_email=${encodeURIComponent(formData.email)}; path=/; expires=${expires}; SameSite=Lax`
+      document.cookie = `request_id=${request.id}; path=/; expires=${expires}; SameSite=Lax`
+    }
+
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
     setIsSubmitting(false)
     setStep(4)
+  }
+
+  const handleAccessLandingPage = () => {
+    // Check if access was granted
+    const accessApproved = document.cookie.includes("access_approved=true")
+    if (accessApproved) {
+      router.push("/")
+    } else {
+      alert("Access not yet approved. Please wait for admin approval.")
+    }
   }
 
   const getStepTitle = () => {
@@ -274,7 +306,8 @@ export default function AccessRequestPage() {
                       </div>
                       <h4 className="font-semibold text-lg mb-2">Company/Business</h4>
                       <div className="text-sm text-gray-600 mb-4">
-                        Payment gateways, SMS providers, financial services, etc.
+                        Payment gateways (Razorpay, Cashfree), SMS providers (MSG91, TextLocal), financial services,
+                        etc.
                       </div>
                       <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
                         Direct Admin Review
@@ -295,7 +328,7 @@ export default function AccessRequestPage() {
                         Individual users wanting to participate in chit funds
                       </div>
                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                        MCQ Assessment Required
+                        PSO Knowledge Test
                       </Badge>
                     </CardContent>
                   </Card>
@@ -311,7 +344,7 @@ export default function AccessRequestPage() {
                       <h4 className="font-semibold text-lg mb-2">Foreman</h4>
                       <div className="text-sm text-gray-600 mb-4">Chit fund operators and scheme managers</div>
                       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        Advanced MCQ Required
+                        Advanced PSO Assessment
                       </Badge>
                     </CardContent>
                   </Card>
@@ -319,12 +352,13 @@ export default function AccessRequestPage() {
 
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-8">
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <FileText className="h-5 w-5 text-yellow-600 mt-0.5" />
                     <div>
-                      <div className="font-medium text-yellow-800">Access Control Notice</div>
+                      <div className="font-medium text-yellow-800">PSO (Prior Sanction Order) Information</div>
                       <div className="text-sm text-yellow-700 mt-1">
-                        All access requests are reviewed by our admin team. Companies undergo direct review, while users
-                        and foremen must pass knowledge assessments before admin approval.
+                        All users must demonstrate understanding of PSO requirements and chit fund regulations.
+                        Companies undergo direct review, while users and foremen must pass PSO knowledge assessments
+                        before accessing the platform.
                       </div>
                     </div>
                   </div>
@@ -452,7 +486,7 @@ export default function AccessRequestPage() {
                     onClick={handleFormSubmit}
                     disabled={!formData.contactPerson || !formData.email || !formData.phone || !formData.purpose}
                   >
-                    {requestType === "company" ? "Submit Request" : "Continue to Assessment"}
+                    {requestType === "company" ? "Submit Request" : "Continue to PSO Assessment"}
                   </Button>
                 </div>
               </div>
@@ -461,9 +495,9 @@ export default function AccessRequestPage() {
             {step === 3 && (
               <div className="space-y-6">
                 <div className="text-center mb-6">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Knowledge Assessment</h3>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">PSO Knowledge Assessment</h3>
                   <div className="text-gray-600">
-                    Please answer the following questions to demonstrate your understanding
+                    Please answer the following questions about PSO and chit fund regulations
                   </div>
                   <div className="mt-2">
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
@@ -507,7 +541,7 @@ export default function AccessRequestPage() {
                     onClick={submitRequest}
                     disabled={Object.keys(mcqAnswers).length !== currentMCQs.length || isSubmitting}
                   >
-                    {isSubmitting ? "Submitting..." : "Submit Assessment"}
+                    {isSubmitting ? "Submitting..." : "Submit PSO Assessment"}
                   </Button>
                 </div>
               </div>
@@ -521,7 +555,7 @@ export default function AccessRequestPage() {
 
                 <div>
                   <h3 className="text-2xl font-semibold text-gray-800 mb-2">Request Submitted Successfully!</h3>
-                  <div className="text-gray-600">Your access request has been submitted and is now under review</div>
+                  <div className="text-gray-600">Your access request has been processed</div>
                 </div>
 
                 {currentMCQs.length > 0 && (
@@ -529,12 +563,12 @@ export default function AccessRequestPage() {
                     <CardContent className="p-6">
                       <div className="text-center">
                         <div className="text-lg font-semibold text-blue-800 mb-2">
-                          Assessment Score: {calculateMCQScore()}%
+                          PSO Assessment Score: {calculateMCQScore()}%
                         </div>
                         <div className="text-sm text-blue-600">
                           {calculateMCQScore() >= (requestType === "foreman" ? 80 : 70)
-                            ? "✅ Passed - Your request will be reviewed by admin"
-                            : "❌ Did not meet minimum score - Request rejected"}
+                            ? "✅ Passed - Access granted!"
+                            : "❌ Did not meet minimum PSO knowledge requirement"}
                         </div>
                       </div>
                     </CardContent>
@@ -544,24 +578,41 @@ export default function AccessRequestPage() {
                 <div className="bg-gray-50 rounded-lg p-6">
                   <h4 className="font-semibold text-gray-800 mb-3">What happens next?</h4>
                   <div className="space-y-3 text-sm text-gray-600">
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-4 w-4 text-blue-500" />
-                      <span>Admin will review your request within 24-48 hours</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Send className="h-4 w-4 text-blue-500" />
-                      <span>You'll receive an email notification about the decision</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Shield className="h-4 w-4 text-blue-500" />
-                      <span>If approved, you'll get access credentials and instructions</span>
-                    </div>
+                    {requestType === "company" ||
+                    (currentMCQs.length > 0 && calculateMCQScore() >= (requestType === "foreman" ? 80 : 70)) ? (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <span>Access has been granted - you can now view the landing page</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Shield className="h-4 w-4 text-blue-500" />
+                          <span>Your access is valid for 30 days</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <Clock className="h-4 w-4 text-blue-500" />
+                          <span>Admin will review your request within 24-48 hours</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Send className="h-4 w-4 text-blue-500" />
+                          <span>You'll receive an email notification about the decision</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                <Button onClick={() => router.push("/")} className="w-full">
-                  Return to Home
-                </Button>
+                <div className="flex gap-4 justify-center">
+                  <Button onClick={handleAccessLandingPage} className="bg-blue-600 hover:bg-blue-700">
+                    Access Landing Page
+                  </Button>
+                  <Button variant="outline" onClick={() => router.push("/admin/access-requests")}>
+                    View Admin Panel
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
