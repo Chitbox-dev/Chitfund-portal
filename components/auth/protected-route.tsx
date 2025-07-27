@@ -1,70 +1,67 @@
 "use client"
 
 import type React from "react"
+
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
-import { Shield, Clock } from "lucide-react"
+import { Shield, AlertTriangle } from "lucide-react"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
-  allowedUserTypes?: ("admin" | "company" | "user" | "foreman")[]
-  redirectTo?: string
+  requiredRole?: "admin" | "user" | "foreman" | "company"
+  fallbackPath?: string
 }
 
 export default function ProtectedRoute({
   children,
-  allowedUserTypes = ["admin", "company", "user", "foreman"],
-  redirectTo = "/access-request",
+  requiredRole,
+  fallbackPath = "/access-request",
 }: ProtectedRouteProps) {
   const router = useRouter()
-  const [userType, setUserType] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [hasAccess, setHasAccess] = useState(false)
 
   useEffect(() => {
     const checkAccess = () => {
-      // Check cookies for access
-      const cookies = document.cookie.split(";").reduce(
-        (acc, cookie) => {
-          const [key, value] = cookie.trim().split("=")
-          acc[key] = value
-          return acc
-        },
-        {} as Record<string, string>,
-      )
+      // Check if user has any access
+      const adminAccess = document.cookie.includes("admin_access=true")
+      const portalAccess = document.cookie.includes("portal_access=true")
 
-      const currentUserType = cookies.user_type
-      const hasValidAccess = cookies.admin_access === "true" || cookies.portal_access === "true"
-
-      if (!hasValidAccess || !currentUserType) {
-        router.push(redirectTo)
+      if (!adminAccess && !portalAccess) {
+        router.push(fallbackPath)
         return
       }
 
-      if (!allowedUserTypes.includes(currentUserType as any)) {
-        router.push("/access-denied")
-        return
+      // If specific role is required, check user type
+      if (requiredRole) {
+        const userTypeCookie = document.cookie.split("; ").find((row) => row.startsWith("user_type="))
+
+        const userType = userTypeCookie ? userTypeCookie.split("=")[1] : null
+
+        if (userType !== requiredRole) {
+          router.push("/access-denied")
+          return
+        }
       }
 
-      setUserType(currentUserType)
       setHasAccess(true)
       setIsLoading(false)
     }
 
     checkAccess()
-  }, [router, allowedUserTypes, redirectTo])
+  }, [router, requiredRole, fallbackPath])
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="w-96">
           <CardContent className="p-8 text-center">
-            <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Clock className="h-8 w-8 text-blue-600 animate-spin" />
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="flex items-center justify-center gap-2 text-gray-600">
+              <Shield className="h-4 w-4" />
+              <span>Verifying access...</span>
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Verifying Access</h3>
-            <div className="text-gray-600">Please wait while we verify your access permissions...</div>
           </CardContent>
         </Card>
       </div>
@@ -73,20 +70,12 @@ export default function ProtectedRoute({
 
   if (!hasAccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="w-96">
           <CardContent className="p-8 text-center">
-            <div className="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="h-8 w-8 text-red-600" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Access Required</h3>
-            <div className="text-gray-600 mb-4">You need to request access to view this page.</div>
-            <button
-              onClick={() => router.push(redirectTo)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Request Access
-            </button>
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+            <p className="text-gray-600">You don't have permission to access this page.</p>
           </CardContent>
         </Card>
       </div>

@@ -1,86 +1,81 @@
 "use server"
 
-export interface AccessRequestData {
-  userType: "admin" | "company" | "user" | "foreman"
-  email: string
-  password?: string
-  companyName?: string
-  businessType?: string
-  integrationNeeds?: string[]
-  fullName?: string
-  phone?: string
-  experience?: string
-  chitFundKnowledge?: number
-  foremanExperience?: string
-  managementSkills?: number
-}
+import type { AccessRequest } from "@/lib/access-control"
 
-export async function submitAccessRequest(data: AccessRequestData) {
+export async function submitAccessRequest(formData: FormData): Promise<{
+  success: boolean
+  message: string
+  requestId?: string
+}> {
   try {
-    // Simulate API call delay
+    const requestType = formData.get("requestType") as string
+    const contactPerson = formData.get("contactPerson") as string
+    const email = formData.get("email") as string
+    const phone = formData.get("phone") as string
+    const purpose = formData.get("purpose") as string
+
+    // Validate required fields
+    if (!requestType || !contactPerson || !email || !phone || !purpose) {
+      return {
+        success: false,
+        message: "Please fill in all required fields",
+      }
+    }
+
+    // Create access request
+    const request: AccessRequest = {
+      id: `REQ-${Date.now()}`,
+      requestType: requestType as "admin" | "company" | "user" | "foreman",
+      contactPerson,
+      email,
+      phone,
+      purpose,
+      companyName: (formData.get("companyName") as string) || undefined,
+      businessType: (formData.get("businessType") as string) || undefined,
+      experience: (formData.get("experience") as string) || undefined,
+      status: "pending",
+      submittedAt: new Date().toISOString(),
+    }
+
+    // In a real application, this would be saved to a database
+    // For demo purposes, we'll simulate the process
+
+    // Simulate processing delay
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    if (data.userType === "admin") {
-      // Validate admin credentials
-      const validEmail = "admin@chitfundportal.com"
-      const validPassword = "Admin@123"
-
-      if (data.email !== validEmail || data.password !== validPassword) {
-        return {
-          success: false,
-          message: "Invalid admin credentials. Please check your email and password.",
-        }
-      }
-
-      // Set admin access cookies
-      const response = new Response()
-      response.headers.set(
-        "Set-Cookie",
-        `admin_access=true; user_type=admin; user_email=${encodeURIComponent(data.email)}; Path=/; Max-Age=${30 * 24 * 60 * 60}`,
-      )
-
-      return {
-        success: true,
-        message: "Admin access granted successfully!",
-        redirectTo: "/",
-      }
-    } else {
-      // For other user types, simulate approval process
-      // In a real app, this would save to database and notify admin
-      console.log("Access request submitted:", data)
-
-      return {
-        success: true,
-        message: `Access request submitted successfully! Admin will review your ${data.userType} access request and notify you via email.`,
-        redirectTo: "/access-request",
-      }
+    return {
+      success: true,
+      message: "Access request submitted successfully",
+      requestId: request.id,
     }
   } catch (error) {
     console.error("Error submitting access request:", error)
     return {
       success: false,
-      message: "An error occurred while submitting your request. Please try again.",
+      message: "An error occurred while submitting your request",
     }
   }
 }
 
-export async function approveAccessRequest(requestId: string, userType: string, email: string) {
+export async function approveAccessRequest(requestId: string): Promise<{
+  success: boolean
+  message: string
+}> {
   try {
-    // Simulate approval process
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    // In a real application, this would update the database
+    // For demo purposes, we'll simulate the approval
 
-    // In a real app, this would update the database and send notification email
-    console.log(`Approved access request ${requestId} for ${userType}: ${email}`)
+    await new Promise((resolve) => setTimeout(resolve, 500))
 
     return {
       success: true,
-      message: "Access request approved successfully!",
+      message: "Access request approved successfully",
     }
   } catch (error) {
     console.error("Error approving access request:", error)
     return {
       success: false,
-      message: "An error occurred while approving the request.",
+      message: "An error occurred while approving the request",
     }
   }
 }

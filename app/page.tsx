@@ -14,22 +14,73 @@ import Footer from "@/components/landing/footer"
 import { Card, CardContent } from "@/components/ui/card"
 import { Shield, Clock, AlertTriangle } from "lucide-react"
 
+const newsUpdates = [
+  {
+    id: 1,
+    title: "New UCFSIN Registration Process Launched",
+    date: "Jan 15, 2025",
+    category: "REGISTRATION",
+    excerpt:
+      "Enhanced digital registration process with improved KYC verification and faster UCFSIN generation for all users across India.",
+    type: "update",
+  },
+  {
+    id: 2,
+    title: "Enhanced Security Measures Implemented",
+    date: "Jan 10, 2025",
+    category: "SECURITY",
+    excerpt:
+      "Advanced encryption and multi-factor authentication now protect all user accounts and transactions on the platform.",
+    type: "security",
+  },
+  {
+    id: 3,
+    title: "Monthly Performance Report - December 2024",
+    date: "Jan 5, 2025",
+    category: "REPORTS",
+    excerpt:
+      "Comprehensive review of chit fund performance, member benefits, and platform statistics for December 2024.",
+    type: "report",
+  },
+]
+
+const helpTopics = [
+  "How do I register for UCFSIN?",
+  "What documents are required for KYC?",
+  "How to track my chit fund status?",
+  "Payment and transaction queries",
+  "Account security and login issues",
+  "Mobile app download and setup",
+]
+
 export default function Home() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
-  const [hasAdminAccess, setHasAdminAccess] = useState(false)
+  const [hasAccess, setHasAccess] = useState(false)
+  const [userType, setUserType] = useState<string | null>(null)
 
   useEffect(() => {
-    const checkAdminAccess = () => {
-      // Check for admin access cookie
-      const adminAccess = document.cookie.includes("admin_access=true")
-      const userType = document.cookie.includes("user_type=admin")
-      const adminToken = localStorage.getItem("adminToken")
+    const checkAccess = () => {
+      // Check for any valid access (admin, company, user, or foreman)
+      const cookies = document.cookie.split(";").reduce(
+        (acc, cookie) => {
+          const [key, value] = cookie.trim().split("=")
+          acc[key] = value
+          return acc
+        },
+        {} as Record<string, string>,
+      )
 
-      if (adminAccess && userType && adminToken) {
-        setHasAdminAccess(true)
+      const adminAccess = cookies.admin_access === "true"
+      const portalAccess = cookies.portal_access === "true"
+      const currentUserType = cookies.user_type
+
+      // All approved users can access landing page
+      if ((adminAccess || portalAccess) && currentUserType) {
+        setHasAccess(true)
+        setUserType(currentUserType)
       } else {
-        // Redirect non-admin users to access request
+        // Redirect to access request if no valid access
         router.push("/access-request")
         return
       }
@@ -37,7 +88,7 @@ export default function Home() {
       setIsLoading(false)
     }
 
-    checkAdminAccess()
+    checkAccess()
   }, [router])
 
   if (isLoading) {
@@ -48,15 +99,15 @@ export default function Home() {
             <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Clock className="h-8 w-8 text-blue-600 animate-spin" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Verifying Admin Access</h3>
-            <div className="text-gray-600">Please wait while we verify your admin credentials...</div>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Loading Portal</h3>
+            <div className="text-gray-600">Please wait while we load your personalized experience...</div>
           </CardContent>
         </Card>
       </div>
     )
   }
 
-  if (!hasAdminAccess) {
+  if (!hasAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <Card className="w-96">
@@ -64,15 +115,15 @@ export default function Home() {
             <div className="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="h-8 w-8 text-red-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Admin Access Required</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Access Required</h3>
             <div className="text-gray-600 mb-4">
-              Only administrators can access the landing page. Please login with admin credentials.
+              Please complete the access request process to view the chit fund portal.
             </div>
             <button
               onClick={() => router.push("/access-request")}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Admin Login
+              Request Access
             </button>
           </CardContent>
         </Card>
@@ -80,16 +131,65 @@ export default function Home() {
     )
   }
 
+  const getUserTypeDisplay = (type: string) => {
+    switch (type) {
+      case "admin":
+        return "Administrator"
+      case "company":
+        return "Business Partner"
+      case "user":
+        return "Subscriber"
+      case "foreman":
+        return "Foreman"
+      default:
+        return "User"
+    }
+  }
+
+  const getUserTypeColor = (type: string) => {
+    switch (type) {
+      case "admin":
+        return "bg-red-50 text-red-800 border-red-200"
+      case "company":
+        return "bg-purple-50 text-purple-800 border-purple-200"
+      case "user":
+        return "bg-green-50 text-green-800 border-green-200"
+      case "foreman":
+        return "bg-blue-50 text-blue-800 border-blue-200"
+      default:
+        return "bg-gray-50 text-gray-800 border-gray-200"
+    }
+  }
+
   return (
     <main className="min-h-screen">
-      {/* Admin Status Banner */}
-      <div className="bg-green-50 border-b border-green-200 px-4 py-2">
+      {/* User Status Banner */}
+      <div className={`border-b px-4 py-2 ${getUserTypeColor(userType || "")}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-green-800">
+          <div className="flex items-center gap-2 text-sm">
             <Shield className="h-4 w-4" />
-            <span>Administrator Access - Welcome to Chit Fund Portal</span>
+            <span>
+              Welcome, <strong>{getUserTypeDisplay(userType || "")}</strong> - Chit Fund Portal Access Granted
+            </span>
           </div>
-          <div className="text-xs text-green-600">Full system access granted</div>
+          <div className="flex items-center gap-4">
+            <div className="text-xs">Access Level: Full Portal</div>
+            <button
+              onClick={() => {
+                // Clear access and redirect to access request
+                document.cookie.split(";").forEach((cookie) => {
+                  const eqPos = cookie.indexOf("=")
+                  const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
+                  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
+                })
+                localStorage.clear()
+                router.push("/access-request")
+              }}
+              className="text-xs px-2 py-1 rounded border hover:bg-white/50 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 

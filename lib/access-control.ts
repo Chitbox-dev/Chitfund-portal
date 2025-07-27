@@ -1,70 +1,82 @@
-export interface AccessUser {
-  userType: "admin" | "company" | "user" | "foreman"
+export interface AccessRequest {
+  id: string
+  requestType: "admin" | "company" | "user" | "foreman"
+  companyName?: string
+  contactPerson: string
   email: string
-  accessLevel: "full" | "limited"
-  approvedAt: string
+  phone: string
+  password?: string
+  purpose: string
+  businessType?: string
+  userType?: string
+  experience?: string
+  mcqAnswers?: { [key: string]: string }
+  mcqScore?: number
+  status: "pending" | "mcq_required" | "approved" | "rejected"
+  submittedAt: string
+  reviewedAt?: string
+  adminComments?: string
 }
 
-export function checkAccessApproval(): AccessUser | null {
+export const checkUserAccess = (): {
+  hasAccess: boolean
+  userType: string | null
+  email: string | null
+} => {
+  if (typeof window === "undefined") {
+    return { hasAccess: false, userType: null, email: null }
+  }
+
+  const adminAccess = document.cookie.includes("admin_access=true")
+  const portalAccess = document.cookie.includes("portal_access=true")
+
+  if (!adminAccess && !portalAccess) {
+    return { hasAccess: false, userType: null, email: null }
+  }
+
+  const userTypeCookie = document.cookie.split("; ").find((row) => row.startsWith("user_type="))
+  const emailCookie = document.cookie.split("; ").find((row) => row.startsWith("user_email="))
+
+  const userType = userTypeCookie ? userTypeCookie.split("=")[1] : null
+  const email = emailCookie ? decodeURIComponent(emailCookie.split("=")[1]) : null
+
+  return {
+    hasAccess: true,
+    userType,
+    email,
+  }
+}
+
+export const getUserToken = (userType: string): string | null => {
   if (typeof window === "undefined") return null
 
-  try {
-    const cookies = document.cookie.split(";").reduce(
-      (acc, cookie) => {
-        const [key, value] = cookie.trim().split("=")
-        acc[key] = value
-        return acc
-      },
-      {} as Record<string, string>,
-    )
-
-    const userType = cookies.user_type as AccessUser["userType"]
-    const email = cookies.user_email
-    const hasAccess = cookies.admin_access === "true" || cookies.portal_access === "true"
-
-    if (!hasAccess || !userType || !email) {
+  switch (userType) {
+    case "admin":
+      return localStorage.getItem("adminToken")
+    case "user":
+      return localStorage.getItem("userToken")
+    case "foreman":
+      return localStorage.getItem("foremanToken")
+    case "company":
+      return localStorage.getItem("companyToken")
+    default:
       return null
-    }
-
-    return {
-      userType,
-      email: decodeURIComponent(email),
-      accessLevel: cookies.admin_access === "true" ? "full" : "limited",
-      approvedAt: cookies.approved_at || new Date().toISOString(),
-    }
-  } catch (error) {
-    console.error("Error checking access approval:", error)
-    return null
   }
 }
 
-export function setAccessApproval(user: AccessUser): void {
+export const clearUserAccess = (): void => {
   if (typeof window === "undefined") return
 
-  const expires = new Date()
-  expires.setDate(expires.getDate() + 30) // 30 days
+  // Clear cookies
+  document.cookie = "admin_access=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+  document.cookie = "portal_access=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+  document.cookie = "user_type=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+  document.cookie = "user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+  document.cookie = "request_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
 
-  document.cookie = `user_type=${user.userType}; expires=${expires.toUTCString()}; path=/`
-  document.cookie = `user_email=${encodeURIComponent(user.email)}; expires=${expires.toUTCString()}; path=/`
-  document.cookie = `${user.accessLevel === "full" ? "admin_access" : "portal_access"}=true; expires=${expires.toUTCString()}; path=/`
-  document.cookie = `approved_at=${user.approvedAt}; expires=${expires.toUTCString()}; path=/`
-}
-
-export function clearAccessApproval(): void {
-  if (typeof window === "undefined") return
-
-  const cookies = ["user_type", "user_email", "admin_access", "portal_access", "approved_at"]
-  cookies.forEach((cookie) => {
-    document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`
-  })
-}
-
-export function validateAdminCredentials(email: string, password: string): boolean {
-  // In a real application, this would validate against a secure backend
-  const validCredentials = {
-    email: "admin@chitfundportal.com",
-    password: "Admin@123",
-  }
-
-  return email === validCredentials.email && password === validCredentials.password
+  // Clear localStorage
+  localStorage.removeItem("adminToken")
+  localStorage.removeItem("userToken")
+  localStorage.removeItem("foremanToken")
+  localStorage.removeItem("companyToken")
 }
