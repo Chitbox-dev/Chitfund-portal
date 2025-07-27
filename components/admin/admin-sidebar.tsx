@@ -1,296 +1,197 @@
 "use client"
+
+import { useState } from "react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
+  SidebarFooter,
 } from "@/components/ui/sidebar"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   LayoutDashboard,
   Users,
+  UserCheck,
+  Shield,
   FileText,
   Settings,
-  CreditCard,
   BarChart3,
-  Shield,
-  UserCheck,
-  TrendingUp,
-  Package,
-  ChevronUp,
-  LogOut,
-  User,
-  Bell,
-  HelpCircle,
-  Workflow,
+  CreditCard,
   CheckSquare,
+  Workflow,
+  LogOut,
+  ChevronDown,
+  Building,
 } from "lucide-react"
-import { toast } from "@/hooks/use-toast"
 
-const navigation = [
+const menuItems = [
   {
-    title: "Overview",
-    items: [
-      {
-        title: "Dashboard",
-        url: "/admin/dashboard",
-        icon: LayoutDashboard,
-      },
-      {
-        title: "All Approvals",
-        url: "/admin/approvals",
-        icon: CheckSquare,
-        badge: "12",
-      },
+    title: "Dashboard",
+    href: "/admin/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Access Requests",
+    href: "/admin/access-requests",
+    icon: Shield,
+    badge: "New",
+  },
+  {
+    title: "Users",
+    href: "/admin/users",
+    icon: Users,
+  },
+  {
+    title: "Foremen",
+    href: "/admin/foremen",
+    icon: UserCheck,
+  },
+  {
+    title: "Schemes",
+    href: "/admin/schemes",
+    icon: FileText,
+    submenu: [
+      { title: "All Schemes", href: "/admin/schemes" },
+      { title: "Reports", href: "/admin/schemes/reports" },
     ],
   },
   {
-    title: "User Management",
-    items: [
-      {
-        title: "Users",
-        url: "/admin/users",
-        icon: Users,
-      },
-      {
-        title: "Foremen",
-        url: "/admin/foremen",
-        icon: UserCheck,
-      },
-      {
-        title: "Access Requests",
-        url: "/admin/access-requests",
-        icon: Shield,
-        badge: "5",
-      },
-    ],
+    title: "Card Tracking",
+    href: "/admin/card-tracking",
+    icon: CreditCard,
   },
   {
-    title: "Scheme Management",
-    items: [
-      {
-        title: "All Schemes",
-        url: "/admin/schemes",
-        icon: FileText,
-      },
-      {
-        title: "Scheme Reports",
-        url: "/admin/schemes/reports",
-        icon: BarChart3,
-      },
-    ],
+    title: "Approvals",
+    href: "/admin/approvals",
+    icon: CheckSquare,
   },
   {
-    title: "Operations",
-    items: [
-      {
-        title: "Card Tracking",
-        url: "/admin/card-tracking",
-        icon: CreditCard,
-      },
-      {
-        title: "Monthly Reports",
-        url: "/reports/monthly",
-        icon: TrendingUp,
-      },
-      {
-        title: "Workflow Management",
-        url: "/admin/workflow-management",
-        icon: Workflow,
-      },
-    ],
+    title: "Workflow Management",
+    href: "/admin/workflow-management",
+    icon: Workflow,
   },
   {
-    title: "System",
-    items: [
-      {
-        title: "Settings",
-        url: "/admin/settings",
-        icon: Settings,
-      },
-      {
-        title: "System Health",
-        url: "/admin/system-health",
-        icon: Package,
-      },
-    ],
+    title: "Reports",
+    href: "/admin/reports",
+    icon: BarChart3,
+  },
+  {
+    title: "Settings",
+    href: "/admin/settings",
+    icon: Settings,
   },
 ]
 
 export function AdminSidebar() {
   const pathname = usePathname()
-  const router = useRouter()
+  const [expandedItems, setExpandedItems] = useState<string[]>([])
 
-  const handleLogout = () => {
-    try {
-      // Clear admin token from localStorage
-      localStorage.removeItem("adminToken")
-
-      // Clear any other admin-related data
-      localStorage.removeItem("adminUser")
-      localStorage.removeItem("adminSession")
-
-      // Clear session storage as well
-      sessionStorage.clear()
-
-      // Show success message
-      toast({
-        title: "Logged out successfully",
-        description: "You have been logged out of the admin panel.",
-      })
-
-      // Redirect to login page
-      router.push("/auth/login")
-
-      // Force page reload to clear any cached data
-      setTimeout(() => {
-        window.location.href = "/auth/login"
-      }, 100)
-    } catch (error) {
-      console.error("Logout error:", error)
-      toast({
-        title: "Logout Error",
-        description: "There was an issue logging out. Please try again.",
-        variant: "destructive",
-      })
-    }
+  const toggleExpanded = (title: string) => {
+    setExpandedItems((prev) => (prev.includes(title) ? prev.filter((item) => item !== title) : [...prev, title]))
   }
 
-  const handleAccountClick = () => {
-    router.push("/admin/account")
-  }
-
-  const handleNotificationsClick = () => {
-    router.push("/admin/notifications")
-  }
-
-  const handleSupportClick = () => {
-    router.push("/admin/support")
+  const isActive = (href: string) => {
+    return pathname === href || pathname.startsWith(href + "/")
   }
 
   return (
-    <Sidebar variant="inset">
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-4 py-2">
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-sidebar-primary-foreground">
-            <Shield className="size-4 text-white" />
+    <Sidebar className="border-r border-gray-200 bg-white">
+      <SidebarHeader className="border-b border-gray-200 p-6">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <Building className="h-6 w-6 text-white" />
           </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">UCFSIN Admin</span>
-            <span className="truncate text-xs text-muted-foreground">Control Panel</span>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Admin Panel</h2>
+            <p className="text-sm text-gray-500">Chit Fund Portal</p>
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
-        {navigation.map((group) => (
-          <SidebarGroup key={group.title}>
-            <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={pathname === item.url} className="relative">
-                      <Link href={item.url}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                        {item.badge && (
-                          <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
-                            {item.badge}
-                          </span>
-                        )}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
-      </SidebarContent>
-      <SidebarFooter>
+
+      <SidebarContent className="p-4">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-white">
-                      AD
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">Admin User</span>
-                    <span className="truncate text-xs">admin@ucfsin.com</span>
-                  </div>
-                  <ChevronUp className="ml-auto size-4" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                side="bottom"
-                align="end"
-                sideOffset={4}
-              >
-                <DropdownMenuLabel className="p-0 font-normal">
-                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-white">
-                        AD
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">Admin User</span>
-                      <span className="truncate text-xs">admin@ucfsin.com</span>
+          {menuItems.map((item) => (
+            <SidebarMenuItem key={item.title}>
+              {item.submenu ? (
+                <div>
+                  <SidebarMenuButton
+                    onClick={() => toggleExpanded(item.title)}
+                    className={cn("w-full justify-between", isActive(item.href) && "bg-blue-50 text-blue-700")}
+                  >
+                    <div className="flex items-center gap-3">
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
                     </div>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleAccountClick} className="cursor-pointer">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Account</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleNotificationsClick} className="cursor-pointer">
-                  <Bell className="mr-2 h-4 w-4" />
-                  <span>Notifications</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSupportClick} className="cursor-pointer">
-                  <HelpCircle className="mr-2 h-4 w-4" />
-                  <span>Support</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
+                    <ChevronDown
+                      className={cn("h-4 w-4 transition-transform", expandedItems.includes(item.title) && "rotate-180")}
+                    />
+                  </SidebarMenuButton>
+                  {expandedItems.includes(item.title) && (
+                    <div className="ml-8 mt-2 space-y-1">
+                      {item.submenu.map((subItem) => (
+                        <Link key={subItem.href} href={subItem.href}>
+                          <SidebarMenuButton
+                            className={cn("w-full text-sm", isActive(subItem.href) && "bg-blue-50 text-blue-700")}
+                          >
+                            {subItem.title}
+                          </SidebarMenuButton>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link href={item.href}>
+                  <SidebarMenuButton className={cn("w-full", isActive(item.href) && "bg-blue-50 text-blue-700")}>
+                    <div className="flex items-center gap-3">
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
+                      {item.badge && (
+                        <Badge variant="secondary" className="ml-auto bg-red-100 text-red-700">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </div>
+                  </SidebarMenuButton>
+                </Link>
+              )}
+            </SidebarMenuItem>
+          ))}
         </SidebarMenu>
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-gray-200 p-4">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg">
+            <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+              <span className="text-sm font-medium text-white">A</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">Admin User</p>
+              <p className="text-xs text-gray-500 truncate">admin@chitfund.com</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full justify-start gap-2 text-gray-600 hover:text-gray-900 bg-transparent"
+            onClick={() => {
+              // Handle admin logout
+              window.location.href = "/access-request"
+            }}
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
+        </div>
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   )
 }

@@ -107,11 +107,24 @@ export default function AccessRequestsPage() {
       ),
     )
 
+    // Set access cookie for the approved user
+    if (typeof window !== "undefined") {
+      // In a real application, you would send this via API to set server-side cookies
+      // For demo purposes, we'll simulate setting the cookie
+      const approvedUser = requests.find((req) => req.id === requestId)
+      if (approvedUser) {
+        // This would typically be handled server-side
+        console.log(`Setting access cookie for user: ${approvedUser.email}`)
+      }
+    }
+
     setIsProcessing(false)
     setAdminComments("")
 
     // Here you would typically send approval email to the user
-    alert(`Access request approved! User will receive email with access credentials.`)
+    alert(
+      `Access request approved! User ${requests.find((req) => req.id === requestId)?.email} can now access the landing page.`,
+    )
   }
 
   const handleRejectRequest = async (requestId: string, comments: string) => {
