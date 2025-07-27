@@ -1,93 +1,86 @@
 "use server"
 
-import { cookies } from "next/headers"
-
-interface AccessRequestData {
-  requestType: "company" | "user" | "foreman"
-  companyName?: string
-  contactPerson: string
+export interface AccessRequestData {
+  userType: "admin" | "company" | "user" | "foreman"
   email: string
-  phone: string
-  purpose: string
+  password?: string
+  companyName?: string
   businessType?: string
+  integrationNeeds?: string[]
+  fullName?: string
+  phone?: string
   experience?: string
-  mcqScore?: number
-  mcqAnswers?: { [key: string]: string }
+  chitFundKnowledge?: number
+  foremanExperience?: string
+  managementSkills?: number
 }
 
 export async function submitAccessRequest(data: AccessRequestData) {
   try {
-    // Generate request ID
-    const requestId = `REQ-${Date.now()}`
+    // Simulate API call delay
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    // Create request object
-    const accessRequest = {
-      id: requestId,
-      ...data,
-      status: "pending",
-      submittedAt: new Date().toISOString(),
-    }
+    if (data.userType === "admin") {
+      // Validate admin credentials
+      const validEmail = "admin@chitfundportal.com"
+      const validPassword = "Admin@123"
 
-    // Auto-approve logic for demo
-    const shouldAutoApprove =
-      data.requestType === "company" || (data.mcqScore && data.mcqScore >= (data.requestType === "foreman" ? 80 : 70))
+      if (data.email !== validEmail || data.password !== validPassword) {
+        return {
+          success: false,
+          message: "Invalid admin credentials. Please check your email and password.",
+        }
+      }
 
-    if (shouldAutoApprove) {
-      // Set cookies for approved access
-      const cookieStore = await cookies()
-      const maxAge = 60 * 60 * 24 * 30 // 30 days
-
-      cookieStore.set("access_approved", "true", {
-        path: "/",
-        maxAge,
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-      })
-
-      cookieStore.set("user_type", data.requestType, {
-        path: "/",
-        maxAge,
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-      })
-
-      cookieStore.set("user_email", data.email, {
-        path: "/",
-        maxAge,
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-      })
-
-      cookieStore.set("request_id", requestId, {
-        path: "/",
-        maxAge,
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-      })
+      // Set admin access cookies
+      const response = new Response()
+      response.headers.set(
+        "Set-Cookie",
+        `admin_access=true; user_type=admin; user_email=${encodeURIComponent(data.email)}; Path=/; Max-Age=${30 * 24 * 60 * 60}`,
+      )
 
       return {
         success: true,
-        requestId,
-        approved: true,
-        message: "Access approved! You can now access the landing page.",
+        message: "Admin access granted successfully!",
+        redirectTo: "/",
+      }
+    } else {
+      // For other user types, simulate approval process
+      // In a real app, this would save to database and notify admin
+      console.log("Access request submitted:", data)
+
+      return {
+        success: true,
+        message: `Access request submitted successfully! Admin will review your ${data.userType} access request and notify you via email.`,
+        redirectTo: "/access-request",
       }
     }
+  } catch (error) {
+    console.error("Error submitting access request:", error)
+    return {
+      success: false,
+      message: "An error occurred while submitting your request. Please try again.",
+    }
+  }
+}
+
+export async function approveAccessRequest(requestId: string, userType: string, email: string) {
+  try {
+    // Simulate approval process
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    // In a real app, this would update the database and send notification email
+    console.log(`Approved access request ${requestId} for ${userType}: ${email}`)
 
     return {
       success: true,
-      requestId,
-      approved: false,
-      message: "Request submitted for admin review.",
+      message: "Access request approved successfully!",
     }
   } catch (error) {
-    console.error("Error processing access request:", error)
+    console.error("Error approving access request:", error)
     return {
       success: false,
-      error: "Failed to process access request",
+      message: "An error occurred while approving the request.",
     }
   }
 }

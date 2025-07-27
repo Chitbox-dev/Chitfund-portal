@@ -11,15 +11,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Building, Users, UserCheck, Shield, CheckCircle, Clock, Send, FileText } from "lucide-react"
+import { Building, Users, UserCheck, Shield, CheckCircle, Clock, FileText, Lock } from "lucide-react"
 
 interface AccessRequest {
   id: string
-  requestType: "company" | "user" | "foreman"
+  requestType: "admin" | "company" | "user" | "foreman"
   companyName?: string
   contactPerson: string
   email: string
   phone: string
+  password?: string
   purpose: string
   businessType?: string
   userType?: string
@@ -30,6 +31,12 @@ interface AccessRequest {
   submittedAt: string
   reviewedAt?: string
   adminComments?: string
+}
+
+// Admin login credentials
+const ADMIN_CREDENTIALS = {
+  email: "admin@chitfundportal.com",
+  password: "Admin@123",
 }
 
 // Enhanced MCQ Questions with PSO focus
@@ -147,12 +154,13 @@ const foremanMCQs = [
 export default function AccessRequestPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
-  const [requestType, setRequestType] = useState<"company" | "user" | "foreman" | "">("")
+  const [requestType, setRequestType] = useState<"admin" | "company" | "user" | "foreman" | "">("")
   const [formData, setFormData] = useState({
     companyName: "",
     contactPerson: "",
     email: "",
     phone: "",
+    password: "",
     purpose: "",
     businessType: "",
     userType: "",
@@ -162,13 +170,21 @@ export default function AccessRequestPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentMCQs, setCurrentMCQs] = useState<any[]>([])
 
-  const handleRequestTypeSelect = (type: "company" | "user" | "foreman") => {
+  const handleRequestTypeSelect = (type: "admin" | "company" | "user" | "foreman") => {
     setRequestType(type)
     setStep(2)
   }
 
   const handleFormSubmit = () => {
-    if (requestType === "company") {
+    if (requestType === "admin") {
+      // Admin login validation
+      if (formData.email === ADMIN_CREDENTIALS.email && formData.password === ADMIN_CREDENTIALS.password) {
+        submitRequest()
+      } else {
+        alert("Invalid admin credentials. Please check your email and password.")
+        return
+      }
+    } else if (requestType === "company") {
       // Companies go directly to admin approval
       submitRequest()
     } else {
@@ -200,18 +216,19 @@ export default function AccessRequestPage() {
 
     const request: AccessRequest = {
       id: `REQ-${Date.now()}`,
-      requestType: requestType as "company" | "user" | "foreman",
+      requestType: requestType as "admin" | "company" | "user" | "foreman",
       companyName: formData.companyName,
       contactPerson: formData.contactPerson,
       email: formData.email,
       phone: formData.phone,
+      password: requestType === "admin" ? formData.password : undefined,
       purpose: formData.purpose,
       businessType: formData.businessType,
       userType: formData.userType,
       experience: formData.experience,
       mcqAnswers: Object.keys(mcqAnswers).length > 0 ? mcqAnswers : undefined,
       mcqScore: score,
-      status: requestType === "company" ? "pending" : score && score >= passThreshold ? "pending" : "rejected",
+      status: "approved",
       submittedAt: new Date().toISOString(),
     }
 
@@ -220,16 +237,28 @@ export default function AccessRequestPage() {
     existingRequests.push(request)
     localStorage.setItem("accessRequests", JSON.stringify(existingRequests))
 
-    // For demo purposes, auto-approve certain requests
-    if (requestType === "company" || (score && score >= passThreshold)) {
-      // Set access cookies
-      const maxAge = 60 * 60 * 24 * 30 // 30 days
-      const expires = new Date(Date.now() + maxAge * 1000).toUTCString()
+    // Set access cookies based on user type
+    const maxAge = 60 * 60 * 24 * 30 // 30 days
+    const expires = new Date(Date.now() + maxAge * 1000).toUTCString()
 
-      document.cookie = `access_approved=true; path=/; expires=${expires}; SameSite=Lax`
+    if (requestType === "admin") {
+      // Only admin gets landing page access
+      document.cookie = `admin_access=true; path=/; expires=${expires}; SameSite=Lax`
+      document.cookie = `user_type=admin; path=/; expires=${expires}; SameSite=Lax`
+      document.cookie = `user_email=${encodeURIComponent(formData.email)}; path=/; expires=${expires}; SameSite=Lax`
+      localStorage.setItem("adminToken", "admin-token-123")
+    } else {
+      // Other users get access to their respective portals only
+      document.cookie = `portal_access=true; path=/; expires=${expires}; SameSite=Lax`
       document.cookie = `user_type=${requestType}; path=/; expires=${expires}; SameSite=Lax`
       document.cookie = `user_email=${encodeURIComponent(formData.email)}; path=/; expires=${expires}; SameSite=Lax`
-      document.cookie = `request_id=${request.id}; path=/; expires=${expires}; SameSite=Lax`
+
+      // Set specific tokens for different user types
+      if (requestType === "foreman") {
+        localStorage.setItem("foremanToken", "foreman-token-123")
+      } else if (requestType === "user") {
+        localStorage.setItem("userToken", "user-token-123")
+      }
     }
 
     // Simulate API delay
@@ -239,13 +268,15 @@ export default function AccessRequestPage() {
     setStep(4)
   }
 
-  const handleAccessLandingPage = () => {
-    // Check if access was granted
-    const accessApproved = document.cookie.includes("access_approved=true")
-    if (accessApproved) {
-      router.push("/")
-    } else {
-      alert("Access not yet approved. Please wait for admin approval.")
+  const handleAccessPortal = () => {
+    if (requestType === "admin") {
+      router.push("/") // Admin goes to landing page
+    } else if (requestType === "foreman") {
+      router.push("/foreman/dashboard")
+    } else if (requestType === "user") {
+      router.push("/user/dashboard")
+    } else if (requestType === "company") {
+      router.push("/admin/dashboard") // Companies get admin panel access
     }
   }
 
@@ -254,11 +285,11 @@ export default function AccessRequestPage() {
       case 1:
         return "Select Access Type"
       case 2:
-        return "Provide Details"
+        return requestType === "admin" ? "Admin Login" : "Provide Details"
       case 3:
         return "Knowledge Assessment"
       case 4:
-        return "Request Submitted"
+        return "Access Granted"
       default:
         return ""
     }
@@ -291,11 +322,29 @@ export default function AccessRequestPage() {
             {step === 1 && (
               <div className="space-y-6">
                 <div className="text-center mb-8">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Who are you requesting access for?</h3>
-                  <div className="text-gray-600">Select the category that best describes your access requirement</div>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Select Your Access Type</h3>
+                  <div className="text-gray-600">Choose the category that best describes your access requirement</div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <Card
+                    className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-blue-500"
+                    onClick={() => handleRequestTypeSelect("admin")}
+                  >
+                    <CardContent className="p-6 text-center">
+                      <div className="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Shield className="h-8 w-8 text-red-600" />
+                      </div>
+                      <h4 className="font-semibold text-lg mb-2">Admin</h4>
+                      <div className="text-sm text-gray-600 mb-4">
+                        System administrator with full access to landing page and admin panel
+                      </div>
+                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                        Login Required
+                      </Badge>
+                    </CardContent>
+                  </Card>
+
                   <Card
                     className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-blue-500"
                     onClick={() => handleRequestTypeSelect("company")}
@@ -306,11 +355,10 @@ export default function AccessRequestPage() {
                       </div>
                       <h4 className="font-semibold text-lg mb-2">Company/Business</h4>
                       <div className="text-sm text-gray-600 mb-4">
-                        Payment gateways (Razorpay, Cashfree), SMS providers (MSG91, TextLocal), financial services,
-                        etc.
+                        Payment gateways, SMS providers, financial services, etc.
                       </div>
                       <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                        Direct Admin Review
+                        Admin Review
                       </Badge>
                     </CardContent>
                   </Card>
@@ -354,11 +402,13 @@ export default function AccessRequestPage() {
                   <div className="flex items-start gap-3">
                     <FileText className="h-5 w-5 text-yellow-600 mt-0.5" />
                     <div>
-                      <div className="font-medium text-yellow-800">PSO (Prior Sanction Order) Information</div>
+                      <div className="font-medium text-yellow-800">Access Control Information</div>
                       <div className="text-sm text-yellow-700 mt-1">
-                        All users must demonstrate understanding of PSO requirements and chit fund regulations.
-                        Companies undergo direct review, while users and foremen must pass PSO knowledge assessments
-                        before accessing the platform.
+                        <strong>Admin:</strong> Full access to landing page and admin panel with login credentials.
+                        <br />
+                        <strong>Companies:</strong> Access to admin panel for integration and services.
+                        <br />
+                        <strong>Users & Foremen:</strong> Access to respective dashboards after PSO assessment.
                       </div>
                     </div>
                   </div>
@@ -369,114 +419,160 @@ export default function AccessRequestPage() {
             {step === 2 && (
               <div className="space-y-6">
                 <div className="text-center mb-6">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Provide Your Details</h3>
-                  <div className="text-gray-600">Please fill in the required information for your access request</div>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                    {requestType === "admin" ? "Admin Login" : "Provide Your Details"}
+                  </h3>
+                  <div className="text-gray-600">
+                    {requestType === "admin"
+                      ? "Enter your admin credentials to access the system"
+                      : "Please fill in the required information for your access request"}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {requestType === "company" && (
+                {requestType === "admin" ? (
+                  <div className="max-w-md mx-auto space-y-4">
+                    <Card className="bg-red-50 border-red-200">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 text-red-800 mb-2">
+                          <Lock className="h-4 w-4 text-red-600" />
+                          <span className="font-medium">Admin Access</span>
+                        </div>
+                        <div className="text-sm text-red-700">
+                          Only authorized administrators can access the landing page and admin panel.
+                        </div>
+                      </CardContent>
+                    </Card>
+
                     <div>
-                      <Label htmlFor="companyName">Company Name *</Label>
+                      <Label htmlFor="admin-email">Admin Email *</Label>
                       <Input
-                        id="companyName"
-                        value={formData.companyName}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, companyName: e.target.value }))}
-                        placeholder="Enter your company name"
+                        id="admin-email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                        placeholder="Enter admin email"
                         required
                       />
                     </div>
-                  )}
 
-                  <div>
-                    <Label htmlFor="contactPerson">
-                      {requestType === "company" ? "Contact Person *" : "Full Name *"}
-                    </Label>
-                    <Input
-                      id="contactPerson"
-                      value={formData.contactPerson}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, contactPerson: e.target.value }))}
-                      placeholder="Enter your full name"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="email">Email Address *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                      placeholder="Enter your email address"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="phone">Phone Number *</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
-                      placeholder="Enter your phone number"
-                      required
-                    />
-                  </div>
-
-                  {requestType === "company" && (
                     <div>
-                      <Label htmlFor="businessType">Business Type *</Label>
-                      <Select
-                        value={formData.businessType}
-                        onValueChange={(value) => setFormData((prev) => ({ ...prev, businessType: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select your business type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="payment-gateway">Payment Gateway (Razorpay, Cashfree, etc.)</SelectItem>
-                          <SelectItem value="sms-provider">SMS Provider (MSG91, TextLocal, etc.)</SelectItem>
-                          <SelectItem value="fintech">Fintech Services</SelectItem>
-                          <SelectItem value="banking">Banking Services</SelectItem>
-                          <SelectItem value="insurance">Insurance Services</SelectItem>
-                          <SelectItem value="other">Other Financial Services</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="admin-password">Admin Password *</Label>
+                      <Input
+                        id="admin-password"
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+                        placeholder="Enter admin password"
+                        required
+                      />
                     </div>
-                  )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {requestType === "company" && (
+                      <div>
+                        <Label htmlFor="companyName">Company Name *</Label>
+                        <Input
+                          id="companyName"
+                          value={formData.companyName}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, companyName: e.target.value }))}
+                          placeholder="Enter your company name"
+                          required
+                        />
+                      </div>
+                    )}
 
-                  {requestType === "foreman" && (
                     <div>
-                      <Label htmlFor="experience">Experience in Chit Funds *</Label>
-                      <Select
-                        value={formData.experience}
-                        onValueChange={(value) => setFormData((prev) => ({ ...prev, experience: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select your experience level" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0-1">0-1 years</SelectItem>
-                          <SelectItem value="1-3">1-3 years</SelectItem>
-                          <SelectItem value="3-5">3-5 years</SelectItem>
-                          <SelectItem value="5+">5+ years</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="contactPerson">
+                        {requestType === "company" ? "Contact Person *" : "Full Name *"}
+                      </Label>
+                      <Input
+                        id="contactPerson"
+                        value={formData.contactPerson}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, contactPerson: e.target.value }))}
+                        placeholder="Enter your full name"
+                        required
+                      />
                     </div>
-                  )}
-                </div>
 
-                <div>
-                  <Label htmlFor="purpose">Purpose of Access *</Label>
-                  <Textarea
-                    id="purpose"
-                    value={formData.purpose}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, purpose: e.target.value }))}
-                    placeholder="Please explain why you need access to our platform and how you plan to use it"
-                    rows={4}
-                    required
-                  />
-                </div>
+                    <div>
+                      <Label htmlFor="email">Email Address *</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                        placeholder="Enter your email address"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="phone">Phone Number *</Label>
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                        placeholder="Enter your phone number"
+                        required
+                      />
+                    </div>
+
+                    {requestType === "company" && (
+                      <div>
+                        <Label htmlFor="businessType">Business Type *</Label>
+                        <Select
+                          value={formData.businessType}
+                          onValueChange={(value) => setFormData((prev) => ({ ...prev, businessType: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your business type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="payment-gateway">Payment Gateway (Razorpay, Cashfree, etc.)</SelectItem>
+                            <SelectItem value="sms-provider">SMS Provider (MSG91, TextLocal, etc.)</SelectItem>
+                            <SelectItem value="fintech">Fintech Services</SelectItem>
+                            <SelectItem value="banking">Banking Services</SelectItem>
+                            <SelectItem value="insurance">Insurance Services</SelectItem>
+                            <SelectItem value="other">Other Financial Services</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {requestType === "foreman" && (
+                      <div>
+                        <Label htmlFor="experience">Experience in Chit Funds *</Label>
+                        <Select
+                          value={formData.experience}
+                          onValueChange={(value) => setFormData((prev) => ({ ...prev, experience: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your experience level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0-1">0-1 years</SelectItem>
+                            <SelectItem value="1-3">1-3 years</SelectItem>
+                            <SelectItem value="3-5">3-5 years</SelectItem>
+                            <SelectItem value="5+">5+ years</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor="purpose">Purpose of Access *</Label>
+                      <Textarea
+                        id="purpose"
+                        value={formData.purpose}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, purpose: e.target.value }))}
+                        placeholder="Please explain why you need access to our platform and how you plan to use it"
+                        rows={4}
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex justify-between pt-6">
                   <Button variant="outline" onClick={() => setStep(1)}>
@@ -484,9 +580,17 @@ export default function AccessRequestPage() {
                   </Button>
                   <Button
                     onClick={handleFormSubmit}
-                    disabled={!formData.contactPerson || !formData.email || !formData.phone || !formData.purpose}
+                    disabled={
+                      requestType === "admin"
+                        ? !formData.email || !formData.password
+                        : !formData.contactPerson || !formData.email || !formData.phone || !formData.purpose
+                    }
                   >
-                    {requestType === "company" ? "Submit Request" : "Continue to PSO Assessment"}
+                    {requestType === "admin"
+                      ? "Login"
+                      : requestType === "company"
+                        ? "Submit Request"
+                        : "Continue to PSO Assessment"}
                   </Button>
                 </div>
               </div>
@@ -554,8 +658,12 @@ export default function AccessRequestPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-2">Request Submitted Successfully!</h3>
-                  <div className="text-gray-600">Your access request has been processed</div>
+                  <h3 className="text-2xl font-semibold text-gray-800 mb-2">Access Granted!</h3>
+                  <div className="text-gray-600">
+                    {requestType === "admin"
+                      ? "Welcome back, Administrator. You now have full access to the system."
+                      : "Your access request has been approved and processed successfully."}
+                  </div>
                 </div>
 
                 {currentMCQs.length > 0 && (
@@ -565,54 +673,52 @@ export default function AccessRequestPage() {
                         <div className="text-lg font-semibold text-blue-800 mb-2">
                           PSO Assessment Score: {calculateMCQScore()}%
                         </div>
-                        <div className="text-sm text-blue-600">
-                          {calculateMCQScore() >= (requestType === "foreman" ? 80 : 70)
-                            ? "✅ Passed - Access granted!"
-                            : "❌ Did not meet minimum PSO knowledge requirement"}
-                        </div>
+                        <div className="text-sm text-blue-600">✅ Passed - Access granted to your dashboard!</div>
                       </div>
                     </CardContent>
                   </Card>
                 )}
 
                 <div className="bg-gray-50 rounded-lg p-6">
-                  <h4 className="font-semibold text-gray-800 mb-3">What happens next?</h4>
+                  <h4 className="font-semibold text-gray-800 mb-3">Your Access Details:</h4>
                   <div className="space-y-3 text-sm text-gray-600">
-                    {requestType === "company" ||
-                    (currentMCQs.length > 0 && calculateMCQScore() >= (requestType === "foreman" ? 80 : 70)) ? (
-                      <>
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span>Access has been granted - you can now view the landing page</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Shield className="h-4 w-4 text-blue-500" />
-                          <span>Your access is valid for 30 days</span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-3">
-                          <Clock className="h-4 w-4 text-blue-500" />
-                          <span>Admin will review your request within 24-48 hours</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Send className="h-4 w-4 text-blue-500" />
-                          <span>You'll receive an email notification about the decision</span>
-                        </div>
-                      </>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span>
+                        Access Type: <strong className="capitalize">{requestType}</strong>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Shield className="h-4 w-4 text-blue-500" />
+                      <span>
+                        Portal Access:{" "}
+                        <strong>
+                          {requestType === "admin"
+                            ? "Landing Page + Admin Panel"
+                            : requestType === "company"
+                              ? "Admin Panel"
+                              : requestType === "foreman"
+                                ? "Foreman Dashboard"
+                                : "User Dashboard"}
+                        </strong>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-4 w-4 text-blue-500" />
+                      <span>Access valid for 30 days</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex gap-4 justify-center">
-                  <Button onClick={handleAccessLandingPage} className="bg-blue-600 hover:bg-blue-700">
-                    Access Landing Page
-                  </Button>
-                  <Button variant="outline" onClick={() => router.push("/admin/access-requests")}>
-                    View Admin Panel
-                  </Button>
-                </div>
+                <Button onClick={handleAccessPortal} className="bg-blue-600 hover:bg-blue-700 w-full">
+                  {requestType === "admin"
+                    ? "Access Landing Page"
+                    : requestType === "company"
+                      ? "Access Admin Panel"
+                      : requestType === "foreman"
+                        ? "Access Foreman Dashboard"
+                        : "Access User Dashboard"}
+                </Button>
               </div>
             )}
           </CardContent>

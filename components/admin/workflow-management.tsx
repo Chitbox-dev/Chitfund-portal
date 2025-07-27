@@ -6,125 +6,117 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { WorkflowCreationDialog } from "./workflow-creation-dialog"
 import {
-  Plus,
-  Edit,
   Play,
   Pause,
-  MoreHorizontal,
+  Edit,
+  Trash2,
+  Plus,
   Clock,
   CheckCircle,
-  XCircle,
-  AlertTriangle,
+  AlertCircle,
   Users,
   FileText,
   Settings,
+  BarChart3,
 } from "lucide-react"
 
 interface WorkflowStep {
   id: string
   name: string
+  type: "approval" | "notification" | "action" | "condition"
+  assignedTo: string[]
   description: string
-  assignedTo: string
   estimatedTime: number
-  status: "pending" | "in_progress" | "completed" | "failed"
-  dependencies: string[]
+  status: "pending" | "completed" | "failed"
 }
 
 interface Workflow {
   id: string
   name: string
   description: string
-  category: "user_registration" | "scheme_approval" | "document_verification" | "payment_processing"
+  category: "user_management" | "scheme_approval" | "document_review" | "compliance"
   status: "active" | "inactive" | "draft"
   steps: WorkflowStep[]
   createdAt: string
-  updatedAt: string
-  createdBy: string
+  lastModified: string
+  totalExecutions: number
+  successRate: number
 }
 
 const sampleWorkflows: Workflow[] = [
   {
-    id: "WF001",
-    name: "User Registration Workflow",
-    description: "Complete user onboarding and UCFSIN generation process",
-    category: "user_registration",
+    id: "wf-001",
+    name: "User Registration Approval",
+    description: "Complete workflow for approving new user registrations including KYC verification",
+    category: "user_management",
     status: "active",
-    createdAt: "2025-01-15T10:00:00Z",
-    updatedAt: "2025-01-20T14:30:00Z",
-    createdBy: "Admin",
     steps: [
       {
-        id: "step1",
-        name: "Basic Information Collection",
-        description: "Collect user's basic personal information",
-        assignedTo: "System",
-        estimatedTime: 5,
+        id: "step-001",
+        name: "Document Verification",
+        type: "approval",
+        assignedTo: ["admin", "kyc_officer"],
+        description: "Verify uploaded documents and identity proof",
+        estimatedTime: 30,
         status: "completed",
-        dependencies: [],
       },
       {
-        id: "step2",
-        name: "KYC Document Verification",
-        description: "Verify uploaded KYC documents",
-        assignedTo: "KYC Team",
-        estimatedTime: 24,
-        status: "in_progress",
-        dependencies: ["step1"],
-      },
-      {
-        id: "step3",
-        name: "UCFSIN Generation",
-        description: "Generate unique chit fund subscriber ID",
-        assignedTo: "System",
-        estimatedTime: 1,
+        id: "step-002",
+        name: "Background Check",
+        type: "action",
+        assignedTo: ["compliance_team"],
+        description: "Perform background verification and credit check",
+        estimatedTime: 60,
         status: "pending",
-        dependencies: ["step2"],
+      },
+      {
+        id: "step-003",
+        name: "Final Approval",
+        type: "approval",
+        assignedTo: ["admin"],
+        description: "Final approval and account activation",
+        estimatedTime: 15,
+        status: "pending",
       },
     ],
+    createdAt: "2025-01-15T10:00:00Z",
+    lastModified: "2025-01-20T14:30:00Z",
+    totalExecutions: 45,
+    successRate: 89,
   },
   {
-    id: "WF002",
-    name: "Scheme Approval Workflow",
-    description: "Review and approve new chit fund schemes",
+    id: "wf-002",
+    name: "Scheme Approval Process",
+    description: "Workflow for reviewing and approving new chit fund schemes",
     category: "scheme_approval",
     status: "active",
-    createdAt: "2025-01-10T09:00:00Z",
-    updatedAt: "2025-01-18T16:45:00Z",
-    createdBy: "Admin",
     steps: [
       {
-        id: "step1",
-        name: "Scheme Documentation Review",
-        description: "Review scheme documents and compliance",
-        assignedTo: "Compliance Team",
-        estimatedTime: 48,
+        id: "step-004",
+        name: "Scheme Review",
+        type: "approval",
+        assignedTo: ["scheme_reviewer"],
+        description: "Review scheme details and compliance requirements",
+        estimatedTime: 45,
         status: "completed",
-        dependencies: [],
       },
       {
-        id: "step2",
-        name: "Financial Assessment",
-        description: "Assess financial viability and risk",
-        assignedTo: "Finance Team",
-        estimatedTime: 72,
-        status: "in_progress",
-        dependencies: ["step1"],
-      },
-      {
-        id: "step3",
-        name: "Final Approval",
-        description: "Final approval by authorized personnel",
-        assignedTo: "Senior Manager",
-        estimatedTime: 24,
+        id: "step-005",
+        name: "Legal Compliance Check",
+        type: "condition",
+        assignedTo: ["legal_team"],
+        description: "Ensure scheme meets all legal requirements",
+        estimatedTime: 90,
         status: "pending",
-        dependencies: ["step2"],
       },
     ],
+    createdAt: "2025-01-12T09:15:00Z",
+    lastModified: "2025-01-18T16:45:00Z",
+    totalExecutions: 23,
+    successRate: 95,
   },
 ]
 
@@ -133,62 +125,38 @@ export function WorkflowManagement() {
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [filterCategory, setFilterCategory] = useState<string>("all")
+  const [filterStatus, setFilterStatus] = useState<string>("all")
 
   const filteredWorkflows = workflows.filter((workflow) => {
     const matchesSearch =
       workflow.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       workflow.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || workflow.status === statusFilter
-    return matchesSearch && matchesStatus
+    const matchesCategory = filterCategory === "all" || workflow.category === filterCategory
+    const matchesStatus = filterStatus === "all" || workflow.status === filterStatus
+    return matchesSearch && matchesCategory && matchesStatus
   })
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800 border-green-300"
-      case "inactive":
-        return "bg-gray-100 text-gray-800 border-gray-300"
-      case "draft":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300"
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300"
+  const handleCreateWorkflow = (workflowData: Partial<Workflow>) => {
+    const newWorkflow: Workflow = {
+      id: `wf-${Date.now()}`,
+      name: workflowData.name || "",
+      description: workflowData.description || "",
+      category: workflowData.category || "user_management",
+      status: "draft",
+      steps: workflowData.steps || [],
+      createdAt: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
+      totalExecutions: 0,
+      successRate: 0,
     }
+    setWorkflows([...workflows, newWorkflow])
+    setIsCreateDialogOpen(false)
   }
 
-  const getStepStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-600" />
-      case "in_progress":
-        return <Clock className="h-4 w-4 text-blue-600" />
-      case "failed":
-        return <XCircle className="h-4 w-4 text-red-600" />
-      case "pending":
-        return <AlertTriangle className="h-4 w-4 text-yellow-600" />
-      default:
-        return <Clock className="h-4 w-4 text-gray-400" />
-    }
-  }
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "user_registration":
-        return <Users className="h-4 w-4" />
-      case "scheme_approval":
-        return <FileText className="h-4 w-4" />
-      case "document_verification":
-        return <CheckCircle className="h-4 w-4" />
-      case "payment_processing":
-        return <Settings className="h-4 w-4" />
-      default:
-        return <Settings className="h-4 w-4" />
-    }
-  }
-
-  const handleToggleWorkflowStatus = (workflowId: string) => {
-    setWorkflows((prev) =>
-      prev.map((workflow) =>
+  const toggleWorkflowStatus = (workflowId: string) => {
+    setWorkflows(
+      workflows.map((workflow) =>
         workflow.id === workflowId
           ? { ...workflow, status: workflow.status === "active" ? "inactive" : "active" }
           : workflow,
@@ -196,253 +164,245 @@ export function WorkflowManagement() {
     )
   }
 
+  const deleteWorkflow = (workflowId: string) => {
+    setWorkflows(workflows.filter((workflow) => workflow.id !== workflowId))
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "active":
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case "inactive":
+        return <Pause className="h-4 w-4 text-gray-500" />
+      case "draft":
+        return <Edit className="h-4 w-4 text-yellow-500" />
+      default:
+        return <AlertCircle className="h-4 w-4 text-red-500" />
+    }
+  }
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case "user_management":
+        return <Users className="h-4 w-4" />
+      case "scheme_approval":
+        return <FileText className="h-4 w-4" />
+      case "document_review":
+        return <Settings className="h-4 w-4" />
+      case "compliance":
+        return <BarChart3 className="h-4 w-4" />
+      default:
+        return <Settings className="h-4 w-4" />
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Workflow Management</h2>
-          <p className="text-gray-600 mt-1">Create and manage automated workflows for various processes</p>
+          <h1 className="text-3xl font-bold text-gray-900">Workflow Management</h1>
+          <p className="text-gray-600 mt-2">Create and manage automated workflows for your operations</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Workflow
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create New Workflow</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="workflowName">Workflow Name</Label>
-                  <Input id="workflowName" placeholder="Enter workflow name" />
-                </div>
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user_registration">User Registration</SelectItem>
-                      <SelectItem value="scheme_approval">Scheme Approval</SelectItem>
-                      <SelectItem value="document_verification">Document Verification</SelectItem>
-                      <SelectItem value="payment_processing">Payment Processing</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea id="description" placeholder="Describe the workflow purpose" rows={3} />
-              </div>
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => setIsCreateDialogOpen(false)}>Create Workflow</Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Create Workflow
+        </Button>
       </div>
 
-      {/* Statistics */}
+      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Workflows</p>
-                <p className="text-3xl font-bold text-gray-900">{workflows.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{workflows.length}</p>
               </div>
-              <Settings className="h-8 w-8 text-blue-600" />
+              <Settings className="h-8 w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Active</p>
-                <p className="text-3xl font-bold text-green-600">
+                <p className="text-sm font-medium text-gray-600">Active Workflows</p>
+                <p className="text-2xl font-bold text-gray-900">
                   {workflows.filter((w) => w.status === "active").length}
                 </p>
               </div>
-              <Play className="h-8 w-8 text-green-600" />
+              <Play className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Inactive</p>
-                <p className="text-3xl font-bold text-gray-600">
-                  {workflows.filter((w) => w.status === "inactive").length}
+                <p className="text-sm font-medium text-gray-600">Total Executions</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {workflows.reduce((sum, w) => sum + w.totalExecutions, 0)}
                 </p>
               </div>
-              <Pause className="h-8 w-8 text-gray-600" />
+              <BarChart3 className="h-8 w-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Draft</p>
-                <p className="text-3xl font-bold text-yellow-600">
-                  {workflows.filter((w) => w.status === "draft").length}
+                <p className="text-sm font-medium text-gray-600">Avg Success Rate</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {Math.round(workflows.reduce((sum, w) => sum + w.successRate, 0) / workflows.length)}%
                 </p>
               </div>
-              <Edit className="h-8 w-8 text-yellow-600" />
+              <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search and Filter */}
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <Input placeholder="Search workflows..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Workflows Table */}
+      {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle>Workflows ({filteredWorkflows.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Workflow</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Steps</TableHead>
-                <TableHead>Last Updated</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredWorkflows.map((workflow) => (
-                <TableRow key={workflow.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium text-gray-900">{workflow.name}</div>
-                      <div className="text-sm text-gray-500">{workflow.description}</div>
-                      <div className="text-xs text-gray-400 mt-1">ID: {workflow.id}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {getCategoryIcon(workflow.category)}
-                      <span className="capitalize">{workflow.category.replace("_", " ")}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(workflow.status)}>{workflow.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      {workflow.steps.map((step, index) => (
-                        <div key={step.id} className="flex items-center">
-                          {getStepStatusIcon(step.status)}
-                          {index < workflow.steps.length - 1 && <div className="w-2 h-px bg-gray-300 mx-1" />}
-                        </div>
-                      ))}
-                      <span className="ml-2 text-sm text-gray-500">{workflow.steps.length} steps</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-gray-500">{new Date(workflow.updatedAt).toLocaleDateString()}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setSelectedWorkflow(workflow)}>
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleToggleWorkflowStatus(workflow.id)}>
-                        {workflow.status === "active" ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <MoreHorizontal className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="search">Search Workflows</Label>
+              <Input
+                id="search"
+                placeholder="Search by name or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="user_management">User Management</SelectItem>
+                  <SelectItem value="scheme_approval">Scheme Approval</SelectItem>
+                  <SelectItem value="document_review">Document Review</SelectItem>
+                  <SelectItem value="compliance">Compliance</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Workflow Detail Dialog */}
-      {selectedWorkflow && (
-        <Dialog open={!!selectedWorkflow} onOpenChange={() => setSelectedWorkflow(null)}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3">
-                {getCategoryIcon(selectedWorkflow.category)}
-                {selectedWorkflow.name}
-                <Badge className={getStatusColor(selectedWorkflow.status)}>{selectedWorkflow.status}</Badge>
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6">
-              <div>
-                <h4 className="font-medium text-gray-900 mb-2">Description</h4>
-                <p className="text-gray-600">{selectedWorkflow.description}</p>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-gray-900 mb-4">Workflow Steps</h4>
-                <div className="space-y-4">
-                  {selectedWorkflow.steps.map((step, index) => (
-                    <Card key={step.id} className="border-l-4 border-l-blue-500">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="text-sm font-medium text-gray-500">Step {index + 1}</span>
-                              {getStepStatusIcon(step.status)}
-                              <Badge variant="outline" className="capitalize">
-                                {step.status.replace("_", " ")}
-                              </Badge>
-                            </div>
-                            <h5 className="font-medium text-gray-900 mb-1">{step.name}</h5>
-                            <p className="text-sm text-gray-600 mb-2">{step.description}</p>
-                            <div className="flex items-center gap-4 text-xs text-gray-500">
-                              <span>Assigned to: {step.assignedTo}</span>
-                              <span>Est. Time: {step.estimatedTime}h</span>
-                              {step.dependencies.length > 0 && <span>Dependencies: {step.dependencies.length}</span>}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+      {/* Workflows List */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {filteredWorkflows.map((workflow) => (
+          <Card key={workflow.id} className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  {getCategoryIcon(workflow.category)}
+                  <div>
+                    <CardTitle className="text-lg">{workflow.name}</CardTitle>
+                    <p className="text-sm text-gray-600 mt-1">{workflow.description}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {getStatusIcon(workflow.status)}
+                  <Badge variant={workflow.status === "active" ? "default" : "secondary"}>{workflow.status}</Badge>
                 </div>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">Steps:</span>
+                    <span className="ml-2">{workflow.steps.length}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Executions:</span>
+                    <span className="ml-2">{workflow.totalExecutions}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Success Rate:</span>
+                    <span className="ml-2">{workflow.successRate}%</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Category:</span>
+                    <span className="ml-2 capitalize">{workflow.category.replace("_", " ")}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Clock className="h-4 w-4" />
+                    Modified {new Date(workflow.lastModified).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => toggleWorkflowStatus(workflow.id)}>
+                      {workflow.status === "active" ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setSelectedWorkflow(workflow)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteWorkflow(workflow.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredWorkflows.length === 0 && (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No workflows found</h3>
+            <p className="text-gray-600 mb-4">
+              {searchTerm || filterCategory !== "all" || filterStatus !== "all"
+                ? "Try adjusting your search criteria"
+                : "Create your first workflow to get started"}
+            </p>
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Workflow
+            </Button>
+          </CardContent>
+        </Card>
       )}
+
+      <WorkflowCreationDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSave={handleCreateWorkflow}
+      />
     </div>
   )
 }

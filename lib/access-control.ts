@@ -1,46 +1,70 @@
 export interface AccessUser {
+  userType: "admin" | "company" | "user" | "foreman"
   email: string
-  userType: "company" | "user" | "foreman"
-  requestId: string
+  accessLevel: "full" | "limited"
   approvedAt: string
 }
 
 export function checkAccessApproval(): AccessUser | null {
   if (typeof window === "undefined") return null
 
-  const cookies = document.cookie.split(";")
-  const accessCookie = cookies.find((cookie) => cookie.trim().startsWith("access_approved="))
-  const userTypeCookie = cookies.find((cookie) => cookie.trim().startsWith("user_type="))
-  const emailCookie = cookies.find((cookie) => cookie.trim().startsWith("user_email="))
-  const requestIdCookie = cookies.find((cookie) => cookie.trim().startsWith("request_id="))
+  try {
+    const cookies = document.cookie.split(";").reduce(
+      (acc, cookie) => {
+        const [key, value] = cookie.trim().split("=")
+        acc[key] = value
+        return acc
+      },
+      {} as Record<string, string>,
+    )
 
-  if (accessCookie && accessCookie.includes("true") && userTypeCookie && emailCookie && requestIdCookie) {
-    return {
-      email: decodeURIComponent(emailCookie.split("=")[1]),
-      userType: userTypeCookie.split("=")[1] as "company" | "user" | "foreman",
-      requestId: requestIdCookie.split("=")[1],
-      approvedAt: new Date().toISOString(),
+    const userType = cookies.user_type as AccessUser["userType"]
+    const email = cookies.user_email
+    const hasAccess = cookies.admin_access === "true" || cookies.portal_access === "true"
+
+    if (!hasAccess || !userType || !email) {
+      return null
     }
+
+    return {
+      userType,
+      email: decodeURIComponent(email),
+      accessLevel: cookies.admin_access === "true" ? "full" : "limited",
+      approvedAt: cookies.approved_at || new Date().toISOString(),
+    }
+  } catch (error) {
+    console.error("Error checking access approval:", error)
+    return null
+  }
+}
+
+export function setAccessApproval(user: AccessUser): void {
+  if (typeof window === "undefined") return
+
+  const expires = new Date()
+  expires.setDate(expires.getDate() + 30) // 30 days
+
+  document.cookie = `user_type=${user.userType}; expires=${expires.toUTCString()}; path=/`
+  document.cookie = `user_email=${encodeURIComponent(user.email)}; expires=${expires.toUTCString()}; path=/`
+  document.cookie = `${user.accessLevel === "full" ? "admin_access" : "portal_access"}=true; expires=${expires.toUTCString()}; path=/`
+  document.cookie = `approved_at=${user.approvedAt}; expires=${expires.toUTCString()}; path=/`
+}
+
+export function clearAccessApproval(): void {
+  if (typeof window === "undefined") return
+
+  const cookies = ["user_type", "user_email", "admin_access", "portal_access", "approved_at"]
+  cookies.forEach((cookie) => {
+    document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`
+  })
+}
+
+export function validateAdminCredentials(email: string, password: string): boolean {
+  // In a real application, this would validate against a secure backend
+  const validCredentials = {
+    email: "admin@chitfundportal.com",
+    password: "Admin@123",
   }
 
-  return null
-}
-
-export function setAccessApproval(user: Omit<AccessUser, "approvedAt">) {
-  const maxAge = 60 * 60 * 24 * 30 // 30 days for landing page access
-  const expires = new Date(Date.now() + maxAge * 1000).toUTCString()
-
-  document.cookie = `access_approved=true; path=/; expires=${expires}; SameSite=Lax`
-  document.cookie = `user_type=${user.userType}; path=/; expires=${expires}; SameSite=Lax`
-  document.cookie = `user_email=${encodeURIComponent(user.email)}; path=/; expires=${expires}; SameSite=Lax`
-  document.cookie = `request_id=${user.requestId}; path=/; expires=${expires}; SameSite=Lax`
-}
-
-export function hasValidAccess(): boolean {
-  return checkAccessApproval() !== null
-}
-
-export function getUserType(): string | null {
-  const user = checkAccessApproval()
-  return user ? user.userType : null
+  return email === validCredentials.email && password === validCredentials.password
 }

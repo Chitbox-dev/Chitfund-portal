@@ -1,72 +1,84 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Shield, User, CheckCircle } from "lucide-react"
-import { checkAccessApproval, type AccessUser } from "@/lib/access-control"
+import { User, Shield, Building, Users } from "lucide-react"
 
-export default function AccessStatus() {
-  const [user, setUser] = useState<AccessUser | null>(null)
+interface AccessStatusProps {
+  className?: string
+}
+
+export default function AccessStatus({ className = "" }: AccessStatusProps) {
+  const [userType, setUserType] = useState<string | null>(null)
+  const [hasAccess, setHasAccess] = useState(false)
 
   useEffect(() => {
-    const accessUser = checkAccessApproval()
-    setUser(accessUser)
+    const checkStatus = () => {
+      const cookies = document.cookie.split(";").reduce(
+        (acc, cookie) => {
+          const [key, value] = cookie.trim().split("=")
+          acc[key] = value
+          return acc
+        },
+        {} as Record<string, string>,
+      )
+
+      const currentUserType = cookies.user_type
+      const hasValidAccess = cookies.admin_access === "true" || cookies.portal_access === "true"
+
+      setUserType(currentUserType)
+      setHasAccess(hasValidAccess)
+    }
+
+    checkStatus()
   }, [])
 
-  if (!user) return null
+  if (!hasAccess || !userType) {
+    return null
+  }
 
-  const getUserTypeLabel = (type: string) => {
-    switch (type) {
+  const getIcon = () => {
+    switch (userType) {
+      case "admin":
+        return <Shield className="h-4 w-4" />
       case "company":
-        return "Business Partner"
-      case "user":
-        return "Subscriber"
+        return <Building className="h-4 w-4" />
       case "foreman":
-        return "Foreman"
+        return <Users className="h-4 w-4" />
+      case "user":
+        return <User className="h-4 w-4" />
       default:
-        return "User"
+        return <User className="h-4 w-4" />
     }
   }
 
-  const getUserTypeColor = (type: string) => {
-    switch (type) {
+  const getVariant = () => {
+    switch (userType) {
+      case "admin":
+        return "destructive"
       case "company":
-        return "bg-purple-100 text-purple-800 border-purple-300"
-      case "user":
-        return "bg-green-100 text-green-800 border-green-300"
+        return "secondary"
       case "foreman":
-        return "bg-blue-100 text-blue-800 border-blue-300"
+        return "outline"
+      case "user":
+        return "default"
       default:
-        return "bg-gray-100 text-gray-800 border-gray-300"
+        return "default"
     }
   }
 
   return (
-    <div className="bg-gradient-to-r from-green-50 to-blue-50 border-b border-green-200 px-4 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-green-800">
-            <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            </div>
-            <span>Access Verified</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-gray-600" />
-            <span className="text-sm text-gray-700 font-medium">{user.email}</span>
-          </div>
-          <Badge variant="outline" className={`${getUserTypeColor(user.userType)} font-medium`}>
-            {getUserTypeLabel(user.userType)}
+    <Card className={`${className}`}>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-2">
+          <Badge variant={getVariant() as any} className="flex items-center gap-1">
+            {getIcon()}
+            {userType.charAt(0).toUpperCase() + userType.slice(1)} Access
           </Badge>
+          <span className="text-sm text-gray-600">Active</span>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-xs text-gray-600 bg-white/50 px-3 py-1 rounded-full">
-            <Shield className="h-3 w-3 inline mr-1" />
-            Secure Portal Access
-          </div>
-          <div className="text-xs text-gray-500">ID: {user.requestId}</div>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

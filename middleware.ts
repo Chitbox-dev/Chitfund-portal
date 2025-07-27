@@ -4,30 +4,29 @@ import type { NextRequest } from "next/server"
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Skip middleware for static files, API routes, and admin routes
+  // Skip middleware for static files, API routes, and specific paths
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
-    pathname.startsWith("/admin") ||
     pathname.includes(".") ||
     pathname.startsWith("/access-request") ||
-    pathname.startsWith("/access-denied")
+    pathname.startsWith("/access-denied") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/foreman") ||
+    pathname.startsWith("/user")
   ) {
     return NextResponse.next()
   }
 
-  // Check for access approval cookie
-  const accessApproved = request.cookies.get("chit_fund_access_approved")
-  const userType = request.cookies.get("chit_fund_user_type")
+  // For root path, check admin access
+  if (pathname === "/") {
+    const adminAccess = request.cookies.get("admin_access")
+    const userType = request.cookies.get("user_type")
 
-  // If accessing root path without approval, redirect to access request
-  if (pathname === "/" && !accessApproved) {
-    return NextResponse.redirect(new URL("/access-request", request.url))
-  }
-
-  // If user has approval but no user type, redirect to access request
-  if (pathname === "/" && accessApproved && !userType) {
-    return NextResponse.redirect(new URL("/access-request", request.url))
+    // Only allow admin access to landing page
+    if (!adminAccess || adminAccess.value !== "true" || !userType || userType.value !== "admin") {
+      return NextResponse.redirect(new URL("/access-request", request.url))
+    }
   }
 
   return NextResponse.next()

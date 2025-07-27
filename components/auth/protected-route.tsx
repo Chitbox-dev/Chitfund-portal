@@ -1,43 +1,54 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Shield, Clock } from "lucide-react"
-import { checkAccessApproval, type AccessUser } from "@/lib/access-control"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
-  allowedUserTypes?: ("company" | "user" | "foreman")[]
+  allowedUserTypes?: ("admin" | "company" | "user" | "foreman")[]
   redirectTo?: string
 }
 
 export default function ProtectedRoute({
   children,
-  allowedUserTypes = ["company", "user", "foreman"],
+  allowedUserTypes = ["admin", "company", "user", "foreman"],
   redirectTo = "/access-request",
 }: ProtectedRouteProps) {
   const router = useRouter()
-  const [user, setUser] = useState<AccessUser | null>(null)
+  const [userType, setUserType] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [hasAccess, setHasAccess] = useState(false)
 
   useEffect(() => {
     const checkAccess = () => {
-      const accessUser = checkAccessApproval()
+      // Check cookies for access
+      const cookies = document.cookie.split(";").reduce(
+        (acc, cookie) => {
+          const [key, value] = cookie.trim().split("=")
+          acc[key] = value
+          return acc
+        },
+        {} as Record<string, string>,
+      )
 
-      if (!accessUser) {
+      const currentUserType = cookies.user_type
+      const hasValidAccess = cookies.admin_access === "true" || cookies.portal_access === "true"
+
+      if (!hasValidAccess || !currentUserType) {
         router.push(redirectTo)
         return
       }
 
-      if (!allowedUserTypes.includes(accessUser.userType)) {
+      if (!allowedUserTypes.includes(currentUserType as any)) {
         router.push("/access-denied")
         return
       }
 
-      setUser(accessUser)
+      setUserType(currentUserType)
+      setHasAccess(true)
       setIsLoading(false)
     }
 
@@ -60,7 +71,7 @@ export default function ProtectedRoute({
     )
   }
 
-  if (!user) {
+  if (!hasAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <Card className="w-96">
