@@ -100,6 +100,11 @@
   border-right: 3px solid rgba(59, 130, 246, 0.3);
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 50;
 }
 
 .admin-sidebar[data-state="collapsed"] {
@@ -108,11 +113,30 @@
   max-width: var(--sidebar-width-icon);
 }
 
+/* Mobile responsive sidebar */
+@media (max-width: 768px) {
+  .admin-sidebar {
+    width: var(--sidebar-width-mobile);
+    min-width: var(--sidebar-width-mobile);
+    max-width: var(--sidebar-width-mobile);
+    transform: translateX(-100%);
+  }
+
+  .admin-sidebar[data-state="open"] {
+    transform: translateX(0);
+  }
+
+  .admin-sidebar[data-state="collapsed"] {
+    transform: translateX(-100%);
+  }
+}
+
 .sidebar-header-section {
   padding: 20px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
+  flex-shrink: 0;
 }
 
 .sidebar-brand-container {
@@ -219,6 +243,27 @@
   background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.05));
   overflow-y: auto;
   flex: 1;
+  height: calc(100vh - 200px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.sidebar-content-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content-section::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.sidebar-content-section::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.sidebar-content-section::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .sidebar-group {
@@ -362,6 +407,7 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 16px;
   background: rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
 
 .sidebar-status-card {
@@ -560,92 +606,148 @@
 .content-area {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   min-height: 100vh;
+  margin-left: var(--sidebar-width);
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card-enhanced {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card-enhanced:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
-  transform: translateY(-4px);
-}
-
-.gradient-header {
-  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #10b981 100%);
-  border-radius: 20px;
-  color: white;
-  padding: 32px;
-  margin-bottom: 32px;
   position: relative;
-  overflow: hidden;
+  z-index: 1;
 }
 
-.gradient-header::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  opacity: 0.3;
+.content-area[data-sidebar-collapsed="true"] {
+  margin-left: var(--sidebar-width-icon);
 }
 
-.stats-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 20px;
-  padding: 28px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Mobile content area */
+@media (max-width: 768px) {
+  .content-area {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .content-area[data-sidebar-collapsed="true"] {
+    margin-left: 0;
+  }
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .sidebar-brand-title {
+    font-size: 16px;
+  }
+
+  .sidebar-brand-subtitle {
+    font-size: 11px;
+  }
+
+  .sidebar-menu-title {
+    font-size: 13px;
+  }
+
+  .sidebar-menu-description {
+    font-size: 10px;
+  }
+}
+
+/* Fix for overlapping content */
+.sidebar-inset {
   position: relative;
-  overflow: hidden;
+  z-index: 10;
 }
 
-.stats-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b);
-}
-
-.stats-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
-}
-
-.badge-enhanced {
-  padding: 8px 16px;
-  border-radius: 24px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.tab-enhanced {
-  border-radius: 16px;
-  padding: 16px 28px;
-  font-weight: 600;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Ensure proper stacking */
+.sidebar-provider {
   position: relative;
 }
 
-.tab-enhanced.active {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-  transform: translateY(-2px);
+/* Mobile overlay */
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .sidebar-overlay[data-state="open"] {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* Dashboard responsive improvements */
+@media (max-width: 768px) {
+  .stats-card {
+    padding: 20px;
+  }
+
+  .card-enhanced {
+    margin-bottom: 16px;
+  }
+
+  .gradient-header {
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-card {
+    padding: 16px;
+  }
+
+  .gradient-header {
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .sidebar-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .sidebar-stat-card {
+    padding: 8px 6px;
+  }
+
+  .sidebar-stat-number {
+    font-size: 16px;
+  }
+
+  .sidebar-stat-label {
+    font-size: 9px;
+  }
+}
+
+/* Table responsive */
+@media (max-width: 768px) {
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .table-container table {
+    min-width: 600px;
+  }
+}
+
+/* Form responsive */
+@media (max-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .button-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .button-group button {
+    width: 100%;
+  }
 }
 
 /* Smooth scrollbar */

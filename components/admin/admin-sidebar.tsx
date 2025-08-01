@@ -41,6 +41,8 @@ import {
   HelpCircle,
   Workflow,
   CheckSquare,
+  AlertTriangle,
+  MessageSquare,
 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 
@@ -94,6 +96,29 @@ const navigation = [
         title: "Scheme Reports",
         url: "/admin/schemes/reports",
         icon: BarChart3,
+      },
+    ],
+  },
+  {
+    title: "Support & Help",
+    items: [
+      {
+        title: "Help Requests",
+        url: "/admin/help-requests",
+        icon: HelpCircle,
+        badge: "8",
+      },
+      {
+        title: "Grievances",
+        url: "/admin/grievances",
+        icon: AlertTriangle,
+        badge: "3",
+      },
+      {
+        title: "Feedback",
+        url: "/admin/feedback",
+        icon: MessageSquare,
+        badge: "5",
       },
     ],
   },

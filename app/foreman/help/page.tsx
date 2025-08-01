@@ -21,7 +21,6 @@ import {
   CheckCircle,
   XCircle,
   Eye,
-  Download,
   ArrowLeft,
   Phone,
   Mail,
@@ -33,7 +32,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-export default function HelpSupportPage() {
+export default function ForemanHelpSupportPage() {
   const [requestType, setRequestType] = useState("")
   const [subject, setSubject] = useState("")
   const [description, setDescription] = useState("")
@@ -41,19 +40,19 @@ export default function HelpSupportPage() {
   const [attachments, setAttachments] = useState([])
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
   const [submittedTicket, setSubmittedTicket] = useState(null)
-  const [userTickets, setUserTickets] = useState([])
+  const [foremanTickets, setForemanTickets] = useState([])
 
-  // Load user tickets from localStorage
+  // Load foreman tickets from localStorage
   useEffect(() => {
-    const loadUserTickets = () => {
-      const tickets = JSON.parse(localStorage.getItem("userHelpTickets") || "[]")
-      setUserTickets(tickets)
+    const loadForemanTickets = () => {
+      const tickets = JSON.parse(localStorage.getItem("foremanHelpTickets") || "[]")
+      setForemanTickets(tickets)
     }
 
-    loadUserTickets()
+    loadForemanTickets()
 
     // Refresh every 10 seconds to check for admin responses
-    const interval = setInterval(loadUserTickets, 10000)
+    const interval = setInterval(loadForemanTickets, 10000)
     return () => clearInterval(interval)
   }, [])
 
@@ -74,7 +73,7 @@ export default function HelpSupportPage() {
       return
     }
 
-    const ticketId = `TKT-USR-2025-${String(Date.now()).slice(-3)}`
+    const ticketId = `TKT-FM-2025-${String(Date.now()).slice(-3)}`
     const newTicket = {
       id: ticketId,
       type: requestType,
@@ -83,10 +82,10 @@ export default function HelpSupportPage() {
       priority,
       status: "pending",
       submittedDate: new Date().toISOString().split("T")[0],
-      submittedBy: "user",
-      userId: "USR001",
-      userName: "Rajesh Kumar",
-      userEmail: "rajesh.kumar@email.com",
+      submittedBy: "foreman",
+      foremanId: "FM001",
+      foremanName: "Aakash Savant",
+      foremanEmail: "aakash.savant@email.com",
       attachments: attachments.map((file) => ({
         name: file.name,
         size: file.size,
@@ -95,12 +94,12 @@ export default function HelpSupportPage() {
     }
 
     // Store in localStorage for admin to see
-    const existingTickets = JSON.parse(localStorage.getItem("userHelpTickets") || "[]")
+    const existingTickets = JSON.parse(localStorage.getItem("foremanHelpTickets") || "[]")
     const updatedTickets = [...existingTickets, newTicket]
-    localStorage.setItem("userHelpTickets", JSON.stringify(updatedTickets))
+    localStorage.setItem("foremanHelpTickets", JSON.stringify(updatedTickets))
 
     // Update local state
-    setUserTickets(updatedTickets)
+    setForemanTickets(updatedTickets)
 
     setSubmittedTicket(newTicket)
     setShowSubmitDialog(true)
@@ -114,7 +113,7 @@ export default function HelpSupportPage() {
   }
 
   const handleRateResponse = (ticketId, rating, feedback = "") => {
-    const updatedTickets = userTickets.map((ticket) => {
+    const updatedTickets = foremanTickets.map((ticket) => {
       if (ticket.id === ticketId) {
         return {
           ...ticket,
@@ -126,8 +125,8 @@ export default function HelpSupportPage() {
       return ticket
     })
 
-    setUserTickets(updatedTickets)
-    localStorage.setItem("userHelpTickets", JSON.stringify(updatedTickets))
+    setForemanTickets(updatedTickets)
+    localStorage.setItem("foremanHelpTickets", JSON.stringify(updatedTickets))
   }
 
   const getStatusColor = (status) => {
@@ -171,7 +170,7 @@ export default function HelpSupportPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <Link href="/user/dashboard">
+              <Link href="/foreman/dashboard">
                 <Button variant="ghost" size="sm" className="gap-2">
                   <ArrowLeft className="h-4 w-4" />
                   Back to Dashboard
@@ -179,9 +178,9 @@ export default function HelpSupportPage() {
               </Link>
               <div className="h-6 w-px bg-gray-300"></div>
               <div className="flex items-center space-x-3">
-                <HelpCircle className="h-8 w-8 text-[#1e3a8a]" />
+                <HelpCircle className="h-8 w-8 text-green-600" />
                 <div>
-                  <h1 className="text-xl font-semibold text-gray-900">Help & Support</h1>
+                  <h1 className="text-xl font-semibold text-gray-900">Foreman Help & Support</h1>
                   <p className="text-sm text-gray-500">Submit grievances and feedback</p>
                 </div>
               </div>
@@ -197,30 +196,30 @@ export default function HelpSupportPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Quick Contact Info */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-l-4 border-l-blue-500">
+          <Card className="border-l-4 border-l-green-500">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Phone className="h-6 w-6 text-blue-600" />
+                <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Phone className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Phone Support</h3>
-                  <p className="text-sm text-gray-600">+91 1800-123-4567</p>
+                  <h3 className="font-semibold text-gray-900">Foreman Support</h3>
+                  <p className="text-sm text-gray-600">+91 1800-123-4568</p>
                   <p className="text-xs text-gray-500">Mon-Fri, 9 AM - 6 PM</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-green-500">
+          <Card className="border-l-4 border-l-blue-500">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Mail className="h-6 w-6 text-green-600" />
+                <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Mail className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Email Support</h3>
-                  <p className="text-sm text-gray-600">support@ucfsin.com</p>
+                  <p className="text-sm text-gray-600">foreman@ucfsin.com</p>
                   <p className="text-xs text-gray-500">Response within 24 hours</p>
                 </div>
               </div>
@@ -253,7 +252,7 @@ export default function HelpSupportPage() {
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">
               <FileText className="h-4 w-4" />
-              My Tickets ({userTickets.length})
+              My Tickets ({foremanTickets.length})
             </TabsTrigger>
           </TabsList>
 
@@ -266,8 +265,8 @@ export default function HelpSupportPage() {
                   Submit Grievance or Feedback
                 </CardTitle>
                 <p className="text-sm text-gray-600">
-                  Please provide detailed information about your concern or suggestion. Our team will review and respond
-                  within 24-48 hours.
+                  Please provide detailed information about your concern or suggestion. Our admin team will review and
+                  respond within 24-48 hours.
                 </p>
               </CardHeader>
               <CardContent>
@@ -282,7 +281,9 @@ export default function HelpSupportPage() {
                           <AlertTriangle className="h-5 w-5 text-red-500" />
                           <div>
                             <div className="font-medium">Grievance</div>
-                            <div className="text-sm text-gray-600">Report issues, complaints, or problems</div>
+                            <div className="text-sm text-gray-600">
+                              Report issues, complaints, or problems with schemes/system
+                            </div>
                           </div>
                         </Label>
                       </div>
@@ -293,7 +294,7 @@ export default function HelpSupportPage() {
                           <div>
                             <div className="font-medium">Feedback</div>
                             <div className="text-sm text-gray-600">
-                              Share suggestions, compliments, or general feedback
+                              Share suggestions, compliments, or general feedback about the system
                             </div>
                           </div>
                         </Label>
@@ -351,7 +352,7 @@ export default function HelpSupportPage() {
                       id="description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Please provide detailed information about your concern or feedback. Include relevant dates, transaction IDs, or any other helpful details."
+                      placeholder="Please provide detailed information about your concern or feedback. Include relevant scheme IDs, dates, or any other helpful details."
                       rows={6}
                       className="w-full"
                     />
@@ -413,7 +414,7 @@ export default function HelpSupportPage() {
                   <div className="flex justify-end pt-4">
                     <Button
                       type="submit"
-                      className="bg-[#1e3a8a] hover:bg-[#3b82f6] gap-2"
+                      className="bg-green-600 hover:bg-green-700 gap-2"
                       disabled={!requestType || !subject || !description}
                     >
                       <Send className="h-4 w-4" />
@@ -435,19 +436,19 @@ export default function HelpSupportPage() {
                 </div>
                 <div className="flex gap-2">
                   <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                    Pending: {userTickets.filter((t) => t.status === "pending").length}
+                    Pending: {foremanTickets.filter((t) => t.status === "pending").length}
                   </Badge>
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    In Progress: {userTickets.filter((t) => t.status === "in_progress").length}
+                    In Progress: {foremanTickets.filter((t) => t.status === "in_progress").length}
                   </Badge>
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    Resolved: {userTickets.filter((t) => t.status === "resolved").length}
+                    Resolved: {foremanTickets.filter((t) => t.status === "resolved").length}
                   </Badge>
                 </div>
               </div>
 
-              {userTickets.map((ticket) => (
-                <Card key={ticket.id} className="border-l-4 border-l-blue-500">
+              {foremanTickets.map((ticket) => (
+                <Card key={ticket.id} className="border-l-4 border-l-green-500">
                   <CardContent className="p-6">
                     <div className="space-y-4">
                       {/* Ticket Header */}
@@ -512,22 +513,6 @@ export default function HelpSupportPage() {
                             <div className="bg-white border border-blue-300 rounded p-3 mb-3">
                               <p className="text-xs font-medium text-blue-900 mb-1">Internal Remarks:</p>
                               <p className="text-xs text-blue-700">{ticket.adminResponse.remarks}</p>
-                            </div>
-                          )}
-
-                          {/* Response Attachments */}
-                          {ticket.adminResponse.attachments && ticket.adminResponse.attachments.length > 0 && (
-                            <div className="space-y-2">
-                              <p className="text-xs font-medium text-blue-900">Attachments:</p>
-                              {ticket.adminResponse.attachments.map((attachment, index) => (
-                                <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border">
-                                  <FileText className="h-4 w-4 text-blue-600" />
-                                  <span className="text-sm text-blue-800 flex-1">{attachment.name}</span>
-                                  <Button size="sm" variant="ghost" className="text-blue-600 hover:text-blue-700">
-                                    <Download className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ))}
                             </div>
                           )}
                         </div>
@@ -624,13 +609,13 @@ export default function HelpSupportPage() {
                 </Card>
               ))}
 
-              {userTickets.length === 0 && (
+              {foremanTickets.length === 0 && (
                 <Card>
                   <CardContent className="p-12 text-center">
                     <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Support Tickets</h3>
                     <p className="text-gray-600 mb-4">You haven't submitted any support requests yet.</p>
-                    <Button className="bg-[#1e3a8a] hover:bg-[#3b82f6]">Submit Your First Request</Button>
+                    <Button className="bg-green-600 hover:bg-green-700">Submit Your First Request</Button>
                   </CardContent>
                 </Card>
               )}
@@ -668,7 +653,7 @@ export default function HelpSupportPage() {
             <div className="text-sm text-gray-600">
               <p className="mb-2">What happens next:</p>
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Our support team will review your request within 24 hours</li>
+                <li>Our admin team will review your request within 24 hours</li>
                 <li>You'll receive email updates on the progress</li>
                 <li>You can track the status in the "My Tickets" section</li>
                 <li>We aim to resolve all issues within 48-72 hours</li>
