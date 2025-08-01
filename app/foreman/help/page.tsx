@@ -8,137 +8,152 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ForemanSidebar } from "@/components/foreman/foreman-sidebar"
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { Separator } from "@/components/ui/separator"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 import {
   HelpCircle,
   MessageSquare,
-  AlertTriangle,
   Send,
-  Upload,
-  FileText,
   Clock,
   CheckCircle,
-  XCircle,
-  Eye,
-  ArrowLeft,
+  Star,
+  RefreshCw,
+  FileText,
   Phone,
   Mail,
   MessageCircle,
-  Star,
-  ThumbsUp,
-  ThumbsDown,
-  RefreshCw,
 } from "lucide-react"
-import Link from "next/link"
 
-export default function ForemanHelpSupportPage() {
-  const [requestType, setRequestType] = useState("")
-  const [subject, setSubject] = useState("")
-  const [description, setDescription] = useState("")
-  const [priority, setPriority] = useState("medium")
-  const [attachments, setAttachments] = useState([])
-  const [showSubmitDialog, setShowSubmitDialog] = useState(false)
-  const [submittedTicket, setSubmittedTicket] = useState(null)
-  const [foremanTickets, setForemanTickets] = useState([])
+export default function ForemanHelpPage() {
+  const [activeTab, setActiveTab] = useState("submit")
+  const [formData, setFormData] = useState({
+    type: "",
+    subject: "",
+    description: "",
+    priority: "medium",
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [tickets, setTickets] = useState([])
+  const [refreshing, setRefreshing] = useState(false)
 
-  // Load foreman tickets from localStorage
+  // Load tickets on component mount
   useEffect(() => {
-    const loadForemanTickets = () => {
-      const tickets = JSON.parse(localStorage.getItem("foremanHelpTickets") || "[]")
-      setForemanTickets(tickets)
-    }
-
-    loadForemanTickets()
-
-    // Refresh every 10 seconds to check for admin responses
-    const interval = setInterval(loadForemanTickets, 10000)
+    loadTickets()
+    // Auto-refresh every 10 seconds to check for admin responses
+    const interval = setInterval(loadTickets, 10000)
     return () => clearInterval(interval)
   }, [])
 
-  const handleFileUpload = (event) => {
-    const files = Array.from(event.target.files)
-    setAttachments((prev) => [...prev, ...files])
+  const loadTickets = () => {
+    try {
+      const foremanTickets = JSON.parse(localStorage.getItem("foremanHelpTickets") || "[]")
+      setTickets(foremanTickets.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)))
+    } catch (error) {
+      console.error("Error loading tickets:", error)
+      setTickets([])
+    }
   }
 
-  const removeAttachment = (index) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-
-    if (!requestType || !subject || !description) {
+    if (!formData.type || !formData.subject || !formData.description) {
       alert("Please fill in all required fields")
       return
     }
 
-    const ticketId = `TKT-FM-2025-${String(Date.now()).slice(-3)}`
-    const newTicket = {
-      id: ticketId,
-      type: requestType,
-      subject,
-      description,
-      priority,
-      status: "pending",
-      submittedDate: new Date().toISOString().split("T")[0],
-      submittedBy: "foreman",
-      foremanId: "FM001",
-      foremanName: "Aakash Savant",
-      foremanEmail: "aakash.savant@email.com",
-      attachments: attachments.map((file) => ({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-      })),
+    setIsSubmitting(true)
+
+    try {
+      const newTicket = {
+        id: `TKT-${Date.now()}`,
+        ...formData,
+        submittedAt: new Date().toISOString(),
+        status: "pending",
+        source: "foreman",
+        foremanId: "current-foreman-id", // This should come from auth context
+        foremanName: "Current Foreman", // This should come from auth context
+        responses: [],
+        rating: null,
+      }
+
+      // Save to foreman tickets
+      const foremanTickets = JSON.parse(localStorage.getItem("foremanHelpTickets") || "[]")
+      foremanTickets.push(newTicket)
+      localStorage.setItem("foremanHelpTickets", JSON.stringify(foremanTickets))
+
+      // Save to admin help requests
+      const adminRequests = JSON.parse(localStorage.getItem("adminHelpRequests") || "[]")
+      adminRequests.push(newTicket)
+      localStorage.setItem("adminHelpRequests", JSON.stringify(adminRequests))
+
+      // Reset form
+      setFormData({
+        type: "",
+        subject: "",
+        description: "",
+        priority: "medium",
+      })
+
+      // Refresh tickets and switch to My Tickets tab
+      loadTickets()
+      setActiveTab("tickets")
+      alert("Your request has been submitted successfully! You can track its status in 'My Tickets'.")
+    } catch (error) {
+      console.error("Error submitting request:", error)
+      alert("Error submitting request. Please try again.")
+    } finally {
+      setIsSubmitting(false)
     }
-
-    // Store in localStorage for admin to see
-    const existingTickets = JSON.parse(localStorage.getItem("foremanHelpTickets") || "[]")
-    const updatedTickets = [...existingTickets, newTicket]
-    localStorage.setItem("foremanHelpTickets", JSON.stringify(updatedTickets))
-
-    // Update local state
-    setForemanTickets(updatedTickets)
-
-    setSubmittedTicket(newTicket)
-    setShowSubmitDialog(true)
-
-    // Reset form
-    setRequestType("")
-    setSubject("")
-    setDescription("")
-    setPriority("medium")
-    setAttachments([])
   }
 
-  const handleRateResponse = (ticketId, rating, feedback = "") => {
-    const updatedTickets = foremanTickets.map((ticket) => {
-      if (ticket.id === ticketId) {
-        return {
-          ...ticket,
-          rating,
-          feedback,
-          status: "closed",
-        }
-      }
-      return ticket
-    })
+  const handleRefreshTickets = async () => {
+    setRefreshing(true)
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    loadTickets()
+    setRefreshing(false)
+  }
 
-    setForemanTickets(updatedTickets)
-    localStorage.setItem("foremanHelpTickets", JSON.stringify(updatedTickets))
+  const handleRateResponse = (ticketId, rating) => {
+    try {
+      // Update foreman tickets
+      const foremanTickets = JSON.parse(localStorage.getItem("foremanHelpTickets") || "[]")
+      const updatedForemanTickets = foremanTickets.map((ticket) =>
+        ticket.id === ticketId ? { ...ticket, rating } : ticket,
+      )
+      localStorage.setItem("foremanHelpTickets", JSON.stringify(updatedForemanTickets))
+
+      // Update admin requests
+      const adminRequests = JSON.parse(localStorage.getItem("adminHelpRequests") || "[]")
+      const updatedAdminRequests = adminRequests.map((ticket) =>
+        ticket.id === ticketId ? { ...ticket, rating } : ticket,
+      )
+      localStorage.setItem("adminHelpRequests", JSON.stringify(updatedAdminRequests))
+
+      loadTickets()
+      alert("Thank you for your feedback!")
+    } catch (error) {
+      console.error("Error rating response:", error)
+    }
   }
 
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
         return "bg-yellow-100 text-yellow-800 border-yellow-200"
-      case "in_progress":
-        return "bg-blue-100 text-blue-800 border-blue-200"
       case "resolved":
         return "bg-green-100 text-green-800 border-green-200"
-      case "closed":
-        return "bg-gray-100 text-gray-800 border-gray-200"
+      case "in_progress":
+        return "bg-blue-100 text-blue-800 border-blue-200"
       default:
         return "bg-gray-100 text-gray-800 border-gray-200"
     }
@@ -149,7 +164,7 @@ export default function ForemanHelpSupportPage() {
       case "high":
         return "bg-red-100 text-red-800 border-red-200"
       case "medium":
-        return "bg-orange-100 text-orange-800 border-orange-200"
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
       case "low":
         return "bg-green-100 text-green-800 border-green-200"
       default:
@@ -157,514 +172,379 @@ export default function ForemanHelpSupportPage() {
     }
   }
 
-  const renderStars = (rating) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star key={i} className={`h-4 w-4 ${i < rating ? "text-yellow-400 fill-current" : "text-gray-300"}`} />
-    ))
-  }
+  const pendingCount = tickets.filter((t) => t.status === "pending").length
+  const resolvedCount = tickets.filter((t) => t.status === "resolved").length
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/foreman/dashboard">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to Dashboard
-                </Button>
-              </Link>
-              <div className="h-6 w-px bg-gray-300"></div>
-              <div className="flex items-center space-x-3">
-                <HelpCircle className="h-8 w-8 text-green-600" />
-                <div>
-                  <h1 className="text-xl font-semibold text-gray-900">Foreman Help & Support</h1>
-                  <p className="text-sm text-gray-500">Submit grievances and feedback</p>
-                </div>
-              </div>
+    <SidebarProvider>
+      <ForemanSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white px-6">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbLink href="/foreman">Foreman Portal</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="hidden md:block" />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Help & Support</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </header>
+
+        <div className="flex-1 space-y-6 p-6 bg-gray-50">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Foreman Help & Support</h1>
+              <p className="text-gray-600 mt-1">Get assistance with scheme management and foreman operations</p>
             </div>
-            <Button variant="outline" className="gap-2 bg-transparent" onClick={() => window.location.reload()}>
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-4">
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                Total Tickets: {tickets.length}
+              </Badge>
+              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                Pending: {pendingCount}
+              </Badge>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                Resolved: {resolvedCount}
+              </Badge>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Quick Contact Info */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-l-4 border-l-green-500">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Phone className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Foreman Support</h3>
-                  <p className="text-sm text-gray-600">+91 1800-123-4568</p>
-                  <p className="text-xs text-gray-500">Mon-Fri, 9 AM - 6 PM</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="submit" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Submit Request
+              </TabsTrigger>
+              <TabsTrigger value="tickets" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                My Tickets ({tickets.length})
+              </TabsTrigger>
+              <TabsTrigger value="faq" className="flex items-center gap-2">
+                <HelpCircle className="h-4 w-4" />
+                FAQ
+              </TabsTrigger>
+            </TabsList>
 
-          <Card className="border-l-4 border-l-blue-500">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Mail className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Email Support</h3>
-                  <p className="text-sm text-gray-600">foreman@ucfsin.com</p>
-                  <p className="text-xs text-gray-500">Response within 24 hours</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-purple-500">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <MessageCircle className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Live Chat</h3>
-                  <p className="text-sm text-gray-600">Available 24/7</p>
-                  <Button size="sm" className="mt-1 bg-purple-600 hover:bg-purple-700">
-                    Start Chat
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="submit" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-white border shadow-sm">
-            <TabsTrigger value="submit" className="gap-2">
-              <Send className="h-4 w-4" />
-              Submit Request
-            </TabsTrigger>
-            <TabsTrigger value="history" className="gap-2">
-              <FileText className="h-4 w-4" />
-              My Tickets ({foremanTickets.length})
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Submit Request Tab */}
-          <TabsContent value="submit">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  Submit Grievance or Feedback
-                </CardTitle>
-                <p className="text-sm text-gray-600">
-                  Please provide detailed information about your concern or suggestion. Our admin team will review and
-                  respond within 24-48 hours.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Request Type */}
-                  <div className="space-y-3">
-                    <Label className="text-base font-medium">Request Type *</Label>
-                    <RadioGroup value={requestType} onValueChange={setRequestType}>
-                      <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value="grievance" id="grievance" />
-                        <Label htmlFor="grievance" className="flex items-center gap-3 cursor-pointer flex-1">
-                          <AlertTriangle className="h-5 w-5 text-red-500" />
-                          <div>
-                            <div className="font-medium">Grievance</div>
-                            <div className="text-sm text-gray-600">
-                              Report issues, complaints, or problems with schemes/system
-                            </div>
-                          </div>
-                        </Label>
+            <TabsContent value="submit" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    Submit Support Request
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="type">Request Type *</Label>
+                        <Select
+                          value={formData.type}
+                          onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select request type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="scheme_creation">Scheme Creation</SelectItem>
+                            <SelectItem value="scheme_approval">Scheme Approval</SelectItem>
+                            <SelectItem value="subscriber_management">Subscriber Management</SelectItem>
+                            <SelectItem value="payment_issues">Payment Issues</SelectItem>
+                            <SelectItem value="auction_management">Auction Management</SelectItem>
+                            <SelectItem value="technical">Technical Issue</SelectItem>
+                            <SelectItem value="regulatory">Regulatory Compliance</SelectItem>
+                            <SelectItem value="documentation">Documentation</SelectItem>
+                            <SelectItem value="general">General Inquiry</SelectItem>
+                            <SelectItem value="complaint">Complaint</SelectItem>
+                            <SelectItem value="feedback">Feedback</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value="feedback" id="feedback" />
-                        <Label htmlFor="feedback" className="flex items-center gap-3 cursor-pointer flex-1">
-                          <MessageSquare className="h-5 w-5 text-blue-500" />
-                          <div>
-                            <div className="font-medium">Feedback</div>
-                            <div className="text-sm text-gray-600">
-                              Share suggestions, compliments, or general feedback about the system
-                            </div>
-                          </div>
-                        </Label>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="priority">Priority</Label>
+                        <Select
+                          value={formData.priority}
+                          onValueChange={(value) => setFormData((prev) => ({ ...prev, priority: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select priority" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                    </RadioGroup>
-                  </div>
-
-                  {/* Priority */}
-                  <div className="space-y-3">
-                    <Label className="text-base font-medium">Priority Level</Label>
-                    <RadioGroup value={priority} onValueChange={setPriority}>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                          <RadioGroupItem value="high" id="high" />
-                          <Label htmlFor="high" className="cursor-pointer">
-                            <Badge className="bg-red-100 text-red-800 border-red-200">High</Badge>
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                          <RadioGroupItem value="medium" id="medium" />
-                          <Label htmlFor="medium" className="cursor-pointer">
-                            <Badge className="bg-orange-100 text-orange-800 border-orange-200">Medium</Badge>
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                          <RadioGroupItem value="low" id="low" />
-                          <Label htmlFor="low" className="cursor-pointer">
-                            <Badge className="bg-green-100 text-green-800 border-green-200">Low</Badge>
-                          </Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  {/* Subject */}
-                  <div className="space-y-2">
-                    <Label htmlFor="subject" className="text-base font-medium">
-                      Subject *
-                    </Label>
-                    <Input
-                      id="subject"
-                      value={subject}
-                      onChange={(e) => setSubject(e.target.value)}
-                      placeholder="Brief summary of your request"
-                      className="w-full"
-                    />
-                  </div>
-
-                  {/* Description */}
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className="text-base font-medium">
-                      Detailed Description *
-                    </Label>
-                    <Textarea
-                      id="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Please provide detailed information about your concern or feedback. Include relevant scheme IDs, dates, or any other helpful details."
-                      rows={6}
-                      className="w-full"
-                    />
-                    <p className="text-xs text-gray-500">Minimum 20 characters required</p>
-                  </div>
-
-                  {/* File Attachments */}
-                  <div className="space-y-3">
-                    <Label className="text-base font-medium">Attachments (Optional)</Label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                      <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600 mb-2">
-                        Drag and drop files here, or{" "}
-                        <label className="text-blue-600 hover:text-blue-700 cursor-pointer underline">
-                          browse
-                          <input
-                            type="file"
-                            multiple
-                            onChange={handleFileUpload}
-                            className="hidden"
-                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                          />
-                        </label>
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Supported formats: PDF, JPG, PNG, DOC, DOCX (Max 5MB each)
-                      </p>
                     </div>
 
-                    {/* Uploaded Files */}
-                    {attachments.length > 0 && (
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Uploaded Files:</Label>
-                        {attachments.map((file, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <FileText className="h-4 w-4 text-gray-500" />
-                              <div>
-                                <p className="text-sm font-medium">{file.name}</p>
-                                <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                              </div>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeAttachment(index)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Subject *</Label>
+                      <Input
+                        id="subject"
+                        placeholder="Brief description of your issue"
+                        value={formData.subject}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, subject: e.target.value }))}
+                        required
+                      />
+                    </div>
 
-                  {/* Submit Button */}
-                  <div className="flex justify-end pt-4">
-                    <Button
-                      type="submit"
-                      className="bg-green-600 hover:bg-green-700 gap-2"
-                      disabled={!requestType || !subject || !description}
-                    >
-                      <Send className="h-4 w-4" />
-                      Submit Request
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description *</Label>
+                      <Textarea
+                        id="description"
+                        placeholder="Please provide detailed information about your issue or request"
+                        value={formData.description}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                        rows={6}
+                        required
+                      />
+                    </div>
+
+                    <Button type="submit" disabled={isSubmitting} className="w-full">
+                      {isSubmitting ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Submit Request
+                        </>
+                      )}
                     </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* Ticket History Tab */}
-          <TabsContent value="history">
-            <div className="space-y-6">
+            <TabsContent value="tickets" className="space-y-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold">My Support Tickets</h2>
-                  <p className="text-sm text-gray-600">Track the status of your submitted requests</p>
-                </div>
-                <div className="flex gap-2">
-                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                    Pending: {foremanTickets.filter((t) => t.status === "pending").length}
-                  </Badge>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    In Progress: {foremanTickets.filter((t) => t.status === "in_progress").length}
-                  </Badge>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    Resolved: {foremanTickets.filter((t) => t.status === "resolved").length}
-                  </Badge>
-                </div>
+                <h2 className="text-xl font-semibold">My Support Tickets</h2>
+                <Button onClick={handleRefreshTickets} disabled={refreshing} variant="outline">
+                  {refreshing ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Refreshing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh
+                    </>
+                  )}
+                </Button>
               </div>
 
-              {foremanTickets.map((ticket) => (
-                <Card key={ticket.id} className="border-l-4 border-l-green-500">
-                  <CardContent className="p-6">
-                    <div className="space-y-4">
-                      {/* Ticket Header */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">{ticket.subject}</h3>
-                            <Badge className={getStatusColor(ticket.status)}>
-                              {ticket.status.replace("_", " ").toUpperCase()}
-                            </Badge>
-                            <Badge className={getPriorityColor(ticket.priority)}>{ticket.priority.toUpperCase()}</Badge>
+              {tickets.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <MessageCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-600 mb-2">No Support Tickets</h3>
+                    <p className="text-gray-500 mb-4">You haven't submitted any support requests yet.</p>
+                    <Button onClick={() => setActiveTab("submit")}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Submit Your First Request
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {tickets.map((ticket) => (
+                    <Card key={ticket.id} className="border-0 shadow-lg">
+                      <CardHeader className="pb-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="font-semibold text-lg">{ticket.subject}</h3>
+                              <Badge className={getStatusColor(ticket.status)}>
+                                {ticket.status === "pending" && <Clock className="h-3 w-3 mr-1" />}
+                                {ticket.status === "resolved" && <CheckCircle className="h-3 w-3 mr-1" />}
+                                {ticket.status.replace("_", " ").toUpperCase()}
+                              </Badge>
+                              <Badge className={getPriorityColor(ticket.priority)}>
+                                {ticket.priority.toUpperCase()}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                              <span>Ticket ID: {ticket.id}</span>
+                              <span>Type: {ticket.type.replace("_", " ")}</span>
+                              <span>Submitted: {new Date(ticket.submittedAt).toLocaleString()}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                            <span className="flex items-center gap-1">
-                              <FileText className="h-4 w-4" />
-                              {ticket.id}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-4 w-4" />
-                              Submitted: {ticket.submittedDate}
-                            </span>
-                            {ticket.resolvedDate && (
-                              <span className="flex items-center gap-1">
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                                Resolved: {ticket.resolvedDate}
-                              </span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <h4 className="font-medium text-gray-900 mb-2">Your Request:</h4>
+                          <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{ticket.description}</p>
+                        </div>
+
+                        {ticket.responses && ticket.responses.length > 0 && (
+                          <div className="space-y-3">
+                            <h4 className="font-medium text-gray-900">Admin Response:</h4>
+                            {ticket.responses.map((response, index) => (
+                              <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div className="flex items-start justify-between mb-2">
+                                  <span className="font-medium text-blue-900">Support Team</span>
+                                  <span className="text-sm text-blue-600">
+                                    {new Date(response.timestamp).toLocaleString()}
+                                  </span>
+                                </div>
+                                <p className="text-blue-800">{response.message}</p>
+                              </div>
+                            ))}
+
+                            {ticket.status === "resolved" && !ticket.rating && (
+                              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <h5 className="font-medium text-green-900 mb-2">Rate this response:</h5>
+                                <div className="flex items-center gap-2">
+                                  {[1, 2, 3, 4, 5].map((rating) => (
+                                    <Button
+                                      key={rating}
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRateResponse(ticket.id, rating)}
+                                      className="p-1 hover:bg-green-100"
+                                    >
+                                      <Star className="h-5 w-5 text-yellow-500" />
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {ticket.rating && (
+                              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-600">Your rating:</span>
+                                  <div className="flex">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <Star
+                                        key={star}
+                                        className={`h-4 w-4 ${
+                                          star <= ticket.rating ? "text-yellow-500 fill-current" : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
                             )}
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {ticket.type === "grievance" ? (
-                            <AlertTriangle className="h-5 w-5 text-red-500" />
-                          ) : (
-                            <MessageSquare className="h-5 w-5 text-blue-500" />
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Ticket Description */}
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm text-gray-700">{ticket.description}</p>
-                      </div>
-
-                      {/* Admin Response */}
-                      {ticket.adminResponse && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <MessageSquare className="h-4 w-4 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-blue-900">Admin Response</p>
-                              <p className="text-xs text-blue-700">
-                                By {ticket.adminResponse.respondedBy} on {ticket.adminResponse.responseDate}
-                              </p>
-                            </div>
-                          </div>
-                          <p className="text-sm text-blue-800 mb-3">{ticket.adminResponse.comments}</p>
-
-                          {/* Admin Remarks */}
-                          {ticket.adminResponse.remarks && (
-                            <div className="bg-white border border-blue-300 rounded p-3 mb-3">
-                              <p className="text-xs font-medium text-blue-900 mb-1">Internal Remarks:</p>
-                              <p className="text-xs text-blue-700">{ticket.adminResponse.remarks}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Rating and Feedback (for resolved tickets) */}
-                      {ticket.status === "resolved" && ticket.rating && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="flex items-center gap-1">{renderStars(ticket.rating)}</div>
-                            <span className="text-sm font-medium text-green-800">Your Rating: {ticket.rating}/5</span>
-                          </div>
-                          {ticket.feedback && <p className="text-sm text-green-700">"{ticket.feedback}"</p>}
-                        </div>
-                      )}
-
-                      {/* Action Buttons */}
-                      <div className="flex items-center justify-between pt-2">
-                        <div className="flex gap-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-                                <Eye className="h-4 w-4" />
-                                View Details
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                              <DialogHeader>
-                                <DialogTitle>Ticket Details - {ticket.id}</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label className="text-sm font-medium">Type</Label>
-                                    <p className="text-sm text-gray-600 capitalize">{ticket.type}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-medium">Priority</Label>
-                                    <Badge className={getPriorityColor(ticket.priority)}>
-                                      {ticket.priority.toUpperCase()}
-                                    </Badge>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-medium">Status</Label>
-                                    <Badge className={getStatusColor(ticket.status)}>
-                                      {ticket.status.replace("_", " ").toUpperCase()}
-                                    </Badge>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-medium">Submitted Date</Label>
-                                    <p className="text-sm text-gray-600">{ticket.submittedDate}</p>
-                                  </div>
-                                </div>
-                                <div>
-                                  <Label className="text-sm font-medium">Subject</Label>
-                                  <p className="text-sm text-gray-600">{ticket.subject}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-sm font-medium">Description</Label>
-                                  <p className="text-sm text-gray-600">{ticket.description}</p>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-
-                        {/* Rating for resolved tickets without rating */}
-                        {ticket.status === "resolved" && !ticket.rating && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">Rate this response:</span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="gap-1 text-green-600 hover:text-green-700 bg-transparent"
-                              onClick={() => handleRateResponse(ticket.id, 5, "Helpful response")}
-                            >
-                              <ThumbsUp className="h-4 w-4" />
-                              Helpful
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="gap-1 text-red-600 hover:text-red-700 bg-transparent"
-                              onClick={() => handleRateResponse(ticket.id, 2, "Not helpful")}
-                            >
-                              <ThumbsDown className="h-4 w-4" />
-                              Not Helpful
-                            </Button>
-                          </div>
                         )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-
-              {foremanTickets.length === 0 && (
-                <Card>
-                  <CardContent className="p-12 text-center">
-                    <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Support Tickets</h3>
-                    <p className="text-gray-600 mb-4">You haven't submitted any support requests yet.</p>
-                    <Button className="bg-green-600 hover:bg-green-700">Submit Your First Request</Button>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+            </TabsContent>
 
-      {/* Success Dialog */}
-      <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              Request Submitted Successfully
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-sm text-green-800 mb-2">
-                Your {submittedTicket?.type} has been submitted successfully!
-              </p>
-              <div className="space-y-1 text-sm">
-                <p>
-                  <strong>Ticket ID:</strong> {submittedTicket?.id}
-                </p>
-                <p>
-                  <strong>Subject:</strong> {submittedTicket?.subject}
-                </p>
-                <p>
-                  <strong>Priority:</strong> {submittedTicket?.priority}
-                </p>
-              </div>
-            </div>
-            <div className="text-sm text-gray-600">
-              <p className="mb-2">What happens next:</p>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Our admin team will review your request within 24 hours</li>
-                <li>You'll receive email updates on the progress</li>
-                <li>You can track the status in the "My Tickets" section</li>
-                <li>We aim to resolve all issues within 48-72 hours</li>
-              </ul>
-            </div>
-            <div className="flex justify-end">
-              <Button onClick={() => setShowSubmitDialog(false)}>Got it, Thanks!</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+            <TabsContent value="faq" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <HelpCircle className="h-5 w-5" />
+                    Foreman FAQ
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h3 className="font-semibold text-gray-900">How do I create a new chit fund scheme?</h3>
+                      <p className="text-gray-600 mt-1">
+                        Go to "Create Scheme" in your dashboard and follow the 8-step process. You'll need to provide
+                        scheme details, auction rules, bidding parameters, and upload required documents. Admin approval
+                        is required before the scheme goes live.
+                      </p>
+                    </div>
+
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h3 className="font-semibold text-gray-900">What documents are required for scheme approval?</h3>
+                      <p className="text-gray-600 mt-1">
+                        You need to upload: Commission Structure, Terms of Withdrawal, Liabilities Document, Subscriber
+                        Rights, FDR Document (10% of chit value), and Draft Agreement. All documents must be in PDF
+                        format and under 5MB.
+                      </p>
+                    </div>
+
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h3 className="font-semibold text-gray-900">How long does scheme approval take?</h3>
+                      <p className="text-gray-600 mt-1">
+                        Admin review typically takes 2-5 business days. You'll receive PSO certificate automatically
+                        after Steps 1-4 approval, then you can add subscribers and upload the final agreement for final
+                        approval.
+                      </p>
+                    </div>
+
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h3 className="font-semibold text-gray-900">How do I add subscribers to my scheme?</h3>
+                      <p className="text-gray-600 mt-1">
+                        After PSO approval, you can add subscribers manually or use the random subscriber generator for
+                        testing. Each subscriber needs a valid UCFSIN number and complete contact details.
+                      </p>
+                    </div>
+
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h3 className="font-semibold text-gray-900">What are the regulatory requirements?</h3>
+                      <p className="text-gray-600 mt-1">
+                        Minimum bid is 5% of chit value, maximum bid is 30%. FDR must be 10% of chit value. Number of
+                        subscribers must equal scheme duration. All schemes require PSO certificate and Form 7
+                        (Commencement Certificate).
+                      </p>
+                    </div>
+
+                    <div className="border-l-4 border-blue-500 pl-4">
+                      <h3 className="font-semibold text-gray-900">How do I manage scheme auctions?</h3>
+                      <p className="text-gray-600 mt-1">
+                        Once your scheme is live, you can manage auctions through the scheme management interface. Set
+                        auction frequency, timing, and monitor bidding activity. The system handles bid validation
+                        automatically.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-900 mb-2">Need more help?</h4>
+                    <p className="text-blue-800 mb-3">
+                      If you need assistance with scheme management or have regulatory questions, please submit a
+                      support request.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button onClick={() => setActiveTab("submit")} className="bg-blue-600 hover:bg-blue-700">
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Submit Request
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="border-blue-300 text-blue-700 hover:bg-blue-50 bg-transparent"
+                      >
+                        <Phone className="h-4 w-4 mr-2" />
+                        Foreman Helpline: 1800-456-7890
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="border-blue-300 text-blue-700 hover:bg-blue-50 bg-transparent"
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        Email: foreman@ucfsin.gov.in
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
