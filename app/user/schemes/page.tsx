@@ -20,7 +20,6 @@ import {
   AlertTriangle,
   Eye,
   Plus,
-  ArrowRight,
 } from "lucide-react"
 
 export default function UserSchemes() {
@@ -107,51 +106,6 @@ export default function UserSchemes() {
     },
   ]
 
-  const availableSchemes = [
-    {
-      id: 6,
-      name: "Quick Cash Scheme",
-      type: "Express",
-      amount: 20000,
-      monthlyContribution: 2000,
-      duration: 10,
-      members: 8,
-      maxMembers: 10,
-      foreman: "Meera Nair",
-      startDate: "1 Mar 2024",
-      expectedReturn: 3000,
-      status: "open",
-    },
-    {
-      id: 7,
-      name: "Gold Investment Plan",
-      type: "Premium",
-      amount: 150000,
-      monthlyContribution: 15000,
-      duration: 10,
-      members: 12,
-      maxMembers: 15,
-      foreman: "Suresh Gupta",
-      startDate: "15 Mar 2024",
-      expectedReturn: 25000,
-      status: "open",
-    },
-    {
-      id: 8,
-      name: "Wedding Fund",
-      type: "Special",
-      amount: 80000,
-      monthlyContribution: 8000,
-      duration: 10,
-      members: 15,
-      maxMembers: 15,
-      foreman: "Kavya Iyer",
-      startDate: "20 Feb 2024",
-      expectedReturn: 12000,
-      status: "full",
-    },
-  ]
-
   const getSchemeStatusColor = (status: string) => {
     switch (status) {
       case "active":
@@ -203,10 +157,6 @@ export default function UserSchemes() {
     return matchesSearch && matchesStatus
   })
 
-  const filteredAvailableSchemes = availableSchemes.filter((scheme) =>
-    scheme.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
-
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
       {/* Header */}
@@ -248,12 +198,9 @@ export default function UserSchemes() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="my-schemes" className="text-xs sm:text-sm">
+        <TabsList className="w-full">
+          <TabsTrigger value="my-schemes" className="w-full text-sm">
             My Schemes ({mySchemes.length})
-          </TabsTrigger>
-          <TabsTrigger value="available" className="text-xs sm:text-sm">
-            Available Schemes ({availableSchemes.length})
           </TabsTrigger>
         </TabsList>
 
@@ -374,94 +321,6 @@ export default function UserSchemes() {
                             Payment History
                           </Button>
                         )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="available" className="space-y-4">
-          {filteredAvailableSchemes.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 sm:p-12 text-center">
-                <div className="text-gray-400 mb-4">
-                  <Plus className="h-12 w-12 sm:h-16 sm:w-16 mx-auto" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No available schemes</h3>
-                <p className="text-gray-600 mb-4">Check back later for new investment opportunities</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              {filteredAvailableSchemes.map((scheme) => (
-                <Card key={scheme.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-3 sm:pb-4">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                      <CardTitle className="text-base sm:text-lg">{scheme.name}</CardTitle>
-                      <div className="flex gap-2">
-                        <Badge className={`${getSchemeTypeColor(scheme.type)} text-xs`}>{scheme.type}</Badge>
-                        <Badge className={`${getSchemeStatusColor(scheme.status)} text-xs`}>{scheme.status}</Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Key Metrics */}
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p className="text-gray-600">Scheme Amount</p>
-                          <p className="font-bold">₹{scheme.amount.toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Monthly</p>
-                          <p className="font-bold">₹{scheme.monthlyContribution.toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Duration</p>
-                          <p className="font-bold">{scheme.duration} months</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Expected Return</p>
-                          <p className="font-bold text-green-600">+₹{scheme.expectedReturn.toLocaleString()}</p>
-                        </div>
-                      </div>
-
-                      {/* Member Progress */}
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Members</span>
-                          <span>
-                            {scheme.members}/{scheme.maxMembers}
-                          </span>
-                        </div>
-                        <Progress value={(scheme.members / scheme.maxMembers) * 100} className="h-2" />
-                      </div>
-
-                      {/* Additional Info */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          <span>Foreman: {scheme.foreman}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>Starts {scheme.startDate}</span>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                        <Button variant="outline" size="sm" className="w-full sm:flex-1 bg-transparent">
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Details
-                        </Button>
-                        <Button size="sm" className="w-full sm:flex-1" disabled={scheme.status === "full"}>
-                          {scheme.status === "full" ? "Scheme Full" : "Join Scheme"}
-                          {scheme.status !== "full" && <ArrowRight className="h-4 w-4 ml-2" />}
-                        </Button>
                       </div>
                     </div>
                   </CardContent>

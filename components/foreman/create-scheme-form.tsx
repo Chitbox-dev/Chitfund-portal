@@ -35,6 +35,7 @@ import {
   MapPin,
   CreditCard,
   User,
+  AlertCircle,
 } from "lucide-react"
 
 const STEPS = [
@@ -142,11 +143,13 @@ enum SchemeStatus {
   Draft = "draft",
   Submitted = "submitted", // Steps 1-4 submitted for review
   Steps1_4_Approved = "steps_1_4_approved", // Admin approved steps 1-4, PSO request enabled
+  PSO_Requested = "pso_requested", // Foreman requested PSO
   PSO_Approved = "pso_approved", // Admin approved PSO, subscriber enrollment unlocked
   Subscribers_Added = "subscribers_added", // Foreman added subscribers
   Final_Agreement_Uploaded = "final_agreement_uploaded", // Foreman uploaded final agreement
   Commencement_Approved = "commencement_approved", // Admin approved, Form 7 generated
   Live = "live", // Scheme is active
+  Rejected = "rejected", // Admin rejected the scheme
 }
 
 const DEFAULT_STEP_STATUS = {
@@ -382,8 +385,12 @@ export function CreateSchemeForm({
         return 1
       case SchemeStatus.Submitted:
         return 4 // Can access steps 1-4, but stay on 4 to show submission status
-      case SchemeStatus.PSO_Approved: // PSO is automatically generated after steps 1-4 approval
-        return 6 // Can access subscriber enrollment directly
+      case SchemeStatus.Steps1_4_Approved:
+        return 5 // Can request PSO
+      case SchemeStatus.PSO_Requested:
+        return 5 // Stay on PSO step to show request status
+      case SchemeStatus.PSO_Approved:
+        return 6 // Can access subscriber enrollment
       case SchemeStatus.Subscribers_Added:
         return 7 // Can access final agreement upload
       case SchemeStatus.Final_Agreement_Uploaded:
@@ -391,6 +398,8 @@ export function CreateSchemeForm({
       case SchemeStatus.Commencement_Approved:
       case SchemeStatus.Live:
         return 8 // Scheme is complete
+      case SchemeStatus.Rejected:
+        return 4 // Return to step 4 to fix issues
       default:
         return 1
     }
@@ -405,14 +414,20 @@ export function CreateSchemeForm({
         return stepId <= 4 // Can access steps 1-4
       case SchemeStatus.Submitted:
         return stepId <= 4 // Can access steps 1-4
-      case SchemeStatus.PSO_Approved: // PSO automatically generated
-        return stepId <= 6 // Can access up to subscriber enrollment (skip step 5 request)
+      case SchemeStatus.Steps1_4_Approved:
+        return stepId <= 5 // Can access up to PSO request
+      case SchemeStatus.PSO_Requested:
+        return stepId <= 5 // Can access up to PSO request
+      case SchemeStatus.PSO_Approved:
+        return stepId <= 6 // Can access up to subscriber enrollment
       case SchemeStatus.Subscribers_Added:
         return stepId <= 7 // Can access up to final agreement
       case SchemeStatus.Final_Agreement_Uploaded:
       case SchemeStatus.Commencement_Approved:
       case SchemeStatus.Live:
         return stepId <= 8 // Can access all steps
+      case SchemeStatus.Rejected:
+        return stepId <= 4 // Can only access steps 1-4 to fix issues
       default:
         return stepId === 1
     }
@@ -649,6 +664,41 @@ export function CreateSchemeForm({
     }
   }
 
+  const handleRequestPSO = async () => {
+    setIsSubmitting(true)
+
+    try {
+      const updatedFormData = {
+        ...formData,
+        schemeStatus: SchemeStatus.PSO_Requested,
+        psoRequestedAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
+      }
+
+      setFormData(updatedFormData)
+      localStorage.setItem("schemeDraft", JSON.stringify(updatedFormData))
+
+      // Update pending schemes for admin review
+      const existingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
+      const schemeIndex = existingSchemes.findIndex((s) => s.schemeId === formData.schemeId)
+
+      if (schemeIndex >= 0) {
+        existingSchemes[schemeIndex] = updatedFormData
+      } else {
+        existingSchemes.push(updatedFormData)
+      }
+
+      localStorage.setItem("pendingSchemes", JSON.stringify(existingSchemes))
+
+      alert("PSO request submitted successfully! Admin will review and generate the PSO certificate.")
+    } catch (error) {
+      console.error("Error requesting PSO:", error)
+      alert("Error requesting PSO. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const handleSaveSubscribers = async () => {
     if (!validateStep(6)) {
       return
@@ -750,9 +800,11 @@ export function CreateSchemeForm({
 
         // Show notification about status change
         const statusMessages = {
+          [SchemeStatus.Steps1_4_Approved]: "Great! Steps 1-4 approved by admin. You can now request PSO certificate.",
           [SchemeStatus.PSO_Approved]:
-            "Great! Steps 1-4 approved and PSO certificate generated automatically. You can now add subscribers.",
+            "Excellent! PSO certificate generated automatically. You can now add subscribers.",
           [SchemeStatus.Live]: "Congratulations! Your scheme is now LIVE!",
+          [SchemeStatus.Rejected]: "Your scheme has been rejected. Please review admin comments and resubmit.",
         }
 
         if (statusMessages[currentScheme.schemeStatus]) {
@@ -858,6 +910,8 @@ export function CreateSchemeForm({
         return <Badge className="bg-yellow-100 text-yellow-800">Submitted for Review</Badge>
       case SchemeStatus.Steps1_4_Approved:
         return <Badge className="bg-blue-100 text-blue-800">Steps 1-4 Approved</Badge>
+      case SchemeStatus.PSO_Requested:
+        return <Badge className="bg-orange-100 text-orange-800">PSO Requested</Badge>
       case SchemeStatus.PSO_Approved:
         return <Badge className="bg-green-100 text-green-800">PSO Approved</Badge>
       case SchemeStatus.Subscribers_Added:
@@ -868,6 +922,8 @@ export function CreateSchemeForm({
         return <Badge className="bg-emerald-100 text-emerald-800">Commencement Approved</Badge>
       case SchemeStatus.Live:
         return <Badge className="bg-green-100 text-green-800">Live</Badge>
+      case SchemeStatus.Rejected:
+        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>
       default:
         return <Badge className="bg-gray-100 text-gray-800">Unknown</Badge>
     }
@@ -893,7 +949,9 @@ export function CreateSchemeForm({
                   value={formData.chitValue}
                   onChange={(e) => setFormData((prev) => ({ ...prev, chitValue: e.target.value }))}
                   className={errors.chitValue ? "border-red-500" : ""}
-                  disabled={formData.schemeStatus !== SchemeStatus.Draft}
+                  disabled={
+                    formData.schemeStatus !== SchemeStatus.Draft && formData.schemeStatus !== SchemeStatus.Rejected
+                  }
                 />
                 {errors.chitValue && <p className="text-sm text-red-500">{errors.chitValue}</p>}
                 <p className="text-xs text-gray-500">Total amount to be distributed among subscribers</p>
@@ -911,7 +969,9 @@ export function CreateSchemeForm({
                   value={formData.chitDuration}
                   onChange={(e) => setFormData((prev) => ({ ...prev, chitDuration: e.target.value }))}
                   className={errors.chitDuration ? "border-red-500" : ""}
-                  disabled={formData.schemeStatus !== SchemeStatus.Draft}
+                  disabled={
+                    formData.schemeStatus !== SchemeStatus.Draft && formData.schemeStatus !== SchemeStatus.Rejected
+                  }
                 />
                 {errors.chitDuration && <p className="text-sm text-red-500">{errors.chitDuration}</p>}
                 <p className="text-xs text-gray-500">Number of months the scheme will run</p>
@@ -929,7 +989,9 @@ export function CreateSchemeForm({
                   value={formData.numberOfSubscribers}
                   onChange={(e) => setFormData((prev) => ({ ...prev, numberOfSubscribers: e.target.value }))}
                   className={errors.numberOfSubscribers ? "border-red-500" : ""}
-                  disabled={formData.schemeStatus !== SchemeStatus.Draft}
+                  disabled={
+                    formData.schemeStatus !== SchemeStatus.Draft && formData.schemeStatus !== SchemeStatus.Rejected
+                  }
                 />
                 {errors.numberOfSubscribers && <p className="text-sm text-red-500">{errors.numberOfSubscribers}</p>}
                 <p className="text-xs text-gray-500">Must equal duration (1 subscriber per month)</p>
@@ -958,7 +1020,9 @@ export function CreateSchemeForm({
                   value={formData.chitStartDate}
                   onChange={(e) => setFormData((prev) => ({ ...prev, chitStartDate: e.target.value }))}
                   className={errors.chitStartDate ? "border-red-500" : ""}
-                  disabled={formData.schemeStatus !== SchemeStatus.Draft}
+                  disabled={
+                    formData.schemeStatus !== SchemeStatus.Draft && formData.schemeStatus !== SchemeStatus.Rejected
+                  }
                 />
                 {errors.chitStartDate && <p className="text-sm text-red-500">{errors.chitStartDate}</p>}
                 <p className="text-xs text-gray-500">When the scheme will commence</p>
@@ -995,7 +1059,9 @@ export function CreateSchemeForm({
                 <Select
                   value={formData.auctionFrequency}
                   onValueChange={(value) => setFormData((prev) => ({ ...prev, auctionFrequency: value }))}
-                  disabled={formData.schemeStatus !== SchemeStatus.Draft}
+                  disabled={
+                    formData.schemeStatus !== SchemeStatus.Draft && formData.schemeStatus !== SchemeStatus.Rejected
+                  }
                 >
                   <SelectTrigger className={errors.auctionFrequency ? "border-red-500" : ""}>
                     <SelectValue placeholder="Select frequency" />
@@ -1022,7 +1088,9 @@ export function CreateSchemeForm({
                   value={formData.auctionStartDate}
                   onChange={(e) => setFormData((prev) => ({ ...prev, auctionStartDate: e.target.value }))}
                   className={errors.auctionStartDate ? "border-red-500" : ""}
-                  disabled={formData.schemeStatus !== SchemeStatus.Draft}
+                  disabled={
+                    formData.schemeStatus !== SchemeStatus.Draft && formData.schemeStatus !== SchemeStatus.Rejected
+                  }
                 />
                 {errors.auctionStartDate && <p className="text-sm text-red-500">{errors.auctionStartDate}</p>}
                 <p className="text-xs text-gray-500">When auctions will begin</p>
@@ -1039,7 +1107,9 @@ export function CreateSchemeForm({
                   value={formData.auctionStartTime}
                   onChange={(e) => setFormData((prev) => ({ ...prev, auctionStartTime: e.target.value }))}
                   className={errors.auctionStartTime ? "border-red-500" : ""}
-                  disabled={formData.schemeStatus !== SchemeStatus.Draft}
+                  disabled={
+                    formData.schemeStatus !== SchemeStatus.Draft && formData.schemeStatus !== SchemeStatus.Rejected
+                  }
                 />
                 {errors.auctionStartTime && <p className="text-sm text-red-500">{errors.auctionStartTime}</p>}
                 <p className="text-xs text-gray-500">Daily auction start time</p>
@@ -1059,7 +1129,9 @@ export function CreateSchemeForm({
                   value={formData.auctionDuration}
                   onChange={(e) => setFormData((prev) => ({ ...prev, auctionDuration: e.target.value }))}
                   className={errors.auctionDuration ? "border-red-500" : ""}
-                  disabled={formData.schemeStatus !== SchemeStatus.Draft}
+                  disabled={
+                    formData.schemeStatus !== SchemeStatus.Draft && formData.schemeStatus !== SchemeStatus.Rejected
+                  }
                 />
                 {errors.auctionDuration && <p className="text-sm text-red-500">{errors.auctionDuration}</p>}
                 <p className="text-xs text-gray-500">How long each auction will run (1-8 hours)</p>
@@ -1111,7 +1183,9 @@ export function CreateSchemeForm({
                 <Select
                   value={formData.bidIncrement}
                   onValueChange={(value) => setFormData((prev) => ({ ...prev, bidIncrement: value }))}
-                  disabled={formData.schemeStatus !== SchemeStatus.Draft}
+                  disabled={
+                    formData.schemeStatus !== SchemeStatus.Draft && formData.schemeStatus !== SchemeStatus.Rejected
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select increment" />
@@ -1140,7 +1214,9 @@ export function CreateSchemeForm({
                     value={formData.manualIncrement}
                     onChange={(e) => setFormData((prev) => ({ ...prev, manualIncrement: e.target.value }))}
                     className={errors.manualIncrement ? "border-red-500" : ""}
-                    disabled={formData.schemeStatus !== SchemeStatus.Draft}
+                    disabled={
+                      formData.schemeStatus !== SchemeStatus.Draft && formData.schemeStatus !== SchemeStatus.Rejected
+                    }
                   />
                   {errors.manualIncrement && <p className="text-sm text-red-500">{errors.manualIncrement}</p>}
                   <p className="text-xs text-gray-500">Custom bid increment amount</p>
@@ -1201,6 +1277,20 @@ export function CreateSchemeForm({
               </div>
             </div>
 
+            {/* Show rejection reason if scheme was rejected */}
+            {formData.schemeStatus === SchemeStatus.Rejected && formData.rejectionReason && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-red-900">Scheme Rejected - Action Required</h4>
+                    <p className="text-sm text-red-800 mt-1">{formData.rejectionReason}</p>
+                    <p className="text-xs text-red-700 mt-2">Please address the issues above and resubmit.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {documentFields.map((field) => (
                 <div key={field.key} className="space-y-3">
@@ -1243,7 +1333,10 @@ export function CreateSchemeForm({
                               setErrors((prev) => ({ ...prev, [field.key]: null }))
                             }}
                             className="text-red-600 border-red-200 hover:bg-red-50"
-                            disabled={formData.schemeStatus !== SchemeStatus.Draft}
+                            disabled={
+                              formData.schemeStatus !== SchemeStatus.Draft &&
+                              formData.schemeStatus !== SchemeStatus.Rejected
+                            }
                           >
                             <X className="h-4 w-4" />
                             Remove
@@ -1271,12 +1364,18 @@ export function CreateSchemeForm({
                           }}
                           className="hidden"
                           id={`upload-${field.key}`}
-                          disabled={formData.schemeStatus !== SchemeStatus.Draft}
+                          disabled={
+                            formData.schemeStatus !== SchemeStatus.Draft &&
+                            formData.schemeStatus !== SchemeStatus.Rejected
+                          }
                         />
                         <label
                           htmlFor={`upload-${field.key}`}
                           className={`cursor-pointer ${
-                            formData.schemeStatus !== SchemeStatus.Draft ? "cursor-not-allowed opacity-50" : ""
+                            formData.schemeStatus !== SchemeStatus.Draft &&
+                            formData.schemeStatus !== SchemeStatus.Rejected
+                              ? "cursor-not-allowed opacity-50"
+                              : ""
                           }`}
                         >
                           <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
@@ -1302,7 +1401,7 @@ export function CreateSchemeForm({
               ))}
             </div>
 
-            {formData.schemeStatus === SchemeStatus.Draft && (
+            {(formData.schemeStatus === SchemeStatus.Draft || formData.schemeStatus === SchemeStatus.Rejected) && (
               <div className="flex justify-center pt-6">
                 <Button
                   onClick={handleSubmitSteps1to4}
@@ -1399,6 +1498,65 @@ export function CreateSchemeForm({
               </div>
             </div>
 
+            {formData.schemeStatus === SchemeStatus.Steps1_4_Approved && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+                <CheckCircle className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-blue-900 mb-2">Steps 1-4 Approved!</h3>
+                <p className="text-blue-800 mb-4">
+                  Admin has approved your initial steps. You can now request PSO certificate generation.
+                </p>
+                <Button
+                  onClick={handleRequestPSO}
+                  disabled={isSubmitting}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Requesting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Request PSO Certificate
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {formData.schemeStatus === SchemeStatus.PSO_Requested && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
+                <Clock className="h-12 w-12 text-orange-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-orange-900 mb-2">PSO Request Submitted</h3>
+                <p className="text-orange-800 mb-4">
+                  Your PSO request has been submitted to admin. The certificate will be generated automatically upon
+                  approval.
+                </p>
+                <Button
+                  onClick={handleRefreshStatus}
+                  disabled={refreshing}
+                  variant="outline"
+                  className="border-orange-300 text-orange-700 hover:bg-orange-100 bg-transparent"
+                >
+                  {refreshing ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Checking...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Check Status
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-orange-700 mt-2">
+                  Last checked: {new Date(lastRefresh).toLocaleTimeString()}
+                </p>
+              </div>
+            )}
+
             {formData.schemeStatus === SchemeStatus.PSO_Approved && formData.psoDocument && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
                 <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
@@ -1447,37 +1605,6 @@ export function CreateSchemeForm({
                   <Users className="h-4 w-4 mr-2" />
                   Proceed to Subscriber Enrollment
                 </Button>
-              </div>
-            )}
-
-            {formData.schemeStatus !== SchemeStatus.PSO_Approved && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-                <Clock className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-yellow-900 mb-2">Awaiting Admin Approval</h3>
-                <p className="text-yellow-800 mb-4">
-                  Your Steps 1-4 are under admin review. PSO certificate will be generated automatically upon approval.
-                </p>
-                <Button
-                  onClick={handleRefreshStatus}
-                  disabled={refreshing}
-                  variant="outline"
-                  className="border-yellow-300 text-yellow-700 hover:bg-yellow-100 bg-transparent"
-                >
-                  {refreshing ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Checking...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Check Approval Status
-                    </>
-                  )}
-                </Button>
-                <p className="text-xs text-yellow-700 mt-2">
-                  Last checked: {new Date(lastRefresh).toLocaleTimeString()}
-                </p>
               </div>
             )}
           </div>
@@ -1945,51 +2072,76 @@ export function CreateSchemeForm({
               </div>
             )}
 
-            {formData.schemeStatus === SchemeStatus.Commencement_Approved && formData.commencementCertificate && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-                <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-green-900 mb-2">Commencement Approved!</h3>
-                <p className="text-green-800 mb-4">
-                  Your scheme has been approved and is now LIVE! Form 7 (Commencement Certificate) has been
-                  automatically generated.
-                </p>
+            {(formData.schemeStatus === SchemeStatus.Commencement_Approved ||
+              formData.schemeStatus === SchemeStatus.Live) &&
+              formData.commencementCertificate && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                  <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-green-900 mb-2">Scheme is LIVE!</h3>
+                  <p className="text-green-800 mb-4">
+                    Congratulations! Your scheme has been approved and is now LIVE! Form 7 (Commencement Certificate)
+                    has been automatically generated.
+                  </p>
 
-                <div className="bg-white rounded-lg p-4 border border-green-200 mb-4">
-                  <div className="flex items-center justify-center gap-3">
-                    <FileText className="h-6 w-6 text-green-600" />
-                    <div>
-                      <p className="font-medium text-green-900">Commencement Certificate (Form 7)</p>
-                      <p className="text-sm text-green-700">Scheme ID: {formData.schemeId}</p>
-                      <p className="text-xs text-green-600">Generated: {new Date().toLocaleString()}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowPreview(formData.commencementCertificate)}
-                        className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Preview
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                        className="text-green-600 border-green-200 hover:bg-green-50 bg-transparent"
-                      >
-                        <a href={formData.commencementCertificate.url} download={formData.commencementCertificate.name}>
-                          <Download className="h-4 w-4 mr-1" />
-                          Download
-                        </a>
-                      </Button>
+                  <div className="bg-white rounded-lg p-4 border border-green-200 mb-4">
+                    <div className="flex items-center justify-center gap-3">
+                      <FileText className="h-6 w-6 text-green-600" />
+                      <div>
+                        <p className="font-medium text-green-900">Commencement Certificate (Form 7)</p>
+                        <p className="text-sm text-green-700">
+                          Certificate Number: {formData.commencementCertificate.number}
+                        </p>
+                        <p className="text-xs text-green-600">
+                          Issued: {new Date(formData.commencementCertificate.issuedDate).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowPreview(formData.commencementCertificate)}
+                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Preview
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="text-green-600 border-green-200 hover:bg-green-50 bg-transparent"
+                        >
+                          <a
+                            href={formData.commencementCertificate.url}
+                            download={formData.commencementCertificate.name}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
+                          </a>
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <Badge className="bg-green-100 text-green-800 font-medium">Scheme is now LIVE!</Badge>
-              </div>
-            )}
+                  <div className="flex justify-center gap-3">
+                    <Button
+                      onClick={() => (window.location.href = "/foreman/schemes")}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      View All Schemes
+                    </Button>
+                    <Button
+                      onClick={() => (window.location.href = `/foreman/schemes/${formData.schemeId}/manage`)}
+                      variant="outline"
+                      className="border-green-300 text-green-700 hover:bg-green-50"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Manage Scheme
+                    </Button>
+                  </div>
+                </div>
+              )}
           </div>
         )
 
@@ -2072,12 +2224,14 @@ export function CreateSchemeForm({
                 <Button variant="secondary" onClick={handleSaveDraft}>
                   Save Draft
                 </Button>
-                {currentStep > 1 && (
+                {currentStep > 1 && canAccessStep(currentStep - 1) && (
                   <Button variant="secondary" onClick={() => setCurrentStep(currentStep - 1)}>
                     Previous
                   </Button>
                 )}
-                {currentStep < STEPS.length && <Button onClick={() => setCurrentStep(currentStep + 1)}>Next</Button>}
+                {currentStep < STEPS.length && canAccessStep(currentStep + 1) && (
+                  <Button onClick={() => setCurrentStep(currentStep + 1)}>Next</Button>
+                )}
               </div>
             </div>
           </Card>

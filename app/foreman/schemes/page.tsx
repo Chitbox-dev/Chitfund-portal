@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ForemanSidebar } from "@/components/foreman/foreman-sidebar"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -30,6 +31,9 @@ import {
   RefreshCw,
   AlertCircle,
   ArrowRight,
+  Activity,
+  Archive,
+  Filter,
 } from "lucide-react"
 
 const mockSchemes = [
@@ -100,12 +104,57 @@ const mockSchemes = [
       steps_1_4: "Steps 1-4 approved by admin. You can now request PSO.",
     },
   },
+  // Adding some closed schemes for demonstration
+  {
+    id: 4,
+    schemeId: "SCH-1736859600000",
+    name: "Completed Savings Scheme",
+    chitValue: "₹5,00,000",
+    duration: "12 months",
+    subscribers: 10,
+    maxSubscribers: 10,
+    monthlyPremium: "₹50,000",
+    status: "completed",
+    schemeStatus: "completed",
+    psoNumber: "PSO-2024-015",
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+    commission: "4%",
+    collectedAmount: "₹5,00,000",
+    pendingAmount: "₹0",
+    completedMonths: 12,
+    createdDate: "2023-12-15",
+    lastUpdated: "2024-12-31T23:59:59Z",
+  },
+  {
+    id: 5,
+    schemeId: "SCH-1736859601000",
+    name: "Terminated Emergency Fund",
+    chitValue: "₹2,00,000",
+    duration: "8 months",
+    subscribers: 5,
+    maxSubscribers: 8,
+    monthlyPremium: "₹25,000",
+    status: "terminated",
+    schemeStatus: "terminated",
+    psoNumber: "PSO-2024-020",
+    startDate: "2024-06-01",
+    endDate: "2024-10-15",
+    commission: "3%",
+    collectedAmount: "₹1,25,000",
+    pendingAmount: "₹75,000",
+    completedMonths: 4,
+    terminationReason: "Insufficient participation",
+    createdDate: "2024-05-20",
+    lastUpdated: "2024-10-15T15:30:00Z",
+  },
 ]
 
 export default function SchemesPage() {
   const [schemes, setSchemes] = useState([])
   const [selectedScheme, setSelectedScheme] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [activeFilter, setActiveFilter] = useState("all") // all, active, closed, pending
 
   // Load schemes from localStorage and merge with mock data
   useEffect(() => {
@@ -183,12 +232,54 @@ export default function SchemesPage() {
     setRefreshing(false)
   }
 
+  // Filter schemes based on active filter
+  const getFilteredSchemes = () => {
+    switch (activeFilter) {
+      case "active":
+        return schemes.filter((s) =>
+          ["live", "pso_approved", "subscribers_added", "final_agreement_uploaded"].includes(
+            s.schemeStatus || s.status,
+          ),
+        )
+      case "closed":
+        return schemes.filter((s) => ["completed", "terminated", "cancelled"].includes(s.schemeStatus || s.status))
+      case "pending":
+        return schemes.filter((s) =>
+          ["draft", "submitted", "steps_1_4_approved", "pso_requested", "rejected"].includes(
+            s.schemeStatus || s.status,
+          ),
+        )
+      default:
+        return schemes
+    }
+  }
+
+  const filteredSchemes = getFilteredSchemes()
+
+  // Count schemes by category
+  const activeCount = schemes.filter((s) =>
+    ["live", "pso_approved", "subscribers_added", "final_agreement_uploaded"].includes(s.schemeStatus || s.status),
+  ).length
+
+  const closedCount = schemes.filter((s) =>
+    ["completed", "terminated", "cancelled"].includes(s.schemeStatus || s.status),
+  ).length
+
+  const pendingCount = schemes.filter((s) =>
+    ["draft", "submitted", "steps_1_4_approved", "pso_requested", "rejected"].includes(s.schemeStatus || s.status),
+  ).length
+
   const getStatusColor = (status) => {
     switch (status) {
       case "live":
         return "bg-green-100 text-green-800 border-green-200"
-      case "pso_approved":
+      case "completed":
         return "bg-blue-100 text-blue-800 border-blue-200"
+      case "terminated":
+      case "cancelled":
+        return "bg-red-100 text-red-800 border-red-200"
+      case "pso_approved":
+        return "bg-emerald-100 text-emerald-800 border-emerald-200"
       case "steps_1_4_approved":
         return "bg-yellow-100 text-yellow-800 border-yellow-200"
       case "pso_requested":
@@ -209,7 +300,12 @@ export default function SchemesPage() {
   const getStatusIcon = (status) => {
     switch (status) {
       case "live":
+        return <Activity className="h-4 w-4" />
+      case "completed":
         return <CheckCircle className="h-4 w-4" />
+      case "terminated":
+      case "cancelled":
+        return <AlertCircle className="h-4 w-4" />
       case "pso_approved":
         return <CheckCircle className="h-4 w-4" />
       case "steps_1_4_approved":
@@ -258,6 +354,20 @@ export default function SchemesPage() {
           action: "Manage Scheme",
           actionUrl: `/foreman/schemes/${scheme.schemeId}/manage`,
           color: "text-green-600",
+        }
+      case "completed":
+        return {
+          message: "Scheme completed successfully.",
+          action: "View Details",
+          actionUrl: `/foreman/schemes/${scheme.schemeId}`,
+          color: "text-blue-600",
+        }
+      case "terminated":
+        return {
+          message: "Scheme was terminated.",
+          action: "View Details",
+          actionUrl: `/foreman/schemes/${scheme.schemeId}`,
+          color: "text-red-600",
         }
       case "submitted":
         return {
@@ -363,85 +473,255 @@ export default function SchemesPage() {
                 Total Schemes: {schemes.length}
               </Badge>
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                Live: {schemes.filter((s) => s.status === "live" || s.schemeStatus === "live").length}
+                Active: {activeCount}
+              </Badge>
+              <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                Closed: {closedCount}
               </Badge>
               <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                Pending:{" "}
-                {
-                  schemes.filter((s) =>
-                    ["submitted", "pso_requested", "steps_1_4_approved"].includes(s.status || s.schemeStatus),
-                  ).length
-                }
+                Pending: {pendingCount}
               </Badge>
             </div>
           </div>
 
-          {/* Status-based Sections */}
-          <div className="space-y-8">
-            {/* Action Required Section */}
-            {schemes.filter((s) =>
-              ["steps_1_4_approved", "pso_approved", "subscribers_added"].includes(s.schemeStatus || s.status),
-            ).length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <AlertCircle className="h-5 w-5 text-orange-500" />
-                  <h2 className="text-xl font-semibold text-gray-900">Action Required</h2>
-                  <Badge className="bg-orange-100 text-orange-800">
-                    {
-                      schemes.filter((s) =>
+          {/* Filter Tabs */}
+          <Tabs value={activeFilter} onValueChange={setActiveFilter} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4 bg-white border shadow-sm">
+              <TabsTrigger value="all" className="gap-2">
+                <Filter className="h-4 w-4" />
+                All Schemes ({schemes.length})
+              </TabsTrigger>
+              <TabsTrigger value="active" className="gap-2">
+                <Activity className="h-4 w-4" />
+                Active Schemes ({activeCount})
+              </TabsTrigger>
+              <TabsTrigger value="closed" className="gap-2">
+                <Archive className="h-4 w-4" />
+                Closed Schemes ({closedCount})
+              </TabsTrigger>
+              <TabsTrigger value="pending" className="gap-2">
+                <Clock className="h-4 w-4" />
+                Pending ({pendingCount})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* All Schemes Tab */}
+            <TabsContent value="all" className="space-y-6">
+              {/* Action Required Section */}
+              {schemes.filter((s) =>
+                ["steps_1_4_approved", "pso_approved", "subscribers_added"].includes(s.schemeStatus || s.status),
+              ).length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <AlertCircle className="h-5 w-5 text-orange-500" />
+                    <h2 className="text-xl font-semibold text-gray-900">Action Required</h2>
+                    <Badge className="bg-orange-100 text-orange-800">
+                      {
+                        schemes.filter((s) =>
+                          ["steps_1_4_approved", "pso_approved", "subscribers_added"].includes(
+                            s.schemeStatus || s.status,
+                          ),
+                        ).length
+                      }
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {schemes
+                      .filter((s) =>
                         ["steps_1_4_approved", "pso_approved", "subscribers_added"].includes(
                           s.schemeStatus || s.status,
                         ),
-                      ).length
-                    }
-                  </Badge>
+                      )
+                      .map((scheme) => (
+                        <SchemeCard
+                          key={scheme.schemeId}
+                          scheme={scheme}
+                          onView={handleViewScheme}
+                          onEdit={handleEditScheme}
+                          onDelete={handleDeleteScheme}
+                          getStatusColor={getStatusColor}
+                          getStatusIcon={getStatusIcon}
+                          getStatusMessage={getStatusMessage}
+                          priority={true}
+                        />
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* All Schemes Section */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="h-5 w-5 text-gray-500" />
+                  <h2 className="text-xl font-semibold text-gray-900">All Schemes</h2>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {schemes
-                    .filter((s) =>
-                      ["steps_1_4_approved", "pso_approved", "subscribers_added"].includes(s.schemeStatus || s.status),
-                    )
-                    .map((scheme) => (
-                      <SchemeCard
-                        key={scheme.schemeId}
-                        scheme={scheme}
-                        onView={handleViewScheme}
-                        onEdit={handleEditScheme}
-                        onDelete={handleDeleteScheme}
-                        getStatusColor={getStatusColor}
-                        getStatusIcon={getStatusIcon}
-                        getStatusMessage={getStatusMessage}
-                        priority={true}
-                      />
-                    ))}
+                  {schemes.map((scheme) => (
+                    <SchemeCard
+                      key={scheme.schemeId}
+                      scheme={scheme}
+                      onView={handleViewScheme}
+                      onEdit={handleEditScheme}
+                      onDelete={handleDeleteScheme}
+                      getStatusColor={getStatusColor}
+                      getStatusIcon={getStatusIcon}
+                      getStatusMessage={getStatusMessage}
+                    />
+                  ))}
                 </div>
               </div>
-            )}
+            </TabsContent>
 
-            {/* All Schemes Section */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="h-5 w-5 text-gray-500" />
-                <h2 className="text-xl font-semibold text-gray-900">All Schemes</h2>
+            {/* Active Schemes Tab */}
+            <TabsContent value="active" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Active Schemes</h2>
+                  <p className="text-gray-600">Schemes that are currently live or in progress</p>
+                </div>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {schemes.map((scheme) => (
-                  <SchemeCard
-                    key={scheme.schemeId}
-                    scheme={scheme}
-                    onView={handleViewScheme}
-                    onEdit={handleEditScheme}
-                    onDelete={handleDeleteScheme}
-                    getStatusColor={getStatusColor}
-                    getStatusIcon={getStatusIcon}
-                    getStatusMessage={getStatusMessage}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
+              {filteredSchemes.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredSchemes.map((scheme) => (
+                    <SchemeCard
+                      key={scheme.schemeId}
+                      scheme={scheme}
+                      onView={handleViewScheme}
+                      onEdit={handleEditScheme}
+                      onDelete={handleDeleteScheme}
+                      getStatusColor={getStatusColor}
+                      getStatusIcon={getStatusIcon}
+                      getStatusMessage={getStatusMessage}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Activity className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-600 mb-2">No Active Schemes</h3>
+                  <p className="text-gray-500 mb-6">You don't have any active schemes at the moment.</p>
+                  <Button onClick={handleCreateScheme} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Create New Scheme
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
 
-          {/* Empty State */}
+            {/* Closed Schemes Tab */}
+            <TabsContent value="closed" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Closed Schemes</h2>
+                  <p className="text-gray-600">Schemes that have been completed or terminated</p>
+                </div>
+              </div>
+              {filteredSchemes.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredSchemes.map((scheme) => (
+                    <SchemeCard
+                      key={scheme.schemeId}
+                      scheme={scheme}
+                      onView={handleViewScheme}
+                      onEdit={handleEditScheme}
+                      onDelete={handleDeleteScheme}
+                      getStatusColor={getStatusColor}
+                      getStatusIcon={getStatusIcon}
+                      getStatusMessage={getStatusMessage}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Archive className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-600 mb-2">No Closed Schemes</h3>
+                  <p className="text-gray-500">You don't have any completed or terminated schemes yet.</p>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Pending Schemes Tab */}
+            <TabsContent value="pending" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Pending Schemes</h2>
+                  <p className="text-gray-600">Schemes in draft, under review, or requiring action</p>
+                </div>
+              </div>
+
+              {/* Action Required Section for Pending Tab */}
+              {filteredSchemes.filter((s) =>
+                ["steps_1_4_approved", "pso_approved", "subscribers_added"].includes(s.schemeStatus || s.status),
+              ).length > 0 && (
+                <div className="mb-8">
+                  <div className="flex items-center gap-2 mb-4">
+                    <AlertCircle className="h-5 w-5 text-orange-500" />
+                    <h3 className="text-lg font-semibold text-gray-900">Action Required</h3>
+                    <Badge className="bg-orange-100 text-orange-800">
+                      {
+                        filteredSchemes.filter((s) =>
+                          ["steps_1_4_approved", "pso_approved", "subscribers_added"].includes(
+                            s.schemeStatus || s.status,
+                          ),
+                        ).length
+                      }
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {filteredSchemes
+                      .filter((s) =>
+                        ["steps_1_4_approved", "pso_approved", "subscribers_added"].includes(
+                          s.schemeStatus || s.status,
+                        ),
+                      )
+                      .map((scheme) => (
+                        <SchemeCard
+                          key={scheme.schemeId}
+                          scheme={scheme}
+                          onView={handleViewScheme}
+                          onEdit={handleEditScheme}
+                          onDelete={handleDeleteScheme}
+                          getStatusColor={getStatusColor}
+                          getStatusIcon={getStatusIcon}
+                          getStatusMessage={getStatusMessage}
+                          priority={true}
+                        />
+                      ))}
+                  </div>
+                  <Separator className="my-8" />
+                </div>
+              )}
+
+              {filteredSchemes.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredSchemes.map((scheme) => (
+                    <SchemeCard
+                      key={scheme.schemeId}
+                      scheme={scheme}
+                      onView={handleViewScheme}
+                      onEdit={handleEditScheme}
+                      onDelete={handleDeleteScheme}
+                      getStatusColor={getStatusColor}
+                      getStatusIcon={getStatusIcon}
+                      getStatusMessage={getStatusMessage}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Clock className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-600 mb-2">No Pending Schemes</h3>
+                  <p className="text-gray-500 mb-6">You don't have any pending schemes at the moment.</p>
+                  <Button onClick={handleCreateScheme} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Create Your First Scheme
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+          {/* Empty State for All Schemes */}
           {schemes.length === 0 && (
             <div className="text-center py-12">
               <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -503,6 +783,12 @@ function SchemeCard({
                 <p className="text-xs text-blue-600">{scheme.adminComments.steps_1_4}</p>
               </div>
             )}
+            {scheme.terminationReason && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
+                <p className="text-xs text-red-700 font-medium">Termination Reason:</p>
+                <p className="text-xs text-red-600">{scheme.terminationReason}</p>
+              </div>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -550,6 +836,11 @@ function SchemeCard({
           <p className={`text-sm font-medium ${statusInfo.color}`}>{statusInfo.message}</p>
           {scheme.lastUpdated && (
             <p className="text-xs text-gray-500 mt-1">Updated: {new Date(scheme.lastUpdated).toLocaleString()}</p>
+          )}
+          {scheme.endDate && (
+            <p className="text-xs text-gray-500 mt-1">
+              {scheme.status === "completed" ? "Completed" : "Ended"}: {new Date(scheme.endDate).toLocaleString()}
+            </p>
           )}
         </div>
 
