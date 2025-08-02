@@ -60,29 +60,29 @@ export function ForemanSidebar({ ...props }: React.ComponentProps<typeof Sidebar
   return (
     <>
       <Sidebar collapsible="icon" variant="sidebar" className="border-r border-gray-200 bg-white" {...props}>
-        <SidebarHeader className="border-b border-gray-100 bg-gradient-to-r from-green-50 to-blue-50 p-4">
+        <SidebarHeader className="border-b border-gray-100 bg-gradient-to-r from-green-50 to-blue-50 p-3 shrink-0">
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
                 size="lg"
-                className="data-[state=open]:bg-white/80 data-[state=open]:text-gray-900 hover:bg-white/60 transition-all duration-200"
+                className="data-[state=open]:bg-white/80 data-[state=open]:text-gray-900 hover:bg-white/60 transition-all duration-200 w-full"
               >
-                <div className="flex aspect-square size-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-600 to-green-700 text-white shadow-lg">
-                  <span className="font-bold text-lg">UC</span>
+                <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-gradient-to-br from-green-600 to-green-700 text-white shadow-lg shrink-0">
+                  <span className="font-bold text-sm">UC</span>
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className="grid flex-1 text-left text-sm leading-tight min-w-0 group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-bold text-gray-900">UCFSIN Foreman</span>
-                  <span className="truncate text-xs text-gray-600">Scheme Management Portal</span>
+                  <span className="truncate text-xs text-gray-600">Scheme Management</span>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent className="overflow-y-auto bg-gray-50/30 px-2 py-4">
+        <SidebarContent className="overflow-y-auto bg-gray-50/30 px-2 py-3 flex-1">
           {/* Overview */}
-          <SidebarGroup className="mb-6">
-            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2 mb-2">
+          <SidebarGroup className="mb-4">
+            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2 mb-1 group-data-[collapsible=icon]:hidden">
               Overview
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -90,13 +90,14 @@ export function ForemanSidebar({ ...props }: React.ComponentProps<typeof Sidebar
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1"
+                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-0"
+                    tooltip="Dashboard"
                   >
                     <a href="/foreman" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-600">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-100 text-blue-600 shrink-0">
                         <LayoutDashboard className="h-4 w-4" />
                       </div>
-                      <span className="truncate">Dashboard</span>
+                      <span className="truncate group-data-[collapsible=icon]:hidden">Dashboard</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -105,8 +106,8 @@ export function ForemanSidebar({ ...props }: React.ComponentProps<typeof Sidebar
           </SidebarGroup>
 
           {/* Scheme Management */}
-          <SidebarGroup className="mb-6">
-            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2 mb-2">
+          <SidebarGroup className="mb-4">
+            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2 mb-1 group-data-[collapsible=icon]:hidden">
               Scheme Management
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -114,29 +115,31 @@ export function ForemanSidebar({ ...props }: React.ComponentProps<typeof Sidebar
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1"
+                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-0"
+                    tooltip="My Schemes"
                   >
                     <a href="/foreman/schemes" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-purple-100 text-purple-600">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-purple-100 text-purple-600 shrink-0">
                         <FileText className="h-4 w-4" />
                       </div>
-                      <span className="truncate">My Schemes</span>
+                      <span className="truncate group-data-[collapsible=icon]:hidden">My Schemes</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1"
+                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-0"
+                    tooltip="Create Scheme"
                   >
                     <a
                       href="/foreman/create-scheme"
                       className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium"
                     >
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-600">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-green-100 text-green-600 shrink-0">
                         <Plus className="h-4 w-4" />
                       </div>
-                      <span className="truncate">Create Scheme</span>
+                      <span className="truncate group-data-[collapsible=icon]:hidden">Create Scheme</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -145,8 +148,8 @@ export function ForemanSidebar({ ...props }: React.ComponentProps<typeof Sidebar
           </SidebarGroup>
 
           {/* Subscriber Management */}
-          <SidebarGroup className="mb-6">
-            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2 mb-2">
+          <SidebarGroup className="mb-4">
+            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2 mb-1 group-data-[collapsible=icon]:hidden">
               Subscriber Management
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -154,29 +157,31 @@ export function ForemanSidebar({ ...props }: React.ComponentProps<typeof Sidebar
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1"
+                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-0"
+                    tooltip="All Subscribers"
                   >
                     <a href="/foreman/subscribers" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-100 text-orange-600">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-orange-100 text-orange-600 shrink-0">
                         <Users className="h-4 w-4" />
                       </div>
-                      <span className="truncate">All Subscribers</span>
+                      <span className="truncate group-data-[collapsible=icon]:hidden">All Subscribers</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1"
+                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-0"
+                    tooltip="Add Subscriber"
                   >
                     <a
                       href="/foreman/subscribers/add"
                       className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium"
                     >
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-teal-100 text-teal-600">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-teal-100 text-teal-600 shrink-0">
                         <UserPlus className="h-4 w-4" />
                       </div>
-                      <span className="truncate">Add Subscriber</span>
+                      <span className="truncate group-data-[collapsible=icon]:hidden">Add Subscriber</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -185,8 +190,8 @@ export function ForemanSidebar({ ...props }: React.ComponentProps<typeof Sidebar
           </SidebarGroup>
 
           {/* Reports & Analytics */}
-          <SidebarGroup className="mb-6">
-            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2 mb-2">
+          <SidebarGroup className="mb-4">
+            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2 mb-1 group-data-[collapsible=icon]:hidden">
               Reports & Analytics
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -194,13 +199,14 @@ export function ForemanSidebar({ ...props }: React.ComponentProps<typeof Sidebar
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1"
+                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-0"
+                    tooltip="Scheme Reports"
                   >
                     <a href="/foreman/reports" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 shrink-0">
                         <BarChart3 className="h-4 w-4" />
                       </div>
-                      <span className="truncate">Scheme Reports</span>
+                      <span className="truncate group-data-[collapsible=icon]:hidden">Scheme Reports</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -209,8 +215,8 @@ export function ForemanSidebar({ ...props }: React.ComponentProps<typeof Sidebar
           </SidebarGroup>
 
           {/* Support */}
-          <SidebarGroup className="mb-6">
-            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2 mb-2">
+          <SidebarGroup className="mb-4">
+            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2 mb-1 group-data-[collapsible=icon]:hidden">
               Support
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -218,13 +224,14 @@ export function ForemanSidebar({ ...props }: React.ComponentProps<typeof Sidebar
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1"
+                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-0"
+                    tooltip="Help & Support"
                   >
                     <a href="/foreman/help" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-yellow-100 text-yellow-600">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-yellow-100 text-yellow-600 shrink-0">
                         <HelpCircle className="h-4 w-4" />
                       </div>
-                      <span className="truncate">Help & Support</span>
+                      <span className="truncate group-data-[collapsible=icon]:hidden">Help & Support</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -233,8 +240,8 @@ export function ForemanSidebar({ ...props }: React.ComponentProps<typeof Sidebar
           </SidebarGroup>
 
           {/* System */}
-          <SidebarGroup className="mb-6">
-            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2 mb-2">
+          <SidebarGroup className="mb-4">
+            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2 mb-1 group-data-[collapsible=icon]:hidden">
               System
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -242,13 +249,14 @@ export function ForemanSidebar({ ...props }: React.ComponentProps<typeof Sidebar
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1"
+                    className="w-full justify-start hover:bg-green-50 hover:text-green-700 transition-all duration-200 rounded-lg mx-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-0"
+                    tooltip="Settings"
                   >
                     <a href="/foreman/settings" className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-600">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 text-gray-600 shrink-0">
                         <Settings className="h-4 w-4" />
                       </div>
-                      <span className="truncate">Settings</span>
+                      <span className="truncate group-data-[collapsible=icon]:hidden">Settings</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -257,26 +265,26 @@ export function ForemanSidebar({ ...props }: React.ComponentProps<typeof Sidebar
           </SidebarGroup>
         </SidebarContent>
 
-        <SidebarFooter className="border-t border-gray-200 bg-white p-3">
+        <SidebarFooter className="border-t border-gray-200 bg-white p-2 shrink-0">
           <SidebarMenu>
             <SidebarMenuItem>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton
                     size="lg"
-                    className="data-[state=open]:bg-gray-50 data-[state=open]:text-gray-900 w-full hover:bg-gray-50 transition-all duration-200 rounded-xl p-3"
+                    className="data-[state=open]:bg-gray-50 data-[state=open]:text-gray-900 w-full hover:bg-gray-50 transition-all duration-200 rounded-xl p-2 group-data-[collapsible=icon]:justify-center"
                   >
-                    <Avatar className="h-10 w-10 rounded-xl border-2 border-green-200">
-                      <AvatarImage src="/avatars/aakash.jpg" alt="Aakash Savant" />
-                      <AvatarFallback className="rounded-xl bg-gradient-to-br from-green-600 to-green-700 text-white font-bold text-sm">
-                        AS
+                    <Avatar className="h-8 w-8 rounded-xl border-2 border-green-200 shrink-0">
+                      <AvatarImage src="/avatars/rajesh.jpg" alt="Rajesh Kumar" />
+                      <AvatarFallback className="rounded-xl bg-gradient-to-br from-green-600 to-green-700 text-white font-bold text-xs">
+                        RK
                       </AvatarFallback>
                     </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight min-w-0">
-                      <span className="truncate font-semibold text-gray-900">Aakash Savant</span>
-                      <span className="truncate text-xs text-gray-500">aakash@ucfsin.com</span>
+                    <div className="grid flex-1 text-left text-sm leading-tight min-w-0 group-data-[collapsible=icon]:hidden">
+                      <span className="truncate font-semibold text-gray-900">Rajesh Kumar</span>
+                      <span className="truncate text-xs text-gray-500">rajesh@ucfsin.com</span>
                     </div>
-                    <ChevronUp className="ml-auto size-4 shrink-0 text-gray-400" />
+                    <ChevronUp className="ml-auto size-4 shrink-0 text-gray-400 group-data-[collapsible=icon]:hidden" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
