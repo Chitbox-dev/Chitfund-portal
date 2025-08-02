@@ -1,21 +1,24 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { useSearchParams } from "next/navigation"
+import type React from "react"
+
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { CalendarIcon } from "lucide-react"
+import { useRef } from "react"
+import { useSearchParams } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { SubscriberGenerator } from "./subscriber-generator"
 import {
   CheckCircle,
   Upload,
   FileText,
-  Calendar,
   Clock,
   Users,
   DollarSign,
@@ -38,6 +41,28 @@ import {
   AlertCircle,
 } from "lucide-react"
 
+interface SchemeFormData {
+  schemeId: string
+  schemeName: string
+  chitValue: number
+  chitDuration: number
+  numberOfSubscribers: number
+  monthlyPremium: number
+  chitStartDate: Date | null
+  chitEndDate: Date | null
+  auctionFrequency: string
+  biddingRules: string
+  termsAndConditions: string
+  schemeStatus: string
+  lastUpdated: string
+}
+
+interface CreateSchemeFormProps {
+  onSave: (data: SchemeFormData) => void
+  onCancel: () => void
+  initialData?: Partial<SchemeFormData>
+}
+
 const STEPS = [
   {
     id: 1,
@@ -55,7 +80,7 @@ const STEPS = [
     id: 2,
     title: "Auction Rules",
     description: "Auction timing and frequency",
-    icon: Calendar,
+    icon: CalendarIcon,
     phase: 1,
     tips: [
       "Choose auction frequency based on subscriber convenience",
@@ -164,7 +189,7 @@ const DEFAULT_STEP_STATUS = {
 }
 
 const INITIAL_FORM_DATA = {
-  // Generate later - Allow multiple schemes without restriction
+  // Generate unique scheme ID to prevent duplicates
   schemeId: "",
   schemeStatus: SchemeStatus.Draft,
   stepStatus: { ...DEFAULT_STEP_STATUS },
@@ -175,8 +200,8 @@ const INITIAL_FORM_DATA = {
   chitDuration: "",
   numberOfSubscribers: "",
   monthlyPremium: "",
-  chitStartDate: "",
-  chitEndDate: "",
+  chitStartDate: null,
+  chitEndDate: null,
 
   // Step 2
   auctionFrequency: "",
@@ -225,10 +250,10 @@ export function CreateSchemeForm({
   const stepFromUrl = searchParams?.get("step")
 
   const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState(() => ({
+  const [formData, setFormData] = useState<any>(() => ({
     ...INITIAL_FORM_DATA,
-    // Always generate new scheme ID - no restriction on multiple schemes
-    schemeId: schemeIdFromUrl || `SCH-${Date.now()}`,
+    // Generate unique scheme ID to prevent duplicates
+    schemeId: schemeIdFromUrl || `SCH-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
   }))
 
   const [errors, setErrors] = useState({})
@@ -250,8 +275,8 @@ export function CreateSchemeForm({
     if (schemeIdFromUrl) {
       loadExistingScheme(schemeIdFromUrl)
     } else {
-      // Always start with a fresh scheme when creating new - no restrictions
-      const newSchemeId = `SCH-${Date.now()}`
+      // Always start with a fresh scheme when creating new - prevent duplicates
+      const newSchemeId = `SCH-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       setFormData({
         ...INITIAL_FORM_DATA,
         schemeId: newSchemeId,
@@ -274,7 +299,7 @@ export function CreateSchemeForm({
     try {
       console.log("Loading existing scheme:", schemeId)
 
-      // Check all possible locations for the scheme
+      // Check all possible locations for the scheme with proper deduplication
       const pendingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
       const approvedSchemes = JSON.parse(localStorage.getItem("approvedSchemes") || "[]")
       const liveSchemes = JSON.parse(localStorage.getItem("liveSchemes") || "[]")
@@ -314,8 +339,8 @@ export function CreateSchemeForm({
         setCurrentStep(targetStep)
       } else {
         console.log("Scheme not found, creating new scheme")
-        // Create new scheme with fresh ID
-        const newSchemeId = `SCH-${Date.now()}`
+        // Create new scheme with fresh ID to prevent duplicates
+        const newSchemeId = `SCH-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         setFormData({
           ...INITIAL_FORM_DATA,
           schemeId: newSchemeId,
@@ -324,7 +349,7 @@ export function CreateSchemeForm({
     } catch (error) {
       console.error("Error loading existing scheme:", error)
       // Create new scheme on error
-      const newSchemeId = `SCH-${Date.now()}`
+      const newSchemeId = `SCH-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       setFormData({
         ...INITIAL_FORM_DATA,
         schemeId: newSchemeId,
@@ -624,31 +649,21 @@ export function CreateSchemeForm({
       // Save to draft first
       localStorage.setItem("schemeDraft", JSON.stringify(updatedFormData))
 
-      // Save to pending schemes for admin review
+      // Save to pending schemes for admin review with deduplication
       const existingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
-      const schemeIndex = existingSchemes.findIndex((s) => s.schemeId === formData.schemeId)
 
-      if (schemeIndex >= 0) {
-        // Update existing scheme
-        existingSchemes[schemeIndex] = updatedFormData
-      } else {
-        // Add new scheme
-        existingSchemes.push(updatedFormData)
-      }
+      // Remove any existing scheme with same ID to prevent duplicates
+      const filteredSchemes = existingSchemes.filter((s) => s.schemeId !== formData.schemeId)
+      filteredSchemes.push(updatedFormData)
 
-      localStorage.setItem("pendingSchemes", JSON.stringify(existingSchemes))
-      console.log("Saved to pendingSchemes:", existingSchemes)
+      localStorage.setItem("pendingSchemes", JSON.stringify(filteredSchemes))
+      console.log("Saved to pendingSchemes:", filteredSchemes)
 
-      // Also save to allSchemes for the admin schemes page
+      // Also save to allSchemes for the admin schemes page with deduplication
       const allSchemes = JSON.parse(localStorage.getItem("allSchemes") || "[]")
-      const allSchemeIndex = allSchemes.findIndex((s) => s.schemeId === formData.schemeId)
-
-      if (allSchemeIndex >= 0) {
-        allSchemes[allSchemeIndex] = updatedFormData
-      } else {
-        allSchemes.push(updatedFormData)
-      }
-      localStorage.setItem("allSchemes", JSON.stringify(allSchemes))
+      const filteredAllSchemes = allSchemes.filter((s) => s.schemeId !== formData.schemeId)
+      filteredAllSchemes.push(updatedFormData)
+      localStorage.setItem("allSchemes", JSON.stringify(filteredAllSchemes))
 
       alert(
         "Steps 1-4 submitted for admin approval successfully! You will be notified once the admin reviews your submission.",
@@ -678,17 +693,11 @@ export function CreateSchemeForm({
       setFormData(updatedFormData)
       localStorage.setItem("schemeDraft", JSON.stringify(updatedFormData))
 
-      // Update pending schemes for admin review
+      // Update pending schemes for admin review with deduplication
       const existingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
-      const schemeIndex = existingSchemes.findIndex((s) => s.schemeId === formData.schemeId)
-
-      if (schemeIndex >= 0) {
-        existingSchemes[schemeIndex] = updatedFormData
-      } else {
-        existingSchemes.push(updatedFormData)
-      }
-
-      localStorage.setItem("pendingSchemes", JSON.stringify(existingSchemes))
+      const filteredSchemes = existingSchemes.filter((s) => s.schemeId !== formData.schemeId)
+      filteredSchemes.push(updatedFormData)
+      localStorage.setItem("pendingSchemes", JSON.stringify(filteredSchemes))
 
       alert("PSO request submitted successfully! Admin will review and generate the PSO certificate.")
     } catch (error) {
@@ -743,17 +752,11 @@ export function CreateSchemeForm({
       setFormData(updatedFormData)
       localStorage.setItem("schemeDraft", JSON.stringify(updatedFormData))
 
-      // Update pending schemes for admin review
+      // Update pending schemes for admin review with deduplication
       const existingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
-      const schemeIndex = existingSchemes.findIndex((s) => s.schemeId === formData.schemeId)
-
-      if (schemeIndex >= 0) {
-        existingSchemes[schemeIndex] = updatedFormData
-      } else {
-        existingSchemes.push(updatedFormData)
-      }
-
-      localStorage.setItem("pendingSchemes", JSON.stringify(existingSchemes))
+      const filteredSchemes = existingSchemes.filter((s) => s.schemeId !== formData.schemeId)
+      filteredSchemes.push(updatedFormData)
+      localStorage.setItem("pendingSchemes", JSON.stringify(filteredSchemes))
 
       alert("Final agreement submitted for admin approval!")
       setCurrentStep(8) // Move to final step
@@ -2147,6 +2150,53 @@ export function CreateSchemeForm({
 
       default:
         return <p>Unknown step</p>
+    }
+  }
+
+  const handleInputChange = (field: keyof SchemeFormData, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+      lastUpdated: new Date().toISOString(),
+    }))
+
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }))
+    }
+  }
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.schemeName.trim()) {
+      newErrors.schemeName = "Scheme name is required"
+    }
+
+    if (!formData.chitValue || formData.chitValue <= 0) {
+      newErrors.chitValue = "Chit value must be greater than 0"
+    }
+
+    if (!formData.chitDuration || formData.chitDuration <= 0) {
+      newErrors.chitDuration = "Chit duration must be greater than 0"
+    }
+
+    if (!formData.chitStartDate) {
+      newErrors.chitStartDate = "Start date is required"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (validateForm()) {
+      onSuccess(formData)
     }
   }
 

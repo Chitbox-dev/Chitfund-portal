@@ -1,11 +1,16 @@
 "use client"
-import type { ReactNode } from "react"
+
+import type React from "react"
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { ForemanSidebar } from "@/components/foreman/foreman-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 
-export default function ForemanLayout({ children }: { children: ReactNode }) {
+export default function ForemanLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const pathname = usePathname()
   const [isLoading, setIsLoading] = useState(true)
 
@@ -61,13 +66,13 @@ export default function ForemanLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={true}>
+      <div className="flex min-h-screen w-full bg-gray-50">
         <ForemanSidebar />
         <SidebarInset className="flex-1">
-          <div className="w-full">{children}</div>
+          <div className="flex flex-col min-h-screen">{children}</div>
         </SidebarInset>
-      </SidebarProvider>
-    </div>
+      </div>
+    </SidebarProvider>
   )
 }
