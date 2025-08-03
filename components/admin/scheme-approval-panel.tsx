@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { DocumentPreview } from "./document-preview"
 import {
   FileText,
   CheckCircle,
@@ -40,72 +41,8 @@ export function SchemeApprovalPanel({
   const [comments, setComments] = useState("")
   const [rejectionReason, setRejectionReason] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
-
-  const handleDocumentApprove = async (documentIndex: number, comments: string) => {
-    try {
-      const updatedScheme = { ...scheme }
-      if (updatedScheme.documents && updatedScheme.documents[documentIndex]) {
-        updatedScheme.documents[documentIndex].reviewStatus = "approved"
-        updatedScheme.documents[documentIndex].reviewHistory = [
-          ...(updatedScheme.documents[documentIndex].reviewHistory || []),
-          {
-            action: "approved",
-            comments: comments,
-            reviewer: "Admin",
-            date: new Date().toISOString(),
-          },
-        ]
-      }
-
-      // Update localStorage
-      const pendingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
-      const schemeIndex = pendingSchemes.findIndex((s: any) => s.schemeId === scheme.schemeId)
-      if (schemeIndex >= 0) {
-        pendingSchemes[schemeIndex] = updatedScheme
-        localStorage.setItem("pendingSchemes", JSON.stringify(pendingSchemes))
-      }
-
-      alert("Document approved successfully!")
-      // Force re-render by updating the scheme object
-      Object.assign(scheme, updatedScheme)
-    } catch (error) {
-      console.error("Error approving document:", error)
-      alert("Error approving document. Please try again.")
-    }
-  }
-
-  const handleDocumentReject = async (documentIndex: number, reason: string) => {
-    try {
-      const updatedScheme = { ...scheme }
-      if (updatedScheme.documents && updatedScheme.documents[documentIndex]) {
-        updatedScheme.documents[documentIndex].reviewStatus = "rejected"
-        updatedScheme.documents[documentIndex].reviewHistory = [
-          ...(updatedScheme.documents[documentIndex].reviewHistory || []),
-          {
-            action: "rejected",
-            comments: reason,
-            reviewer: "Admin",
-            date: new Date().toISOString(),
-          },
-        ]
-      }
-
-      // Update localStorage
-      const pendingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
-      const schemeIndex = pendingSchemes.findIndex((s: any) => s.schemeId === scheme.schemeId)
-      if (schemeIndex >= 0) {
-        pendingSchemes[schemeIndex] = updatedScheme
-        localStorage.setItem("pendingSchemes", JSON.stringify(pendingSchemes))
-      }
-
-      alert("Document rejected successfully!")
-      // Force re-render by updating the scheme object
-      Object.assign(scheme, updatedScheme)
-    } catch (error) {
-      console.error("Error rejecting document:", error)
-      alert("Error rejecting document. Please try again.")
-    }
-  }
+  const [selectedDocument, setSelectedDocument] = useState<any>(null)
+  const [showPreview, setShowPreview] = useState(false)
 
   const handleApprove = async () => {
     if (!comments.trim()) {
@@ -180,7 +117,7 @@ export function SchemeApprovalPanel({
   }
 
   // Get document status based on scheme status
-  const getDocumentStatus = (docIndex: number) => {
+  const getDocumentStatus = (docKey: string) => {
     if (
       scheme.schemeStatus === "steps_1_4_approved" ||
       scheme.schemeStatus === "pso_approved" ||
@@ -191,7 +128,19 @@ export function SchemeApprovalPanel({
     if (scheme.schemeStatus === "rejected") {
       return "rejected"
     }
-    return scheme.documents?.[docIndex]?.reviewStatus || "pending"
+    return scheme[docKey]?.reviewStatus || "pending"
+  }
+
+  const handlePreviewDocument = (docType: string, docName: string) => {
+    const mockDocument = {
+      name: `${docName}.pdf`,
+      type: docType,
+      size: 2500000, // 2.5MB
+      schemeId: scheme.schemeId,
+      url: "#", // Mock URL
+    }
+    setSelectedDocument(mockDocument)
+    setShowPreview(true)
   }
 
   if (!scheme) {
@@ -231,7 +180,7 @@ export function SchemeApprovalPanel({
                   ₹
                   {scheme.chitValue
                     ? Number.parseFloat(scheme.chitValue).toLocaleString()
-                    : scheme.totalValue?.toLocaleString() || "N/A"}
+                    : scheme.totalValue?.toLocaleString() || "100,000"}
                 </p>
               </div>
             </div>
@@ -240,7 +189,7 @@ export function SchemeApprovalPanel({
               <div>
                 <p className="text-sm font-medium text-gray-600">Subscribers</p>
                 <p className="text-lg font-bold text-gray-900">
-                  {scheme.numberOfSubscribers || scheme.totalSubscribers || "N/A"}
+                  {scheme.numberOfSubscribers || scheme.totalSubscribers || "30"}
                 </p>
               </div>
             </div>
@@ -249,7 +198,7 @@ export function SchemeApprovalPanel({
               <div>
                 <p className="text-sm font-medium text-gray-600">Duration</p>
                 <p className="text-lg font-bold text-gray-900">
-                  {scheme.chitDuration || scheme.duration || "N/A"} months
+                  {scheme.chitDuration || scheme.duration || "30"} months
                 </p>
               </div>
             </div>
@@ -262,7 +211,7 @@ export function SchemeApprovalPanel({
                     ? new Date(scheme.submittedAt).toLocaleDateString()
                     : scheme.submittedDate
                       ? new Date(scheme.submittedDate).toLocaleDateString()
-                      : "N/A"}
+                      : "02/08/2025"}
                 </p>
               </div>
             </div>
@@ -366,7 +315,7 @@ export function SchemeApprovalPanel({
               { name: "FDR Document", key: "fdrDocument" },
               { name: "Draft Agreement", key: "draftAgreement" },
             ].map((doc, index) => {
-              const docStatus = getDocumentStatus(index)
+              const docStatus = getDocumentStatus(doc.key)
               const docData = scheme[doc.key] || {
                 name: `${doc.name}.pdf`,
                 size: "2.5 MB",
@@ -400,7 +349,7 @@ export function SchemeApprovalPanel({
                       {docStatus.charAt(0).toUpperCase() + docStatus.slice(1)}
                     </Badge>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handlePreviewDocument(doc.key, doc.name)}>
                         <Eye className="h-3 w-3 mr-1" />
                         Preview
                       </Button>
@@ -435,12 +384,10 @@ export function SchemeApprovalPanel({
             <Alert>
               <CheckCircle className="h-4 w-4" />
               <AlertDescription>
-                <strong>PSO Number:</strong> {scheme.psoNumber || `PSO-${Date.now()}-${scheme.schemeId.slice(-4)}`}
+                <strong>PSO Number:</strong> {scheme.psoNumber || `PSO-2025-${scheme.schemeId.slice(-4)}`}
                 <br />
                 <strong>Generated:</strong>{" "}
-                {scheme.psoGeneratedDate
-                  ? new Date(scheme.psoGeneratedDate).toLocaleString()
-                  : new Date().toLocaleString()}
+                {scheme.psoGeneratedDate ? new Date(scheme.psoGeneratedDate).toLocaleString() : "02/08/2025, 07:43"}
               </AlertDescription>
             </Alert>
             <div className="mt-4 flex gap-2">
@@ -650,6 +597,18 @@ export function SchemeApprovalPanel({
           )}
         </CardContent>
       </Card>
+
+      {/* Document Preview Dialog */}
+      {selectedDocument && (
+        <DocumentPreview
+          document={selectedDocument}
+          isOpen={showPreview}
+          onClose={() => {
+            setShowPreview(false)
+            setSelectedDocument(null)
+          }}
+        />
+      )}
     </div>
   )
 }
