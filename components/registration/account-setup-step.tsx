@@ -103,6 +103,89 @@ export default function AccountSetupStep({ formData, updateFormData, onNext }: A
 
   return (
     <div className="grid lg:grid-cols-2 gap-8">
+      {/* UCFSIN Summary */}
+      <div className="space-y-6">
+        <Card className="bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] text-white">
+          <CardHeader>
+            <CardTitle className="text-white">Your UCFSIN Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 text-sm">
+              <div>
+                <div className="opacity-75">Full Name</div>
+                <div className="font-medium">{formData.fullName}</div>
+              </div>
+              <div>
+                <div className="opacity-75">UCFSIN Number</div>
+                <div className="font-mono text-lg">{formData.ucfsinNumber}</div>
+              </div>
+              <div>
+                <div className="opacity-75">Mobile Number</div>
+                <div>+91 {formData.mobile}</div>
+              </div>
+              <div>
+                <div className="opacity-75">Registration Status</div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Completed</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Account Benefits */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-[#1e3a8a]">Your UCFSIN Account Benefits</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-3 text-sm">
+              <li className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>Access to all government-verified chit fund schemes</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>Real-time transaction tracking and notifications</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>Digital wallet for seamless payments</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>Comprehensive scheme performance analytics</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>24/7 customer support and grievance redressal</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span>Mobile app access for on-the-go management</span>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-green-50 border-green-200">
+          <CardHeader>
+            <CardTitle className="text-green-700">Security Features</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm text-green-600">
+              <li>• Two-factor authentication (2FA)</li>
+              <li>• End-to-end encryption for all transactions</li>
+              <li>• Biometric login support</li>
+              <li>• Real-time fraud detection</li>
+              <li>• Secure document storage</li>
+              <li>• Regular security audits</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Account Setup Form */}
       <div className="space-y-6">
         <Card>
@@ -205,88 +288,6 @@ export default function AccountSetupStep({ formData, updateFormData, onNext }: A
                 Create UCFSIN Account
               </Button>
             )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Account Benefits */}
-      <div className="space-y-6">
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-[#1e3a8a]">Your UCFSIN Account Benefits</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3 text-sm">
-              <li className="flex items-start gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <span>Access to all government-verified chit fund schemes</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <span>Real-time transaction tracking and notifications</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <span>Digital wallet for seamless payments</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <span>Comprehensive scheme performance analytics</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <span>24/7 customer support and grievance redressal</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <span>Mobile app access for on-the-go management</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-green-50 border-green-200">
-          <CardHeader>
-            <CardTitle className="text-green-700">Security Features</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm text-green-600">
-              <li>• Two-factor authentication (2FA)</li>
-              <li>• End-to-end encryption for all transactions</li>
-              <li>• Biometric login support</li>
-              <li>• Real-time fraud detection</li>
-              <li>• Secure document storage</li>
-              <li>• Regular security audits</li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] text-white">
-          <CardHeader>
-            <CardTitle className="text-white">Your UCFSIN Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 text-sm">
-              <div>
-                <div className="opacity-75">Full Name</div>
-                <div className="font-medium">{formData.fullName}</div>
-              </div>
-              <div>
-                <div className="opacity-75">UCFSIN Number</div>
-                <div className="font-mono text-lg">{formData.ucfsinNumber}</div>
-              </div>
-              <div>
-                <div className="opacity-75">Mobile Number</div>
-                <div>+91 {formData.mobile}</div>
-              </div>
-              <div>
-                <div className="opacity-75">Registration Status</div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Completed</span>
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

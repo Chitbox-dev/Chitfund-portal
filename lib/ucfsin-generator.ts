@@ -24,88 +24,80 @@ export interface UCFSINData {
 }
 
 export function generateUCFSIN(personalData: Partial<UCFSINData>): string {
-  // UCFSIN Format: UC-YYYY-SSSS-DDDD-NNNN
-  // UC: Prefix
-  // YYYY: Year
-  // SSSS: State code (4 digits)
-  // DDDD: District code (4 digits)
-  // NNNN: Sequential number (4 digits)
+  // UCFSIN Format: KA-HSD-7A2-978
+  // KA: State code
+  // HSD: First three digits of PAN
+  // 7A2: Three digits random
+  // 978: Last three digits from Aadhar
 
-  const year = new Date().getFullYear()
   const stateCode = getStateCode(personalData.state || "")
-  const districtCode = getDistrictCode(personalData.district || "")
-  const sequentialNumber = generateSequentialNumber()
+  const panDigits = getPanDigits(personalData.panNumber || "")
+  const randomDigits = generateRandomDigits()
+  const aadharDigits = getAadharDigits(personalData.aadharNumber || "")
 
-  return `UC-${year}-${stateCode}-${districtCode}-${sequentialNumber}`
+  return `${stateCode}-${panDigits}-${randomDigits}-${aadharDigits}`
 }
 
 function getStateCode(state: string): string {
   const stateCodes: Record<string, string> = {
-    "Andhra Pradesh": "0001",
-    "Arunachal Pradesh": "0002",
-    Assam: "0003",
-    Bihar: "0004",
-    Chhattisgarh: "0005",
-    Goa: "0006",
-    Gujarat: "0007",
-    Haryana: "0008",
-    "Himachal Pradesh": "0009",
-    Jharkhand: "0010",
-    Karnataka: "0011",
-    Kerala: "0012",
-    "Madhya Pradesh": "0013",
-    Maharashtra: "0014",
-    Manipur: "0015",
-    Meghalaya: "0016",
-    Mizoram: "0017",
-    Nagaland: "0018",
-    Odisha: "0019",
-    Punjab: "0020",
-    Rajasthan: "0021",
-    Sikkim: "0022",
-    "Tamil Nadu": "0023",
-    Telangana: "0024",
-    Tripura: "0025",
-    "Uttar Pradesh": "0026",
-    Uttarakhand: "0027",
-    "West Bengal": "0028",
-    Delhi: "0029",
-    "Jammu and Kashmir": "0030",
-    Ladakh: "0031",
-    Chandigarh: "0032",
-    "Dadra and Nagar Haveli and Daman and Diu": "0033",
-    Lakshadweep: "0034",
-    Puducherry: "0035",
-    "Andaman and Nicobar Islands": "0036",
+    "Andhra Pradesh": "AP",
+    "Arunachal Pradesh": "AR",
+    Assam: "AS",
+    Bihar: "BR",
+    Chhattisgarh: "CT",
+    Goa: "GA",
+    Gujarat: "GJ",
+    Haryana: "HR",
+    "Himachal Pradesh": "HP",
+    Jharkhand: "JH",
+    Karnataka: "KA",
+    Kerala: "KL",
+    "Madhya Pradesh": "MP",
+    Maharashtra: "MH",
+    Manipur: "MN",
+    Meghalaya: "ML",
+    Mizoram: "MZ",
+    Nagaland: "NL",
+    Odisha: "OD",
+    Punjab: "PB",
+    Rajasthan: "RJ",
+    Sikkim: "SK",
+    "Tamil Nadu": "TN",
+    Telangana: "TS",
+    Tripura: "TR",
+    "Uttar Pradesh": "UP",
+    Uttarakhand: "UK",
+    "West Bengal": "WB",
+    Delhi: "DL",
+    "Jammu and Kashmir": "JK",
+    Ladakh: "LA",
+    Chandigarh: "CH",
+    "Dadra and Nagar Haveli and Daman and Diu": "DD",
+    Lakshadweep: "LD",
+    Puducherry: "PY",
+    "Andaman and Nicobar Islands": "AN",
   }
 
-  return stateCodes[state] || "0000"
+  return stateCodes[state] || "XX"
 }
 
-function getDistrictCode(district: string): string {
-  // This would typically be a comprehensive mapping
-  // For demo purposes, generating a hash-based code
-  let hash = 0
-  for (let i = 0; i < district.length; i++) {
-    const char = district.charCodeAt(i)
-    hash = (hash << 5) - hash + char
-    hash = hash & hash // Convert to 32-bit integer
-  }
-
-  const code = Math.abs(hash % 9999) + 1
-  return code.toString().padStart(4, "0")
+function getPanDigits(panNumber: string): string {
+  return panNumber.substring(0, 3).toUpperCase() || "XXX"
 }
 
-function generateSequentialNumber(): string {
-  // In a real system, this would be from a database sequence
-  // For demo, using timestamp-based generation
-  const timestamp = Date.now()
-  const sequential = (timestamp % 9999) + 1
-  return sequential.toString().padStart(4, "0")
+function generateRandomDigits(): string {
+  const random = Math.floor(Math.random() * 999)
+    .toString()
+    .padStart(3, "0")
+  return random
+}
+
+function getAadharDigits(aadharNumber: string): string {
+  return aadharNumber.slice(-3) || "000"
 }
 
 export function validateUCFSIN(ucfsin: string): boolean {
-  const pattern = /^UC-\d{4}-\d{4}-\d{4}-\d{4}$/
+  const pattern = /^[A-Z]{2}-[A-Z0-9]{3}-\d{3}-\d{3}$/
   return pattern.test(ucfsin)
 }
 
@@ -116,11 +108,10 @@ export function parseUCFSIN(ucfsin: string) {
 
   const parts = ucfsin.split("-")
   return {
-    prefix: parts[0],
-    year: Number.parseInt(parts[1]),
-    stateCode: parts[2],
-    districtCode: parts[3],
-    sequentialNumber: parts[4],
+    stateCode: parts[0],
+    panDigits: parts[1],
+    randomDigits: parts[2],
+    aadharDigits: parts[3],
   }
 }
 
