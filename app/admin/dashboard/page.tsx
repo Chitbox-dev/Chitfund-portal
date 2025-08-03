@@ -179,7 +179,7 @@ export default function AdminDashboard() {
         return
       }
 
-      // Update scheme status to steps_1_4_approved (not directly to pso_approved)
+      // Update scheme status to steps_1_4_approved and mark all documents as approved
       const updatedScheme = {
         ...scheme,
         schemeStatus: "steps_1_4_approved",
@@ -192,6 +192,16 @@ export default function AdminDashboard() {
           },
         },
         lastUpdated: new Date().toISOString(),
+        // Mark all documents as approved
+        commissionStructure: { ...scheme.commissionStructure, reviewStatus: "approved" },
+        termsOfWithdrawal: { ...scheme.termsOfWithdrawal, reviewStatus: "approved" },
+        liabilitiesDocument: { ...scheme.liabilitiesDocument, reviewStatus: "approved" },
+        subscriberRights: { ...scheme.subscriberRights, reviewStatus: "approved" },
+        fdrDocument: { ...scheme.fdrDocument, reviewStatus: "approved" },
+        draftAgreement: { ...scheme.draftAgreement, reviewStatus: "approved" },
+        // Generate PSO details
+        psoNumber: `PSO-${Date.now()}-${schemeId.slice(-4)}`,
+        psoGeneratedDate: new Date().toISOString(),
       }
 
       // Remove from pending schemes
@@ -214,7 +224,7 @@ export default function AdminDashboard() {
       // Update the scheme draft for the foreman
       localStorage.setItem("schemeDraft", JSON.stringify(updatedScheme))
 
-      alert("Scheme approved successfully! Steps 1-4 have been approved.")
+      alert("Scheme approved successfully! Steps 1-4 have been approved and PSO certificate generated.")
       setSelectedScheme(null)
       setApprovalComments("")
       loadDashboardData()
@@ -235,7 +245,7 @@ export default function AdminDashboard() {
         return
       }
 
-      // Update scheme status
+      // Update scheme status and mark all documents as rejected
       const updatedScheme = {
         ...scheme,
         schemeStatus: "rejected",
@@ -249,6 +259,13 @@ export default function AdminDashboard() {
           },
         },
         lastUpdated: new Date().toISOString(),
+        // Mark all documents as rejected
+        commissionStructure: { ...scheme.commissionStructure, reviewStatus: "rejected" },
+        termsOfWithdrawal: { ...scheme.termsOfWithdrawal, reviewStatus: "rejected" },
+        liabilitiesDocument: { ...scheme.liabilitiesDocument, reviewStatus: "rejected" },
+        subscriberRights: { ...scheme.subscriberRights, reviewStatus: "rejected" },
+        fdrDocument: { ...scheme.fdrDocument, reviewStatus: "rejected" },
+        draftAgreement: { ...scheme.draftAgreement, reviewStatus: "rejected" },
       }
 
       // Update pending schemes with rejected status
@@ -631,8 +648,8 @@ export default function AdminDashboard() {
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>Approve Scheme</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Are you sure you want to approve this scheme? This will allow the foreman to
-                                        proceed to the next steps.
+                                        Are you sure you want to approve this scheme? This will approve all documents
+                                        and generate PSO certificate.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <div className="space-y-2">
@@ -647,7 +664,7 @@ export default function AdminDashboard() {
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                                       <AlertDialogAction onClick={() => handleApproveScheme(scheme.schemeId)}>
-                                        Approve
+                                        Approve & Generate PSO
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
@@ -666,7 +683,8 @@ export default function AdminDashboard() {
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>Reject Scheme</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Please provide a reason for rejecting this scheme. The foreman will be notified.
+                                        Please provide a reason for rejecting this scheme. All documents will be marked
+                                        as rejected.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <div className="space-y-2">
@@ -685,7 +703,7 @@ export default function AdminDashboard() {
                                         onClick={() => handleRejectScheme(scheme.schemeId)}
                                         disabled={!rejectionReason.trim()}
                                       >
-                                        Reject
+                                        Reject Scheme
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>

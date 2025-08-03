@@ -1,278 +1,176 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { DocumentPreview } from "./document-preview"
-import { FileText, Eye, Download, CheckCircle, XCircle, Clock, AlertCircle, MessageSquare } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { FileText, CheckCircle, XCircle, Clock, Eye, Download, AlertCircle } from "lucide-react"
 
 interface DocumentReviewPanelProps {
   scheme: any
-  onStatusUpdate: (schemeId: string, newStatus: string) => void
+  onDocumentApprove: (documentIndex: number, comments: string) => void
+  onDocumentReject: (documentIndex: number, reason: string) => void
 }
 
-export function DocumentReviewPanel({ scheme, onStatusUpdate }: DocumentReviewPanelProps) {
-  const [selectedDocument, setSelectedDocument] = useState(null)
-  const [showPreview, setShowPreview] = useState(false)
-  const [showReviewDialog, setShowReviewDialog] = useState(false)
-  const [reviewComment, setReviewComment] = useState("")
-  const [documentStatuses, setDocumentStatuses] = useState({})
-  const [reviewHistory, setReviewHistory] = useState({})
+export function DocumentReviewPanel({ scheme, onDocumentApprove, onDocumentReject }: DocumentReviewPanelProps) {
+  const [selectedDocument, setSelectedDocument] = useState<any>(null)
+  const [reviewAction, setReviewAction] = useState<"approve" | "reject">("approve")
+  const [reviewComments, setReviewComments] = useState("")
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false)
 
-  // Document types with their display names
   const documentTypes = [
-    { key: "commissionStructure", name: "Commission Structure", required: true },
-    { key: "termsOfWithdrawal", name: "Terms of Withdrawal", required: true },
-    { key: "liabilitiesDocument", name: "Liabilities Document", required: true },
-    { key: "subscriberRights", name: "Subscriber Rights", required: true },
-    { key: "fdrDocument", name: "FDR Document", required: true },
-    { key: "draftAgreement", name: "Draft Agreement", required: true },
+    { name: "Commission Structure", key: "commissionStructure" },
+    { name: "Terms of Withdrawal", key: "termsOfWithdrawal" },
+    { name: "Liabilities Document", key: "liabilitiesDocument" },
+    { name: "Subscriber Rights", key: "subscriberRights" },
+    { name: "FDR Document", key: "fdrDocument" },
+    { name: "Draft Agreement", key: "draftAgreement" },
   ]
 
-  // Load document statuses and review history from localStorage
-  useEffect(() => {
-    const savedStatuses = localStorage.getItem(`documentStatuses_${scheme.schemeId}`)
-    const savedHistory = localStorage.getItem(`reviewHistory_${scheme.schemeId}`)
-
-    if (savedStatuses) {
-      setDocumentStatuses(JSON.parse(savedStatuses))
-    }
-
-    if (savedHistory) {
-      setReviewHistory(JSON.parse(savedHistory))
-    }
-  }, [scheme.schemeId])
-
-  // Save document statuses to localStorage
-  const saveDocumentStatus = (docKey: string, status: string, comment: string) => {
-    const newStatuses = {
-      ...documentStatuses,
-      [docKey]: status,
-    }
-
-    const newHistory = {
-      ...reviewHistory,
-      [docKey]: [
-        ...(reviewHistory[docKey] || []),
-        {
-          status,
-          comment,
-          reviewedBy: "Admin",
-          reviewedAt: new Date().toISOString(),
-        },
-      ],
-    }
-
-    setDocumentStatuses(newStatuses)
-    setReviewHistory(newHistory)
-
-    localStorage.setItem(`documentStatuses_${scheme.schemeId}`, JSON.stringify(newStatuses))
-    localStorage.setItem(`reviewHistory_${scheme.schemeId}`, JSON.stringify(newHistory))
-  }
-
-  // Get document status
   const getDocumentStatus = (docKey: string) => {
-    return documentStatuses[docKey] || "pending"
+    // If scheme is approved, all documents should show as approved
+    if (
+      scheme.schemeStatus === "steps_1_4_approved" ||
+      scheme.schemeStatus === "pso_approved" ||
+      scheme.schemeStatus === "live"
+    ) {
+      return "approved"
+    }
+
+    // If scheme is rejected, all documents should show as rejected
+    if (scheme.schemeStatus === "rejected") {
+      return "rejected"
+    }
+
+    // Otherwise, check individual document status
+    const doc = scheme[docKey]
+    return doc?.reviewStatus || "pending"
   }
 
-  // Get status badge
-  const getStatusBadge = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case "approved":
-        return (
-          <Badge className="bg-green-100 text-green-800 border-green-200">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Approved
-          </Badge>
-        )
+        return "bg-green-100 text-green-800 border-green-300"
       case "rejected":
-        return (
-          <Badge className="bg-red-100 text-red-800 border-red-200">
-            <XCircle className="h-3 w-3 mr-1" />
-            Rejected
-          </Badge>
-        )
+        return "bg-red-100 text-red-800 border-red-300"
       case "pending":
-        return (
-          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
-            <Clock className="h-3 w-3 mr-1" />
-            Pending
-          </Badge>
-        )
+        return "bg-yellow-100 text-yellow-800 border-yellow-300"
       default:
-        return (
-          <Badge className="bg-gray-100 text-gray-800 border-gray-200">
-            <AlertCircle className="h-3 w-3 mr-1" />
-            Unknown
-          </Badge>
-        )
+        return "bg-gray-100 text-gray-800 border-gray-300"
     }
   }
 
-  // Handle document review
-  const handleReviewDocument = (action: "approve" | "reject") => {
-    if (!selectedDocument || !reviewComment.trim()) {
-      alert("Please add a review comment")
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "approved":
+        return <CheckCircle className="h-3 w-3" />
+      case "rejected":
+        return <XCircle className="h-3 w-3" />
+      case "pending":
+        return <Clock className="h-3 w-3" />
+      default:
+        return <AlertCircle className="h-3 w-3" />
+    }
+  }
+
+  const handleDocumentReview = (docIndex: number, docKey: string, action: "approve" | "reject") => {
+    const doc = scheme[docKey] || { name: `${documentTypes[docIndex].name}.pdf` }
+    setSelectedDocument({ ...doc, index: docIndex, key: docKey, type: documentTypes[docIndex].name })
+    setReviewAction(action)
+    setIsReviewDialogOpen(true)
+  }
+
+  const handleSubmitReview = () => {
+    if (!reviewComments.trim()) {
+      alert("Please provide review comments")
       return
     }
 
-    const status = action === "approve" ? "approved" : "rejected"
-    saveDocumentStatus(selectedDocument.key, status, reviewComment)
-
-    setShowReviewDialog(false)
-    setReviewComment("")
-    setSelectedDocument(null)
-
-    alert(`Document ${action}d successfully!`)
-  }
-
-  // Get document statistics
-  const getDocumentStats = () => {
-    const total = documentTypes.length
-    const approved = documentTypes.filter((doc) => getDocumentStatus(doc.key) === "approved").length
-    const rejected = documentTypes.filter((doc) => getDocumentStatus(doc.key) === "rejected").length
-    const pending = total - approved - rejected
-
-    return { total, approved, rejected, pending }
-  }
-
-  const stats = getDocumentStats()
-
-  // Create mock document objects for preview
-  const createDocumentObject = (docType: any) => {
-    const schemeDoc = scheme[docType.key]
-    if (!schemeDoc) return null
-
-    return {
-      ...schemeDoc,
-      key: docType.key,
-      type: docType.key,
-      displayName: docType.name,
-      schemeId: scheme.schemeId,
+    if (reviewAction === "approve") {
+      onDocumentApprove(selectedDocument.index, reviewComments)
+    } else {
+      onDocumentReject(selectedDocument.index, reviewComments)
     }
+
+    setIsReviewDialogOpen(false)
+    setReviewComments("")
+    setSelectedDocument(null)
   }
 
   return (
-    <div className="space-y-6">
-      {/* Document Statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-            <div className="text-sm text-gray-600">Total Documents</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
-            <div className="text-sm text-gray-600">Approved</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
-            <div className="text-sm text-gray-600">Rejected</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-            <div className="text-sm text-gray-600">Pending</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Document List */}
+    <>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Submitted Documents
+            Document Review System
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {documentTypes.map((docType) => {
-              const document = scheme[docType.key]
+            {documentTypes.map((docType, index) => {
+              const doc = scheme[docType.key] || {
+                name: `${docType.name}.pdf`,
+                size: "2.5 MB",
+                uploadedAt: new Date().toISOString(),
+              }
               const status = getDocumentStatus(docType.key)
-              const history = reviewHistory[docType.key] || []
 
               return (
-                <div key={docType.key} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <FileText className="h-8 w-8 text-blue-600" />
+                <div key={docType.key} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-blue-600" />
                     <div>
-                      <h4 className="font-medium">{docType.name}</h4>
-                      {document ? (
-                        <div className="text-sm text-gray-600">
-                          <p>{document.name}</p>
-                          <p>
-                            {Math.round(document.size / 1024)} KB • Uploaded:{" "}
-                            {new Date(document.uploadedAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-red-600">Document not uploaded</p>
-                      )}
-                      {history.length > 0 && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Last reviewed: {new Date(history[history.length - 1].reviewedAt).toLocaleString()}
+                      <p className="font-medium text-gray-900">{doc.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {doc.size} • Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()}
+                      </p>
+                      {doc.reviewHistory && doc.reviewHistory.length > 0 && (
+                        <p className="text-xs text-gray-400">
+                          Last reviewed:{" "}
+                          {new Date(doc.reviewHistory[doc.reviewHistory.length - 1].date).toLocaleDateString()}
                         </p>
                       )}
                     </div>
                   </div>
-
                   <div className="flex items-center gap-3">
-                    {getStatusBadge(status)}
-
-                    {document && (
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedDocument(createDocumentObject(docType))
-                            setShowPreview(true)
-                          }}
-                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Preview
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedDocument({ ...createDocumentObject(docType), key: docType.key })
-                            setShowReviewDialog(true)
-                          }}
-                          className="text-green-600 border-green-200 hover:bg-green-50"
-                        >
-                          <MessageSquare className="h-4 w-4 mr-1" />
-                          Review
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                          className="text-gray-600 border-gray-200 hover:bg-gray-50 bg-transparent"
-                        >
-                          <a href={document.url} download={document.name}>
-                            <Download className="h-4 w-4 mr-1" />
-                            Download
-                          </a>
-                        </Button>
-                      </div>
-                    )}
-
-                    {!document && docType.required && <Badge variant="destructive">Missing</Badge>}
+                    <Badge className={getStatusColor(status)}>
+                      {getStatusIcon(status)}
+                      <span className="ml-1">{status.charAt(0).toUpperCase() + status.slice(1)}</span>
+                    </Badge>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-3 w-3 mr-1" />
+                        Preview
+                      </Button>
+                      {status === "pending" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => handleDocumentReview(index, docType.key, "approve")}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDocumentReview(index, docType.key, "reject")}
+                          >
+                            <XCircle className="h-3 w-3 mr-1" />
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      <Button variant="outline" size="sm">
+                        <Download className="h-3 w-3 mr-1" />
+                        Download
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )
@@ -281,106 +179,56 @@ export function DocumentReviewPanel({ scheme, onStatusUpdate }: DocumentReviewPa
         </CardContent>
       </Card>
 
-      {/* Document Preview Dialog */}
-      {selectedDocument && (
-        <DocumentPreview
-          document={selectedDocument}
-          isOpen={showPreview}
-          onClose={() => {
-            setShowPreview(false)
-            setSelectedDocument(null)
-          }}
-        />
-      )}
-
-      {/* Review Dialog */}
-      <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
-        <DialogContent className="max-w-4xl h-[80vh]">
+      {/* Document Review Dialog */}
+      <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Review Document: {selectedDocument?.displayName}
-            </DialogTitle>
+            <DialogTitle>{reviewAction === "approve" ? "Approve Document" : "Reject Document"}</DialogTitle>
+            <DialogDescription>
+              {selectedDocument && `${selectedDocument.type} - ${selectedDocument.name}`}
+            </DialogDescription>
           </DialogHeader>
-
-          <Tabs defaultValue="preview" className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="preview">Document Preview</TabsTrigger>
-              <TabsTrigger value="review">Review & Comments</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="preview" className="flex-1 overflow-auto">
-              {selectedDocument && (
-                <div className="h-full overflow-auto bg-gray-100 p-4">
-                  <DocumentPreview document={selectedDocument} isOpen={true} onClose={() => {}} />
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="review" className="flex-1 space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="reviewComment">Review Comments *</Label>
-                  <Textarea
-                    id="reviewComment"
-                    placeholder="Add your detailed review comments here..."
-                    value={reviewComment}
-                    onChange={(e) => setReviewComment(e.target.value)}
-                    className="min-h-[120px] mt-2"
-                  />
-                </div>
-
-                {/* Review History */}
-                {selectedDocument &&
-                  reviewHistory[selectedDocument.key] &&
-                  reviewHistory[selectedDocument.key].length > 0 && (
-                    <div>
-                      <Label>Review History</Label>
-                      <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
-                        {reviewHistory[selectedDocument.key].map((review, index) => (
-                          <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                {getStatusBadge(review.status)}
-                                <span className="text-sm font-medium">{review.reviewedBy}</span>
-                              </div>
-                              <span className="text-xs text-gray-500">
-                                {new Date(review.reviewedAt).toLocaleString()}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-700">{review.comment}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <Button variant="outline" onClick={() => setShowReviewDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => handleReviewDocument("reject")}
-                    disabled={!reviewComment.trim()}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Reject Document
-                  </Button>
-                  <Button
-                    onClick={() => handleReviewDocument("approve")}
-                    disabled={!reviewComment.trim()}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="review-comments">
+                {reviewAction === "approve" ? "Approval Comments" : "Rejection Reason"}
+              </Label>
+              <Textarea
+                id="review-comments"
+                value={reviewComments}
+                onChange={(e) => setReviewComments(e.target.value)}
+                placeholder={
+                  reviewAction === "approve" ? "Enter approval comments..." : "Enter reason for rejection..."
+                }
+                rows={4}
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setIsReviewDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubmitReview}
+                className={
+                  reviewAction === "approve" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
+                }
+              >
+                {reviewAction === "approve" ? (
+                  <>
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Approve Document
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Reject Document
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }

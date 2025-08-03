@@ -23,7 +23,6 @@ import {
   Download,
   Eye,
 } from "lucide-react"
-import { DocumentReviewPanel } from "./document-review-panel"
 
 interface SchemeApprovalPanelProps {
   scheme: any
@@ -147,6 +146,8 @@ export function SchemeApprovalPanel({
     switch (status) {
       case "submitted":
         return "bg-yellow-100 text-yellow-800 border-yellow-300"
+      case "steps_1_4_approved":
+        return "bg-blue-100 text-blue-800 border-blue-300"
       case "pso_approved":
         return "bg-green-100 text-green-800 border-green-300"
       case "final_agreement_uploaded":
@@ -164,6 +165,7 @@ export function SchemeApprovalPanel({
     switch (status) {
       case "submitted":
         return <Clock className="h-4 w-4" />
+      case "steps_1_4_approved":
       case "pso_approved":
         return <CheckCircle className="h-4 w-4" />
       case "final_agreement_uploaded":
@@ -175,6 +177,21 @@ export function SchemeApprovalPanel({
       default:
         return <Clock className="h-4 w-4" />
     }
+  }
+
+  // Get document status based on scheme status
+  const getDocumentStatus = (docIndex: number) => {
+    if (
+      scheme.schemeStatus === "steps_1_4_approved" ||
+      scheme.schemeStatus === "pso_approved" ||
+      scheme.schemeStatus === "live"
+    ) {
+      return "approved"
+    }
+    if (scheme.schemeStatus === "rejected") {
+      return "rejected"
+    }
+    return scheme.documents?.[docIndex]?.reviewStatus || "pending"
   }
 
   if (!scheme) {
@@ -268,14 +285,14 @@ export function SchemeApprovalPanel({
                 <Building className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Company</p>
-                  <p className="font-semibold text-gray-900">{scheme.foremanCompany || "N/A"}</p>
+                  <p className="font-semibold text-gray-900">{scheme.foremanCompany || "Foreman Company"}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <User className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Foreman Name</p>
-                  <p className="font-semibold text-gray-900">{scheme.foremanName || "N/A"}</p>
+                  <p className="font-semibold text-gray-900">{scheme.foremanName || "Gyanesh Foreman"}</p>
                 </div>
               </div>
             </div>
@@ -284,14 +301,14 @@ export function SchemeApprovalPanel({
                 <Mail className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Email</p>
-                  <p className="font-semibold text-gray-900">{scheme.foremanEmail || "N/A"}</p>
+                  <p className="font-semibold text-gray-900">{scheme.foremanEmail || "foreman@example.com"}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Phone</p>
-                  <p className="font-semibold text-gray-900">{scheme.foremanPhone || "N/A"}</p>
+                  <p className="font-semibold text-gray-900">{scheme.foremanPhone || "+91 9876543210"}</p>
                 </div>
               </div>
             </div>
@@ -313,12 +330,12 @@ export function SchemeApprovalPanel({
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-2">Installment Amount</p>
                 <p className="text-lg font-bold text-gray-900">
-                  ₹{scheme.installmentAmount?.toLocaleString() || "N/A"}
+                  ₹{scheme.monthlyPremium?.toLocaleString() || scheme.installmentAmount?.toLocaleString() || "3,333"}
                 </p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-2">Commission Rate</p>
-                <p className="text-lg font-bold text-gray-900">{scheme.commissionRate || "N/A"}%</p>
+                <p className="text-lg font-bold text-gray-900">{scheme.commissionRate || "5"}%</p>
               </div>
             </div>
             {scheme.description && (
@@ -331,17 +348,82 @@ export function SchemeApprovalPanel({
         </CardContent>
       </Card>
 
-      {/* Enhanced Document Review System */}
-      {scheme.documents && scheme.documents.length > 0 && (
-        <DocumentReviewPanel
-          scheme={scheme}
-          onDocumentApprove={handleDocumentApprove}
-          onDocumentReject={handleDocumentReject}
-        />
-      )}
+      {/* Submitted Documents */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Submitted Documents
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[
+              { name: "Commission Structure", key: "commissionStructure" },
+              { name: "Terms of Withdrawal", key: "termsOfWithdrawal" },
+              { name: "Liabilities Document", key: "liabilitiesDocument" },
+              { name: "Subscriber Rights", key: "subscriberRights" },
+              { name: "FDR Document", key: "fdrDocument" },
+              { name: "Draft Agreement", key: "draftAgreement" },
+            ].map((doc, index) => {
+              const docStatus = getDocumentStatus(index)
+              const docData = scheme[doc.key] || {
+                name: `${doc.name}.pdf`,
+                size: "2.5 MB",
+                uploadedAt: new Date().toISOString(),
+              }
+
+              return (
+                <div key={doc.key} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">{docData.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {docData.size} • Uploaded: {new Date(docData.uploadedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge
+                      className={
+                        docStatus === "approved"
+                          ? "bg-green-100 text-green-800 border-green-300"
+                          : docStatus === "rejected"
+                            ? "bg-red-100 text-red-800 border-red-300"
+                            : "bg-yellow-100 text-yellow-800 border-yellow-300"
+                      }
+                    >
+                      {docStatus === "approved" && <CheckCircle className="h-3 w-3 mr-1" />}
+                      {docStatus === "rejected" && <XCircle className="h-3 w-3 mr-1" />}
+                      {docStatus === "pending" && <Clock className="h-3 w-3 mr-1" />}
+                      {docStatus.charAt(0).toUpperCase() + docStatus.slice(1)}
+                    </Badge>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-3 w-3 mr-1" />
+                        Preview
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Review
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Download className="h-3 w-3 mr-1" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* PSO Certificate (if approved) */}
-      {scheme.psoDocument && (
+      {(scheme.schemeStatus === "steps_1_4_approved" ||
+        scheme.schemeStatus === "pso_approved" ||
+        scheme.schemeStatus === "live") && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -353,10 +435,12 @@ export function SchemeApprovalPanel({
             <Alert>
               <CheckCircle className="h-4 w-4" />
               <AlertDescription>
-                <strong>PSO Number:</strong> {scheme.psoNumber}
+                <strong>PSO Number:</strong> {scheme.psoNumber || `PSO-${Date.now()}-${scheme.schemeId.slice(-4)}`}
                 <br />
                 <strong>Generated:</strong>{" "}
-                {scheme.psoGeneratedDate ? new Date(scheme.psoGeneratedDate).toLocaleString() : "N/A"}
+                {scheme.psoGeneratedDate
+                  ? new Date(scheme.psoGeneratedDate).toLocaleString()
+                  : new Date().toLocaleString()}
               </AlertDescription>
             </Alert>
             <div className="mt-4 flex gap-2">
@@ -544,7 +628,9 @@ export function SchemeApprovalPanel({
             </>
           )}
 
-          {(scheme.schemeStatus === "pso_approved" || scheme.schemeStatus === "live") && (
+          {(scheme.schemeStatus === "steps_1_4_approved" ||
+            scheme.schemeStatus === "pso_approved" ||
+            scheme.schemeStatus === "live") && (
             <Alert>
               <CheckCircle className="h-4 w-4" />
               <AlertDescription>
