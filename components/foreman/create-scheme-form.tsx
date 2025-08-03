@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -9,6 +11,8 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { SubscriberGenerator } from "./subscriber-generator"
 import {
   CheckCircle,
   Upload,
@@ -33,6 +37,7 @@ import {
   MapPin,
   CreditCard,
   User,
+  AlertCircle,
 } from "lucide-react"
 
 interface SchemeFormData {
@@ -1923,4 +1928,382 @@ export function CreateSchemeForm({
                 <div className="border rounded-lg p-4 bg-green-50 border-green-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <FileText className\
+                      <FileText className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="font-medium text-green-900 text-sm truncate max-w-[200px]">
+                          {formData.finalAgreement.name}
+                        </p>
+                        <p className="text-xs text-green-700">
+                          Uploaded: {new Date(formData.finalAgreement.uploadedAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowPreview(formData.finalAgreement)}
+                        className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Preview
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setFormData((prev) => ({ ...prev, finalAgreement: null }))
+                          setErrors((prev) => ({ ...prev, finalAgreement: null }))
+                        }}
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                        disabled={formData.schemeStatus !== SchemeStatus.Subscribers_Added}
+                      >
+                        <X className="h-4 w-4" />
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                      errors.finalAgreement
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-300 hover:border-gray-400 bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          handleFileUpload("finalAgreement", file)
+                        }
+                      }}
+                      className="hidden"
+                      id="upload-finalAgreement"
+                      disabled={formData.schemeStatus !== SchemeStatus.Subscribers_Added}
+                    />
+                    <label
+                      htmlFor="upload-finalAgreement"
+                      className={`cursor-pointer ${
+                        formData.schemeStatus !== SchemeStatus.Subscribers_Added ? "cursor-not-allowed opacity-50" : ""
+                      }`}
+                    >
+                      <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm font-medium text-gray-600">Click to upload Final Agreement</p>
+                      <p className="text-xs text-gray-500 mt-1">PDF files only, max 5MB</p>
+                    </label>
+                  </div>
+
+                  {uploadProgress.finalAgreement !== undefined && uploadProgress.finalAgreement < 100 && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Uploading...</span>
+                        <span>{uploadProgress.finalAgreement}%</span>
+                      </div>
+                      <Progress value={uploadProgress.finalAgreement} className="h-2" />
+                    </div>
+                  )}
+
+                  {errors.finalAgreement && <p className="text-sm text-red-500">{errors.finalAgreement}</p>}
+                </div>
+              )}
+            </div>
+
+            {formData.schemeStatus === SchemeStatus.Subscribers_Added && (
+              <div className="flex justify-center pt-6">
+                <Button
+                  onClick={handleSubmitFinalAgreement}
+                  disabled={isSubmitting}
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Submit Final Agreement
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        )
+
+      case 8:
+        if (!canAccessStep(8)) {
+          return (
+            <div className="text-center py-12">
+              <Lock className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">Step Locked</h3>
+              <p className="text-gray-500">Submit the final agreement to unlock the Commencement Certificate.</p>
+            </div>
+          )
+        }
+
+        return (
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h4 className="font-medium text-blue-900 mb-2">Commencement Certificate (Form 7)</h4>
+              <div className="space-y-1 text-sm text-blue-800">
+                <p>• Admin will review the final agreement</p>
+                <p>• Form 7 (Commencement Certificate) will be auto-generated</p>
+                <p>• Scheme becomes live after final approval</p>
+              </div>
+            </div>
+
+            {formData.schemeStatus === SchemeStatus.Final_Agreement_Uploaded && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                <Clock className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-yellow-900 mb-2">Awaiting Admin Approval</h3>
+                <p className="text-yellow-800 mb-4">
+                  Your final agreement is under admin review. The Commencement Certificate will be generated
+                  automatically upon approval.
+                </p>
+                <Button
+                  onClick={handleRefreshStatus}
+                  disabled={refreshing}
+                  variant="outline"
+                  className="border-yellow-300 text-yellow-700 hover:bg-yellow-100 bg-transparent"
+                >
+                  {refreshing ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Checking...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Check Approval Status
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-yellow-700 mt-2">
+                  Last checked: {new Date(lastRefresh).toLocaleTimeString()}
+                </p>
+              </div>
+            )}
+
+            {(formData.schemeStatus === SchemeStatus.Commencement_Approved ||
+              formData.schemeStatus === SchemeStatus.Live) &&
+              formData.commencementCertificate && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                  <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-green-900 mb-2">Scheme is LIVE!</h3>
+                  <p className="text-green-800 mb-4">
+                    Congratulations! Your scheme has been approved and is now LIVE! Form 7 (Commencement Certificate)
+                    has been automatically generated.
+                  </p>
+
+                  <div className="bg-white rounded-lg p-4 border border-green-200 mb-4">
+                    <div className="flex items-center justify-center gap-3">
+                      <FileText className="h-6 w-6 text-green-600" />
+                      <div>
+                        <p className="font-medium text-green-900">Commencement Certificate (Form 7)</p>
+                        <p className="text-sm text-green-700">Scheme ID: {formData.schemeId}</p>
+                        <p className="text-xs text-green-600">Issued: {new Date().toLocaleString()}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowPreview(formData.commencementCertificate)}
+                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Preview
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="text-green-600 border-green-200 hover:bg-green-50 bg-transparent"
+                        >
+                          <a
+                            href={formData.commencementCertificate.url}
+                            download={formData.commencementCertificate.name}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Badge className="bg-green-100 text-green-800 font-medium">Scheme is now LIVE!</Badge>
+                </div>
+              )}
+          </div>
+        )
+
+      default:
+        return <p>Unknown step</p>
+    }
+  }
+
+  const handleInputChange = (field: keyof SchemeFormData, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+      lastUpdated: new Date().toISOString(),
+    }))
+
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }))
+    }
+  }
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.schemeName.trim()) {
+      newErrors.schemeName = "Scheme name is required"
+    }
+
+    if (!formData.chitValue || formData.chitValue <= 0) {
+      newErrors.chitValue = "Chit value must be greater than 0"
+    }
+
+    if (!formData.chitDuration || formData.chitDuration <= 0) {
+      newErrors.chitDuration = "Chit duration must be greater than 0"
+    }
+
+    if (!formData.chitStartDate) {
+      newErrors.chitStartDate = "Start date is required"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (validateForm()) {
+      onSuccess(formData)
+    }
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-7xl space-y-8">
+      {/* Page Header */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-bold">
+          {schemeIdFromUrl ? "Edit Scheme" : "Create New Scheme"}
+          <span className="ml-4 inline-block align-middle">{getStatusBadge()}</span>
+        </h1>
+        <p className="text-gray-600">Complete the steps below to create a new chit scheme.</p>
+      </div>
+
+      {/* Main Layout */}
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Sidebar – steps & tips */}
+        <div className="lg:w-1/3 space-y-8">
+          <Card className="p-4 space-y-4">
+            <h2 className="text-lg font-semibold">Scheme Steps</h2>
+            <div className="space-y-2">
+              {STEPS.map((step) => (
+                <div
+                  key={step.id}
+                  className={`flex items-center justify-between p-3 rounded-md transition-colors cursor-pointer hover:bg-gray-100 ${
+                    currentStep === step.id ? "bg-blue-50" : ""
+                  } ${!canAccessStep(step.id) ? "opacity-50 cursor-not-allowed" : ""}`}
+                  onClick={() => canAccessStep(step.id) && setCurrentStep(step.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <step.icon className="h-5 w-5" />
+                    <div>
+                      <p className="font-medium">{step.title}</p>
+                      <p className="text-sm text-gray-500">{step.description}</p>
+                    </div>
+                  </div>
+                  {formData.stepStatus[step.id] === "complete" && <CheckCircle className="h-4 w-4 text-green-500" />}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Tips */}
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Tips & Guidelines</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowTips(!showTips)}>
+                {showTips ? "Hide" : "Show"}
+              </Button>
+            </div>
+            {showTips && STEPS.find((s) => s.id === currentStep)?.tips && (
+              <ul className="mt-4 space-y-2 text-sm text-gray-600 list-disc list-inside">
+                {STEPS.find((s) => s.id === currentStep)!.tips!.map((tip, i) => (
+                  <li key={i}>{tip}</li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </div>
+
+        {/* Step Content */}
+        <div className="lg:w-2/3">
+          <Card className="p-6 space-y-6">
+            <h2 className="text-2xl font-semibold">{STEPS[currentStep - 1].title}</h2>
+            <p className="text-gray-600">{STEPS[currentStep - 1].description}</p>
+
+            {renderStepContent()}
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-between pt-4">
+              <Button variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+              <div className="flex gap-2">
+                <Button variant="secondary" onClick={handleSaveDraft}>
+                  Save Draft
+                </Button>
+                {currentStep > 1 && canAccessStep(currentStep - 1) && (
+                  <Button variant="secondary" onClick={() => setCurrentStep(currentStep - 1)}>
+                    Previous
+                  </Button>
+                )}
+                {currentStep < STEPS.length && canAccessStep(currentStep + 1) && (
+                  <Button onClick={() => setCurrentStep(currentStep + 1)}>Next</Button>
+                )}
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* Subscriber Generator Dialog */}
+      <SubscriberGenerator
+        isOpen={showSubscriberGenerator}
+        onClose={() => setShowSubscriberGenerator(false)}
+        onSelectSubscribers={handleAddGeneratedSubscribers}
+        schemeDetails={formData}
+      />
+
+      {/* Document-preview dialog */}
+      <Dialog open={showPreview !== null} onOpenChange={(o) => !o && setShowPreview(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Document Preview</DialogTitle>
+            <DialogDescription>Preview of the uploaded document.</DialogDescription>
+          </DialogHeader>
+          {showPreview?.url && <iframe src={showPreview.url} className="w-full h-[500px]" />}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

@@ -1,301 +1,146 @@
 "use client"
 
 import { useState } from "react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, Users, Trash2, Download } from "lucide-react"
-
-// Sample data for generating realistic subscribers
-const SAMPLE_NAMES = [
-  "Rajesh Kumar",
-  "Priya Sharma",
-  "Amit Patel",
-  "Sunita Singh",
-  "Vikram Gupta",
-  "Meera Reddy",
-  "Arjun Nair",
-  "Kavya Iyer",
-  "Rohit Joshi",
-  "Anita Desai",
-  "Suresh Rao",
-  "Deepika Menon",
-  "Kiran Shah",
-  "Pooja Agarwal",
-  "Manoj Verma",
-  "Sneha Kulkarni",
-  "Ravi Chopra",
-  "Nisha Bansal",
-  "Ajay Malhotra",
-  "Rekha Sinha",
-]
-
-const SAMPLE_ADDRESSES = [
-  "123 MG Road, Bangalore",
-  "456 Park Street, Kolkata",
-  "789 Marine Drive, Mumbai",
-  "321 CP, New Delhi",
-  "654 Anna Salai, Chennai",
-  "987 Banjara Hills, Hyderabad",
-  "147 Residency Road, Bangalore",
-  "258 Salt Lake, Kolkata",
-  "369 Andheri West, Mumbai",
-  "741 Karol Bagh, New Delhi",
-  "852 T Nagar, Chennai",
-  "963 Jubilee Hills, Hyderabad",
-]
-
-interface Subscriber {
-  id: string
-  name: string
-  email: string
-  phone: string
-  ticketNumber: number
-  status: "active" | "pending" | "inactive"
-}
+import { CheckCircle, RefreshCw, Wand2, User } from "lucide-react"
+import { generateUCFSIN } from "@/lib/ucfsin-generator"
 
 interface SubscriberGeneratorProps {
-  schemeId: string
-  maxSubscribers: number
-  onSubscribersChange: (subscribers: Subscriber[]) => void
+  isOpen: boolean
+  onClose: () => void
+  onSelectSubscribers: (subscribers: any[]) => void
+  schemeDetails: any
 }
 
-export function SubscriberGenerator({ schemeId, maxSubscribers, onSubscribersChange }: SubscriberGeneratorProps) {
-  const [subscribers, setSubscribers] = useState<Subscriber[]>([])
-  const [newSubscriber, setNewSubscriber] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  })
+export function SubscriberGenerator({ isOpen, onClose, onSelectSubscribers, schemeDetails }: SubscriberGeneratorProps) {
+  const [numberOfSubscribers, setNumberOfSubscribers] = useState("10")
+  const [generatedSubscribers, setGeneratedSubscribers] = useState([])
+  const [generating, setGenerating] = useState(false)
 
-  const generateTicketNumbers = () => {
-    const availableNumbers = Array.from({ length: maxSubscribers }, (_, i) => i + 1)
-    const usedNumbers = subscribers.map((s) => s.ticketNumber)
-    return availableNumbers.filter((num) => !usedNumbers.includes(num))
+  const generateRandomName = () => {
+    const names = ["Alice", "Bob", "Charlie", "David", "Eve", "Jona", "Kevin", "Laura", "Mike", "Nancy"]
+    return names[Math.floor(Math.random() * names.length)]
   }
 
-  const addSubscriber = () => {
-    if (!newSubscriber.name || !newSubscriber.email || !newSubscriber.phone) {
-      alert("Please fill all fields")
-      return
-    }
-
-    const availableTickets = generateTicketNumbers()
-    if (availableTickets.length === 0) {
-      alert("Maximum subscribers reached")
-      return
-    }
-
-    const subscriber: Subscriber = {
-      id: `SUB-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-      ...newSubscriber,
-      ticketNumber: availableTickets[0],
-      status: "pending",
-    }
-
-    const updatedSubscribers = [...subscribers, subscriber]
-    setSubscribers(updatedSubscribers)
-    onSubscribersChange(updatedSubscribers)
-
-    setNewSubscriber({ name: "", email: "", phone: "" })
+  const generateRandomMobile = () => {
+    return `+91 ${Math.floor(Math.random() * 9000000000 + 1000000000)}`
   }
 
-  const removeSubscriber = (id: string) => {
-    const updatedSubscribers = subscribers.filter((s) => s.id !== id)
-    setSubscribers(updatedSubscribers)
-    onSubscribersChange(updatedSubscribers)
-  }
-
-  const generateRandomSubscribers = () => {
-    const names = [
-      "Rajesh Kumar",
-      "Priya Sharma",
-      "Amit Patel",
-      "Sunita Devi",
-      "Vikash Singh",
-      "Meera Gupta",
-      "Ravi Verma",
-      "Kavita Jain",
-      "Suresh Yadav",
-      "Anita Mishra",
+  const generateRandomAddress = () => {
+    const addresses = [
+      "123 Main St, Anytown",
+      "456 Oak Ave, Somecity",
+      "789 Pine Ln, Othertown",
+      "101 Elm Rd, Newville",
+      "222 Maple Dr, Oldtown",
     ]
-
-    const domains = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com"]
-    const availableTickets = generateTicketNumbers()
-    const remainingSlots = Math.min(availableTickets.length, maxSubscribers - subscribers.length)
-
-    const newSubscribers: Subscriber[] = []
-
-    for (let i = 0; i < remainingSlots; i++) {
-      const name = names[Math.floor(Math.random() * names.length)]
-      const email = `${name.toLowerCase().replace(" ", ".")}@${domains[Math.floor(Math.random() * domains.length)]}`
-      const phone = `+91${Math.floor(Math.random() * 9000000000) + 1000000000}`
-
-      newSubscribers.push({
-        id: `SUB-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 6)}`,
-        name,
-        email,
-        phone,
-        ticketNumber: availableTickets[i],
-        status: "pending",
-      })
-    }
-
-    const updatedSubscribers = [...subscribers, ...newSubscribers]
-    setSubscribers(updatedSubscribers)
-    onSubscribersChange(updatedSubscribers)
+    return addresses[Math.floor(Math.random() * addresses.length)]
   }
 
-  const exportSubscribers = () => {
-    const csvContent = [
-      "Name,Email,Phone,Ticket Number,Status",
-      ...subscribers.map((s) => `${s.name},${s.email},${s.phone},${s.ticketNumber},${s.status}`),
-    ].join("\n")
+  const generateSubscribers = async () => {
+    setGenerating(true)
+    setGeneratedSubscribers([])
 
-    const blob = new Blob([csvContent], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `${schemeId}-subscribers.csv`
-    a.click()
-    window.URL.revokeObjectURL(url)
+    try {
+      const num = Number.parseInt(numberOfSubscribers)
+      if (num > 0 && num <= 100) {
+        const newSubscribers = []
+        for (let i = 0; i < num; i++) {
+          const ucfsin = generateUCFSIN()
+          newSubscribers.push({
+            name: generateRandomName(),
+            mobile: generateRandomMobile(),
+            ucfsin: ucfsin,
+            address: generateRandomAddress(),
+            isGenerated: true,
+          })
+        }
+        setGeneratedSubscribers(newSubscribers)
+      } else {
+        alert("Please enter a valid number between 1 and 100")
+      }
+    } catch (error) {
+      console.error("Error generating subscribers:", error)
+      alert("Error generating subscribers. Please try again.")
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const handleSelectSubscribers = () => {
+    onSelectSubscribers(generatedSubscribers)
+    onClose()
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Subscriber Management</h2>
-          <p className="text-gray-600">Add and manage subscribers for this scheme</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="bg-blue-50 text-blue-700">
-            {subscribers.length} / {maxSubscribers} Subscribers
-          </Badge>
-        </div>
-      </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Generate Random Subscribers</DialogTitle>
+          <DialogDescription>Generate a list of random subscribers for testing purposes.</DialogDescription>
+        </DialogHeader>
 
-      {/* Add Subscriber Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Add New Subscriber
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={newSubscriber.name}
-                onChange={(e) => setNewSubscriber((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter full name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                value={newSubscriber.email}
-                onChange={(e) => setNewSubscriber((prev) => ({ ...prev, email: e.target.value }))}
-                placeholder="Enter email address"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                value={newSubscriber.phone}
-                onChange={(e) => setNewSubscriber((prev) => ({ ...prev, phone: e.target.value }))}
-                placeholder="Enter phone number"
-              />
-            </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="numberOfSubscribers">Number of Subscribers (1-100)</Label>
+            <Input
+              id="numberOfSubscribers"
+              type="number"
+              placeholder="Enter number of subscribers to generate"
+              value={numberOfSubscribers}
+              onChange={(e) => setNumberOfSubscribers(e.target.value)}
+            />
           </div>
-          <div className="flex gap-2">
-            <Button onClick={addSubscriber} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Subscriber
-            </Button>
-            <Button variant="outline" onClick={generateRandomSubscribers} className="gap-2 bg-transparent">
-              <Users className="h-4 w-4" />
-              Generate Sample Data
-            </Button>
-            <Button
-              variant="outline"
-              onClick={exportSubscribers}
-              className="gap-2 bg-transparent"
-              disabled={subscribers.length === 0}
-            >
-              <Download className="h-4 w-4" />
-              Export CSV
+
+          <div className="flex justify-end">
+            <Button onClick={generateSubscribers} disabled={generating}>
+              {generating ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Generate Subscribers
+                </>
+              )}
             </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Subscribers List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Current Subscribers
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {subscribers.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No subscribers added yet</p>
-              <p className="text-sm text-gray-500">Add subscribers to get started</p>
-            </div>
-          ) : (
+          {generatedSubscribers.length > 0 && (
             <div className="space-y-3">
-              {subscribers.map((subscriber, index) => (
-                <div key={subscriber.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-semibold">
-                      {subscriber.ticketNumber}
+              <h3 className="text-lg font-semibold">Generated Subscribers</h3>
+              <ul className="space-y-2">
+                {generatedSubscribers.map((subscriber, index) => (
+                  <li key={index} className="flex items-center justify-between p-3 rounded-md bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <p className="font-medium text-gray-900">{subscriber.name}</p>
+                        <p className="text-sm text-gray-500">UCFSIN: {subscriber.ucfsin}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{subscriber.name}</h4>
-                      <p className="text-sm text-gray-600">{subscriber.email}</p>
-                      <p className="text-sm text-gray-600">{subscriber.phone}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant={subscriber.status === "active" ? "default" : "secondary"}
-                      className={
-                        subscriber.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : subscriber.status === "pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-red-100 text-red-800"
-                      }
-                    >
-                      {subscriber.status}
-                    </Badge>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeSubscriber(subscriber.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+
+        <div className="flex justify-end space-x-2 pt-6">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleSelectSubscribers} disabled={generatedSubscribers.length === 0}>
+            Select Subscribers
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
