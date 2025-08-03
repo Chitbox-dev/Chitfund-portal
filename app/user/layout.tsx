@@ -6,7 +6,7 @@ import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { UserSidebar } from "@/components/user/user-sidebar"
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import {
   Breadcrumb,
@@ -88,35 +88,37 @@ export default function UserLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <UserSidebar />
-      <SidebarInset>
-        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex h-14 sm:h-16 items-center gap-4 px-4 sm:px-6">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb className="hidden sm:flex">
-              <BreadcrumbList>
-                {getBreadcrumbs().map((breadcrumb, index) => (
-                  <React.Fragment key={breadcrumb.href}>
-                    <BreadcrumbItem className={breadcrumb.isLast ? "" : "hidden md:block"}>
-                      {breadcrumb.isLast ? (
-                        <BreadcrumbPage className="text-sm sm:text-base">{breadcrumb.title}</BreadcrumbPage>
-                      ) : (
-                        <BreadcrumbLink href={breadcrumb.href} className="text-sm sm:text-base">
-                          {breadcrumb.title}
-                        </BreadcrumbLink>
-                      )}
-                    </BreadcrumbItem>
-                    {!breadcrumb.isLast && <BreadcrumbSeparator className="hidden md:block" />}
-                  </React.Fragment>
-                ))}
-              </BreadcrumbList>
-            </Breadcrumb>
-            <div className="flex-1" />
-          </div>
-        </header>
-        <div className="flex-1 overflow-auto p-4 sm:p-6">{children}</div>
-      </SidebarInset>
+      <div className="flex min-h-screen w-full">
+        <UserSidebar />
+        <main className="flex-1 flex flex-col min-h-screen">
+          <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex h-14 sm:h-16 items-center gap-4 px-4 sm:px-6">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="mr-2 h-4" />
+              <Breadcrumb className="hidden sm:flex">
+                <BreadcrumbList>
+                  {getBreadcrumbs().map((breadcrumb, index) => (
+                    <React.Fragment key={breadcrumb.href}>
+                      <BreadcrumbItem className={breadcrumb.isLast ? "" : "hidden md:block"}>
+                        {breadcrumb.isLast ? (
+                          <BreadcrumbPage className="text-sm sm:text-base">{breadcrumb.title}</BreadcrumbPage>
+                        ) : (
+                          <BreadcrumbLink href={breadcrumb.href} className="text-sm sm:text-base">
+                            {breadcrumb.title}
+                          </BreadcrumbLink>
+                        )}
+                      </BreadcrumbItem>
+                      {!breadcrumb.isLast && <BreadcrumbSeparator className="hidden md:block" />}
+                    </React.Fragment>
+                  ))}
+                </BreadcrumbList>
+              </Breadcrumb>
+              <div className="flex-1" />
+            </div>
+          </header>
+          <div className="flex-1 overflow-auto">{children}</div>
+        </main>
+      </div>
     </SidebarProvider>
   )
 }

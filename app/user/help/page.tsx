@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -29,7 +29,6 @@ import {
   Star,
   ThumbsUp,
   ThumbsDown,
-  RefreshCw,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -41,21 +40,60 @@ export default function HelpSupportPage() {
   const [attachments, setAttachments] = useState([])
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
   const [submittedTicket, setSubmittedTicket] = useState(null)
-  const [userTickets, setUserTickets] = useState([])
 
-  // Load user tickets from localStorage
-  useEffect(() => {
-    const loadUserTickets = () => {
-      const tickets = JSON.parse(localStorage.getItem("userHelpTickets") || "[]")
-      setUserTickets(tickets)
-    }
-
-    loadUserTickets()
-
-    // Refresh every 10 seconds to check for admin responses
-    const interval = setInterval(loadUserTickets, 10000)
-    return () => clearInterval(interval)
-  }, [])
+  // Mock existing tickets data
+  const existingTickets = [
+    {
+      id: "TKT-2025-001",
+      type: "grievance",
+      subject: "Payment not reflected in scheme",
+      description: "I made a payment of ₹50,000 on 15th Jan but it's not showing in my scheme account.",
+      priority: "high",
+      status: "resolved",
+      submittedDate: "2025-01-15",
+      resolvedDate: "2025-01-18",
+      adminResponse: {
+        comments:
+          "We have verified your payment and updated your account. The payment has been reflected in your Gold Savings 50K scheme. Please check your dashboard.",
+        respondedBy: "Admin Support Team",
+        responseDate: "2025-01-18",
+        attachments: [
+          {
+            name: "Payment_Confirmation_Receipt.pdf",
+            url: "/placeholder.svg?height=600&width=800&text=Payment Confirmation Receipt",
+          },
+        ],
+      },
+      rating: 5,
+      feedback: "Very satisfied with the quick resolution. Thank you!",
+    },
+    {
+      id: "TKT-2025-002",
+      type: "feedback",
+      subject: "Suggestion for mobile app improvement",
+      description:
+        "The mobile app could have better navigation. It would be great to have a quick access menu for frequently used features.",
+      priority: "low",
+      status: "in_progress",
+      submittedDate: "2025-01-20",
+      adminResponse: {
+        comments:
+          "Thank you for your valuable feedback. Our development team is working on improving the mobile app user experience. We will consider your suggestions in the next update.",
+        respondedBy: "Product Team",
+        responseDate: "2025-01-22",
+        attachments: [],
+      },
+    },
+    {
+      id: "TKT-2025-003",
+      type: "grievance",
+      subject: "Unable to access UCFSIN card",
+      description: "I'm getting an error when trying to view my UCFSIN card. The page shows 'Card not found' error.",
+      priority: "medium",
+      status: "pending",
+      submittedDate: "2025-01-23",
+    },
+  ]
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files)
@@ -74,7 +112,7 @@ export default function HelpSupportPage() {
       return
     }
 
-    const ticketId = `TKT-USR-2025-${String(Date.now()).slice(-3)}`
+    const ticketId = `TKT-2025-${String(Date.now()).slice(-3)}`
     const newTicket = {
       id: ticketId,
       type: requestType,
@@ -83,24 +121,12 @@ export default function HelpSupportPage() {
       priority,
       status: "pending",
       submittedDate: new Date().toISOString().split("T")[0],
-      submittedBy: "user",
-      userId: "USR001",
-      userName: "Rajesh Kumar",
-      userEmail: "rajesh.kumar@email.com",
       attachments: attachments.map((file) => ({
         name: file.name,
         size: file.size,
         type: file.type,
       })),
     }
-
-    // Store in localStorage for admin to see
-    const existingTickets = JSON.parse(localStorage.getItem("userHelpTickets") || "[]")
-    const updatedTickets = [...existingTickets, newTicket]
-    localStorage.setItem("userHelpTickets", JSON.stringify(updatedTickets))
-
-    // Update local state
-    setUserTickets(updatedTickets)
 
     setSubmittedTicket(newTicket)
     setShowSubmitDialog(true)
@@ -111,23 +137,6 @@ export default function HelpSupportPage() {
     setDescription("")
     setPriority("medium")
     setAttachments([])
-  }
-
-  const handleRateResponse = (ticketId, rating, feedback = "") => {
-    const updatedTickets = userTickets.map((ticket) => {
-      if (ticket.id === ticketId) {
-        return {
-          ...ticket,
-          rating,
-          feedback,
-          status: "closed",
-        }
-      }
-      return ticket
-    })
-
-    setUserTickets(updatedTickets)
-    localStorage.setItem("userHelpTickets", JSON.stringify(updatedTickets))
   }
 
   const getStatusColor = (status) => {
@@ -186,10 +195,6 @@ export default function HelpSupportPage() {
                 </div>
               </div>
             </div>
-            <Button variant="outline" className="gap-2 bg-transparent" onClick={() => window.location.reload()}>
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </Button>
           </div>
         </div>
       </div>
@@ -253,7 +258,7 @@ export default function HelpSupportPage() {
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">
               <FileText className="h-4 w-4" />
-              My Tickets ({userTickets.length})
+              My Tickets ({existingTickets.length})
             </TabsTrigger>
           </TabsList>
 
@@ -435,18 +440,18 @@ export default function HelpSupportPage() {
                 </div>
                 <div className="flex gap-2">
                   <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                    Pending: {userTickets.filter((t) => t.status === "pending").length}
+                    Pending: {existingTickets.filter((t) => t.status === "pending").length}
                   </Badge>
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    In Progress: {userTickets.filter((t) => t.status === "in_progress").length}
+                    In Progress: {existingTickets.filter((t) => t.status === "in_progress").length}
                   </Badge>
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    Resolved: {userTickets.filter((t) => t.status === "resolved").length}
+                    Resolved: {existingTickets.filter((t) => t.status === "resolved").length}
                   </Badge>
                 </div>
               </div>
 
-              {userTickets.map((ticket) => (
+              {existingTickets.map((ticket) => (
                 <Card key={ticket.id} className="border-l-4 border-l-blue-500">
                   <CardContent className="p-6">
                     <div className="space-y-4">
@@ -506,14 +511,6 @@ export default function HelpSupportPage() {
                             </div>
                           </div>
                           <p className="text-sm text-blue-800 mb-3">{ticket.adminResponse.comments}</p>
-
-                          {/* Admin Remarks */}
-                          {ticket.adminResponse.remarks && (
-                            <div className="bg-white border border-blue-300 rounded p-3 mb-3">
-                              <p className="text-xs font-medium text-blue-900 mb-1">Internal Remarks:</p>
-                              <p className="text-xs text-blue-700">{ticket.adminResponse.remarks}</p>
-                            </div>
-                          )}
 
                           {/* Response Attachments */}
                           {ticket.adminResponse.attachments && ticket.adminResponse.attachments.length > 0 && (
@@ -602,7 +599,6 @@ export default function HelpSupportPage() {
                               size="sm"
                               variant="outline"
                               className="gap-1 text-green-600 hover:text-green-700 bg-transparent"
-                              onClick={() => handleRateResponse(ticket.id, 5, "Helpful response")}
                             >
                               <ThumbsUp className="h-4 w-4" />
                               Helpful
@@ -611,7 +607,6 @@ export default function HelpSupportPage() {
                               size="sm"
                               variant="outline"
                               className="gap-1 text-red-600 hover:text-red-700 bg-transparent"
-                              onClick={() => handleRateResponse(ticket.id, 2, "Not helpful")}
                             >
                               <ThumbsDown className="h-4 w-4" />
                               Not Helpful
@@ -624,7 +619,7 @@ export default function HelpSupportPage() {
                 </Card>
               ))}
 
-              {userTickets.length === 0 && (
+              {existingTickets.length === 0 && (
                 <Card>
                   <CardContent className="p-12 text-center">
                     <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />

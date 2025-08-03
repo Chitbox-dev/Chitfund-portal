@@ -1,551 +1,429 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Search,
-  Eye,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  FileText,
-  TrendingUp,
-  Download,
-  RefreshCw,
-} from "lucide-react"
-import { toast } from "@/hooks/use-toast"
+import { FileText, Search, Filter, Eye, CheckCircle, Clock, DollarSign, BarChart3 } from "lucide-react"
 
-// Mock data for schemes
 const mockSchemes = [
   {
-    id: "SCH001",
-    name: "Premium Gold Scheme",
-    foreman: "Rajesh Kumar",
-    foremanId: "FOR001",
-    amount: 100000,
-    duration: 20,
-    subscribers: 18,
+    id: "SCH-001",
+    schemeId: "SCH-1736859597000",
+    name: "Gold Savings 50K",
+    chitValue: "₹10,00,000",
+    duration: "20 months",
+    subscribers: 20,
     maxSubscribers: 20,
-    status: "active",
-    startDate: "2024-01-15",
-    nextAuction: "2024-02-15",
-    completedAuctions: 3,
-    totalCollection: 300000,
-    pendingAmount: 50000,
-    location: "Mumbai",
-    category: "gold",
-    riskLevel: "low",
+    monthlyPremium: "₹50,000",
+    status: "live",
+    foremanName: "Rajesh Kumar",
+    foremanId: "FM001",
+    startDate: "2025-01-01",
+    endDate: "2025-08-01",
+    currentMonth: 1,
+    totalMonths: 20,
+    psoNumber: "PSO-2025-001",
+    form7Number: "FORM7-2025-001",
+    createdDate: "2024-12-15",
+    lastUpdated: "2025-01-14T10:30:00Z",
   },
   {
-    id: "SCH002",
-    name: "Silver Investment Plan",
-    foreman: "Priya Sharma",
-    foremanId: "FOR002",
-    amount: 50000,
-    duration: 12,
-    subscribers: 12,
-    maxSubscribers: 12,
-    status: "completed",
-    startDate: "2023-06-01",
-    nextAuction: null,
-    completedAuctions: 12,
-    totalCollection: 600000,
-    pendingAmount: 0,
-    location: "Delhi",
-    category: "silver",
-    riskLevel: "low",
+    id: "SCH-002",
+    schemeId: "SCH-1736859598000",
+    name: "Business Growth 100K",
+    chitValue: "₹30,00,000",
+    duration: "30 months",
+    subscribers: 25,
+    maxSubscribers: 30,
+    monthlyPremium: "₹1,00,000",
+    status: "submitted",
+    foremanName: "Priya Sharma",
+    foremanId: "FM002",
+    startDate: "2025-02-01",
+    endDate: "2027-07-01",
+    currentMonth: 0,
+    totalMonths: 30,
+    createdDate: "2025-01-10",
+    lastUpdated: "2025-01-14T09:15:00Z",
   },
   {
-    id: "SCH003",
-    name: "Business Growth Fund",
-    foreman: "Amit Patel",
-    foremanId: "FOR003",
-    amount: 200000,
-    duration: 24,
-    subscribers: 15,
-    maxSubscribers: 24,
-    status: "pending_approval",
-    startDate: "2024-03-01",
-    nextAuction: null,
-    completedAuctions: 0,
-    totalCollection: 0,
-    pendingAmount: 0,
-    location: "Ahmedabad",
-    category: "business",
-    riskLevel: "medium",
-  },
-  {
-    id: "SCH004",
-    name: "Emergency Fund Scheme",
-    foreman: "Sunita Reddy",
-    foremanId: "FOR004",
-    amount: 25000,
-    duration: 10,
-    subscribers: 8,
-    maxSubscribers: 10,
-    status: "suspended",
-    startDate: "2024-01-01",
-    nextAuction: null,
-    completedAuctions: 2,
-    totalCollection: 50000,
-    pendingAmount: 15000,
-    location: "Hyderabad",
-    category: "emergency",
-    riskLevel: "high",
+    id: "SCH-003",
+    schemeId: "SCH-1736859599000",
+    name: "Dream Home 200K",
+    chitValue: "₹80,00,000",
+    duration: "40 months",
+    subscribers: 35,
+    maxSubscribers: 40,
+    monthlyPremium: "₹2,00,000",
+    status: "live",
+    foremanName: "Amit Patel",
+    foremanId: "FM003",
+    startDate: "2024-06-01",
+    endDate: "2028-09-01",
+    currentMonth: 8,
+    totalMonths: 40,
+    psoNumber: "PSO-2024-003",
+    form7Number: "FORM7-2024-003",
+    createdDate: "2024-05-15",
+    lastUpdated: "2025-01-14T11:45:00Z",
   },
 ]
 
-const statusColors = {
-  active: "bg-green-100 text-green-800",
-  completed: "bg-blue-100 text-blue-800",
-  pending_approval: "bg-yellow-100 text-yellow-800",
-  suspended: "bg-red-100 text-red-800",
-}
-
-const riskColors = {
-  low: "bg-green-100 text-green-800",
-  medium: "bg-yellow-100 text-yellow-800",
-  high: "bg-red-100 text-red-800",
-}
-
-export default function AdminSchemesPage() {
+export default function AllSchemesPage() {
   const [schemes, setSchemes] = useState(mockSchemes)
-  const [filteredSchemes, setFilteredSchemes] = useState(mockSchemes)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [selectedScheme, setSelectedScheme] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState("all")
 
-  // Filter schemes based on search and status
   useEffect(() => {
-    let filtered = schemes
+    // Load schemes from localStorage
+    const storedSchemes = localStorage.getItem("allSchemes")
+    if (storedSchemes) {
+      try {
+        const parsedSchemes = JSON.parse(storedSchemes)
+        setSchemes([...mockSchemes, ...parsedSchemes])
+      } catch (error) {
+        console.error("Error parsing schemes:", error)
+      }
+    }
+  }, [])
 
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (scheme) =>
-          scheme.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          scheme.foreman.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          scheme.id.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "live":
+        return "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300"
+      case "submitted":
+        return "bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 border-yellow-300"
+      case "pso_approved":
+        return "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border-blue-300"
+      case "rejected":
+        return "bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border-red-300"
+      default:
+        return "bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border-gray-300"
+    }
+  }
+
+  const filteredSchemes = schemes.filter((scheme) => {
+    const matchesSearch =
+      scheme.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      scheme.schemeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      scheme.foremanName.toLowerCase().includes(searchTerm.toLowerCase())
+
+    let matchesStatus = true
+    if (activeTab === "pending") {
+      matchesStatus = ["submitted", "pso_approved"].includes(scheme.status)
+    } else if (activeTab === "active") {
+      matchesStatus = scheme.status === "live"
     }
 
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((scheme) => scheme.status === statusFilter)
-    }
+    const matchesFilter = statusFilter === "all" || scheme.status === statusFilter
+    return matchesSearch && matchesStatus && matchesFilter
+  })
 
-    setFilteredSchemes(filtered)
-  }, [searchTerm, statusFilter, schemes])
+  const handleViewDetails = (scheme) => {
+    setSelectedScheme(scheme)
+  }
 
   const handleApproveScheme = (schemeId) => {
-    setIsLoading(true)
-    setTimeout(() => {
-      setSchemes((prev) => prev.map((scheme) => (scheme.id === schemeId ? { ...scheme, status: "active" } : scheme)))
-      setIsLoading(false)
-      toast({
-        title: "Scheme Approved",
-        description: "The scheme has been approved and is now active.",
-      })
-    }, 1000)
+    const updatedSchemes = schemes.map((scheme) =>
+      scheme.id === schemeId
+        ? { ...scheme, status: "live", psoNumber: `PSO-2025-${Date.now().toString().slice(-6)}` }
+        : scheme,
+    )
+    setSchemes(updatedSchemes)
+    alert("Scheme approved successfully!")
   }
 
   const handleRejectScheme = (schemeId) => {
-    setIsLoading(true)
-    setTimeout(() => {
-      setSchemes((prev) => prev.map((scheme) => (scheme.id === schemeId ? { ...scheme, status: "suspended" } : scheme)))
-      setIsLoading(false)
-      toast({
-        title: "Scheme Rejected",
-        description: "The scheme has been rejected and suspended.",
-        variant: "destructive",
-      })
-    }, 1000)
-  }
-
-  const handleSuspendScheme = (schemeId) => {
-    setIsLoading(true)
-    setTimeout(() => {
-      setSchemes((prev) => prev.map((scheme) => (scheme.id === schemeId ? { ...scheme, status: "suspended" } : scheme)))
-      setIsLoading(false)
-      toast({
-        title: "Scheme Suspended",
-        description: "The scheme has been suspended.",
-        variant: "destructive",
-      })
-    }, 1000)
-  }
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "active":
-        return <CheckCircle className="h-4 w-4" />
-      case "completed":
-        return <CheckCircle className="h-4 w-4" />
-      case "pending_approval":
-        return <Clock className="h-4 w-4" />
-      case "suspended":
-        return <XCircle className="h-4 w-4" />
-      default:
-        return <AlertTriangle className="h-4 w-4" />
-    }
+    const updatedSchemes = schemes.map((scheme) =>
+      scheme.id === schemeId ? { ...scheme, status: "rejected" } : scheme,
+    )
+    setSchemes(updatedSchemes)
+    alert("Scheme rejected.")
   }
 
   const stats = {
     total: schemes.length,
-    active: schemes.filter((s) => s.status === "active").length,
-    pending: schemes.filter((s) => s.status === "pending_approval").length,
-    completed: schemes.filter((s) => s.status === "completed").length,
-    suspended: schemes.filter((s) => s.status === "suspended").length,
+    live: schemes.filter((s) => s.status === "live").length,
+    pending: schemes.filter((s) => ["submitted", "pso_approved"].includes(s.status)).length,
+    rejected: schemes.filter((s) => s.status === "rejected").length,
   }
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Scheme Management</h2>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Schemes</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.completed}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Suspended</CardTitle>
-            <XCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.suspended}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <Label htmlFor="search">Search Schemes</Label>
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="search"
-                  placeholder="Search by name, foreman, or ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
+    <div className="min-h-screen bg-gray-50">
+      <SidebarProvider defaultOpen={true}>
+        <AdminSidebar />
+        <SidebarInset className="content-area">
+          {/* Header */}
+          <div className="bg-white shadow-sm border-b">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-16">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">All Schemes</h1>
+                  <p className="text-sm text-gray-500">Manage and monitor all chit fund schemes</p>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    Total: {stats.total}
+                  </Badge>
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    Live: {stats.live}
+                  </Badge>
+                </div>
               </div>
             </div>
-            <div className="w-full md:w-48">
-              <Label htmlFor="status">Status Filter</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="pending_approval">Pending Approval</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Schemes Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Schemes ({filteredSchemes.length})</CardTitle>
-          <CardDescription>Manage and monitor all chit fund schemes in the system</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Scheme Details</TableHead>
-                <TableHead>Foreman</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Risk</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSchemes.map((scheme) => (
-                <TableRow key={scheme.id}>
-                  <TableCell>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium">{scheme.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        ID: {scheme.id} • {scheme.location}
-                      </div>
+                      <p className="text-sm font-medium text-gray-600">Total Schemes</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{scheme.foreman}</div>
-                      <div className="text-sm text-muted-foreground">ID: {scheme.foremanId}</div>
+                    <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <FileText className="h-6 w-6 text-blue-600" />
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">₹{scheme.amount.toLocaleString()}</div>
-                      <div className="text-sm text-muted-foreground">{scheme.duration} months</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">
-                        {scheme.subscribers}/{scheme.maxSubscribers} subscribers
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {scheme.completedAuctions}/{scheme.duration} auctions
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={statusColors[scheme.status]}>
-                      {getStatusIcon(scheme.status)}
-                      <span className="ml-1 capitalize">{scheme.status.replace("_", " ")}</span>
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={riskColors[scheme.riskLevel]}>{scheme.riskLevel.toUpperCase()}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" onClick={() => setSelectedScheme(scheme)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl">
-                          <DialogHeader>
-                            <DialogTitle>Scheme Details - {selectedScheme?.name}</DialogTitle>
-                            <DialogDescription>Complete information about the scheme</DialogDescription>
-                          </DialogHeader>
-                          {selectedScheme && (
-                            <Tabs defaultValue="overview" className="w-full">
-                              <TabsList className="grid w-full grid-cols-4">
-                                <TabsTrigger value="overview">Overview</TabsTrigger>
-                                <TabsTrigger value="financial">Financial</TabsTrigger>
-                                <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
-                                <TabsTrigger value="auctions">Auctions</TabsTrigger>
-                              </TabsList>
-                              <TabsContent value="overview" className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>Scheme Name</Label>
-                                    <p className="text-sm font-medium">{selectedScheme.name}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Scheme ID</Label>
-                                    <p className="text-sm font-medium">{selectedScheme.id}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Foreman</Label>
-                                    <p className="text-sm font-medium">{selectedScheme.foreman}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Location</Label>
-                                    <p className="text-sm font-medium">{selectedScheme.location}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Start Date</Label>
-                                    <p className="text-sm font-medium">
-                                      {new Date(selectedScheme.startDate).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <Label>Duration</Label>
-                                    <p className="text-sm font-medium">{selectedScheme.duration} months</p>
-                                  </div>
-                                </div>
-                              </TabsContent>
-                              <TabsContent value="financial" className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>Scheme Amount</Label>
-                                    <p className="text-sm font-medium">₹{selectedScheme.amount.toLocaleString()}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Total Collection</Label>
-                                    <p className="text-sm font-medium">
-                                      ₹{selectedScheme.totalCollection.toLocaleString()}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <Label>Pending Amount</Label>
-                                    <p className="text-sm font-medium">
-                                      ₹{selectedScheme.pendingAmount.toLocaleString()}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <Label>Risk Level</Label>
-                                    <Badge className={riskColors[selectedScheme.riskLevel]}>
-                                      {selectedScheme.riskLevel.toUpperCase()}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              </TabsContent>
-                              <TabsContent value="subscribers" className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>Current Subscribers</Label>
-                                    <p className="text-sm font-medium">{selectedScheme.subscribers}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Maximum Subscribers</Label>
-                                    <p className="text-sm font-medium">{selectedScheme.maxSubscribers}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Subscription Rate</Label>
-                                    <p className="text-sm font-medium">
-                                      {((selectedScheme.subscribers / selectedScheme.maxSubscribers) * 100).toFixed(1)}%
-                                    </p>
-                                  </div>
-                                </div>
-                              </TabsContent>
-                              <TabsContent value="auctions" className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>Completed Auctions</Label>
-                                    <p className="text-sm font-medium">{selectedScheme.completedAuctions}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Total Auctions</Label>
-                                    <p className="text-sm font-medium">{selectedScheme.duration}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Next Auction</Label>
-                                    <p className="text-sm font-medium">
-                                      {selectedScheme.nextAuction
-                                        ? new Date(selectedScheme.nextAuction).toLocaleDateString()
-                                        : "N/A"}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <Label>Progress</Label>
-                                    <p className="text-sm font-medium">
-                                      {((selectedScheme.completedAuctions / selectedScheme.duration) * 100).toFixed(1)}%
-                                    </p>
-                                  </div>
-                                </div>
-                              </TabsContent>
-                            </Tabs>
-                          )}
-                        </DialogContent>
-                      </Dialog>
+                  </div>
+                </CardContent>
+              </Card>
 
-                      {scheme.status === "pending_approval" && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleApproveScheme(scheme.id)}
-                            disabled={isLoading}
-                            className="text-green-600 hover:text-green-700"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRejectScheme(scheme.id)}
-                            disabled={isLoading}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-
-                      {scheme.status === "active" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSuspendScheme(scheme.id)}
-                          disabled={isLoading}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </Button>
-                      )}
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Live Schemes</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats.live}</p>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                    <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                      <CheckCircle className="h-6 w-6 text-green-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Pending Approval</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats.pending}</p>
+                    </div>
+                    <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                      <Clock className="h-6 w-6 text-yellow-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Value</p>
+                      <p className="text-3xl font-bold text-gray-900">₹120L</p>
+                    </div>
+                    <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <DollarSign className="h-6 w-6 text-purple-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="all" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  All Schemes ({stats.total})
+                </TabsTrigger>
+                <TabsTrigger value="pending" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Pending Approval ({stats.pending})
+                </TabsTrigger>
+                <TabsTrigger value="active" className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  Active Schemes ({stats.live})
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value={activeTab} className="space-y-6">
+                {/* Search and Filter Controls */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search schemes by name, ID, or foreman..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-48">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="live">Live</SelectItem>
+                      <SelectItem value="submitted">Submitted</SelectItem>
+                      <SelectItem value="pso_approved">PSO Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Schemes Table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Schemes ({filteredSchemes.length})</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Scheme Details</TableHead>
+                          <TableHead>Foreman</TableHead>
+                          <TableHead>Value & Duration</TableHead>
+                          <TableHead>Subscribers</TableHead>
+                          <TableHead>Progress</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredSchemes.map((scheme) => (
+                          <TableRow key={scheme.id}>
+                            <TableCell>
+                              <div className="flex items-center space-x-3">
+                                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <FileText className="h-5 w-5 text-blue-600" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-gray-900">{scheme.name}</p>
+                                  <p className="text-sm text-gray-500">ID: {scheme.schemeId}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium text-gray-900">{scheme.foremanName}</p>
+                                <p className="text-sm text-gray-500">{scheme.foremanId}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium text-gray-900">{scheme.chitValue}</p>
+                                <p className="text-sm text-gray-500">{scheme.duration}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {scheme.subscribers}/{scheme.maxSubscribers}
+                                </p>
+                                <p className="text-sm text-gray-500">Monthly: {scheme.monthlyPremium}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {scheme.status === "live" ? (
+                                <div>
+                                  <p className="font-medium text-gray-900">
+                                    {scheme.currentMonth}/{scheme.totalMonths}
+                                  </p>
+                                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                                    <div
+                                      className="bg-blue-600 h-2 rounded-full"
+                                      style={{ width: `${(scheme.currentMonth / scheme.totalMonths) * 100}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-500">Not started</p>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(scheme.status)}>
+                                {scheme.status.replace(/_/g, " ").toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleViewDetails(scheme)}
+                                  className="gap-1"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  View
+                                </Button>
+                                {scheme.status === "submitted" && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleApproveScheme(scheme.id)}
+                                      className="gap-1 bg-green-600 hover:bg-green-700 text-white"
+                                    >
+                                      <CheckCircle className="h-3 w-3" />
+                                      Approve
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleRejectScheme(scheme.id)}
+                                      className="gap-1 text-red-600 hover:text-red-700"
+                                    >
+                                      Reject
+                                    </Button>
+                                  </>
+                                )}
+                                {scheme.status === "live" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => (window.location.href = `/admin/schemes/${scheme.schemeId}/reports`)}
+                                    className="gap-1"
+                                  >
+                                    <BarChart3 className="h-3 w-3" />
+                                    Reports
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                {filteredSchemes.length === 0 && (
+                  <div className="text-center py-12">
+                    <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-600 mb-2">No Schemes Found</h3>
+                    <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     </div>
   )
 }

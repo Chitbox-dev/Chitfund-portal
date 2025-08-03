@@ -1,23 +1,12 @@
 "use client"
 
-import React from "react"
-
-import type { ReactNode } from "react"
+import type React from "react"
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { ForemanSidebar } from "@/components/foreman/foreman-sidebar"
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 
-export default function ForemanLayout({ children }: { children: ReactNode }) {
+export default function ForemanLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [isLoading, setIsLoading] = useState(true)
   const [foremanData, setForemanData] = useState({
@@ -26,6 +15,7 @@ export default function ForemanLayout({ children }: { children: ReactNode }) {
     status: "Active",
     successRate: "98.5%",
   })
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     // Check authentication
@@ -36,6 +26,17 @@ export default function ForemanLayout({ children }: { children: ReactNode }) {
     }
     setIsLoading(false)
   }, [pathname])
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   const getBreadcrumbs = () => {
     const segments = pathname.split("/").filter(Boolean)
@@ -81,12 +82,14 @@ export default function ForemanLayout({ children }: { children: ReactNode }) {
     return breadcrumbs
   }
 
+  const isFormPage = pathname.includes("/create-scheme") || pathname.includes("/edit-scheme")
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-sm sm:text-base">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p>Loading...</p>
         </div>
       </div>
     )
@@ -94,35 +97,18 @@ export default function ForemanLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <ForemanSidebar />
-      <SidebarInset>
-        <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex h-14 sm:h-16 items-center gap-4 px-4 sm:px-6">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb className="hidden sm:flex">
-              <BreadcrumbList>
-                {getBreadcrumbs().map((breadcrumb, index) => (
-                  <React.Fragment key={breadcrumb.href}>
-                    <BreadcrumbItem className={breadcrumb.isLast ? "" : "hidden md:block"}>
-                      {breadcrumb.isLast ? (
-                        <BreadcrumbPage className="text-sm sm:text-base">{breadcrumb.title}</BreadcrumbPage>
-                      ) : (
-                        <BreadcrumbLink href={breadcrumb.href} className="text-sm sm:text-base">
-                          {breadcrumb.title}
-                        </BreadcrumbLink>
-                      )}
-                    </BreadcrumbItem>
-                    {!breadcrumb.isLast && <BreadcrumbSeparator className="hidden md:block" />}
-                  </React.Fragment>
-                ))}
-              </BreadcrumbList>
-            </Breadcrumb>
-            <div className="flex-1" />
-          </div>
-        </header>
-        <div className="flex-1 overflow-auto p-4 sm:p-6">{children}</div>
-      </SidebarInset>
+      <div className="flex min-h-screen w-full">
+        <ForemanSidebar />
+        <main className="flex-1 flex flex-col min-h-screen">
+          <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex h-14 items-center gap-4 px-4">
+              <SidebarTrigger className="-ml-1" />
+              <div className="flex-1" />
+            </div>
+          </header>
+          <div className="flex-1 p-6">{children}</div>
+        </main>
+      </div>
     </SidebarProvider>
   )
 }
