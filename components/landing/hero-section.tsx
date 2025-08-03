@@ -7,7 +7,7 @@ import Link from "next/link"
 
 export default function HeroSection() {
   return (
-    <section className="relative bg-gradient-to-br from-[#1e3a8a] via-[#3b82f6] to-[#6366f1] text-white overflow-hidden">
+    <section className="relative bg-gradient-to-br from-[#1e3a8a] via-[#3b82f6] to-[#fbbf24] text-white overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
 
@@ -16,14 +16,9 @@ export default function HeroSection() {
           {/* Left Content */}
           <div className="space-y-6 sm:space-y-8 text-center lg:text-left">
             <div className="space-y-4 sm:space-y-6">
-              <div className="inline-flex items-center px-3 sm:px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-xs sm:text-sm font-medium">
-                <Shield className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                Government Verified Platform
-              </div>
-
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-bold leading-tight">
                 Secure Your Future with
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mt-2">
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#fbbf24] to-[#f59e0b] mt-2">
                   Smart Chitfunds
                 </span>
               </h1>

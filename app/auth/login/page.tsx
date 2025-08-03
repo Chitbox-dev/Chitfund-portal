@@ -246,10 +246,10 @@ export default function AuthLoginPage() {
           </div>
 
           {/* Ready to Get Started Section */}
-          <div className="bg-gradient-to-r from-blue-600 to-green-600 rounded-2xl p-6 text-white">
+          <div className="bg-gradient-to-r from-blue-600 to-yellow-500 rounded-2xl p-6 text-white">
             <h3 className="text-lg font-semibold mb-2">Ready to Get Started?</h3>
             <p className="text-blue-100 text-sm">
-              Use the demo credentials to explore the system or contact support for assistance.
+              Use the demo credentials to explore the system or contact support for your organization setup.
             </p>
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function AuthLoginPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-8">
         <div className="w-full max-w-md">
           <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
-            <CardHeader className="text-center pb-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg">
+            <CardHeader className="text-center pb-2 bg-gradient-to-r from-blue-50 to-yellow-50 rounded-t-lg">
               <div className="flex items-center justify-center gap-2 mb-4">
                 <Building className="h-8 w-8 text-blue-600" />
                 <div>

@@ -28,12 +28,10 @@ import {
   TrendingUp,
   BarChart3,
   ArrowLeft,
-  CheckCircle,
   Clock,
-  AlertCircle,
-  Eye,
-  Edit,
 } from "lucide-react"
+import { MonthlyReportGenerator } from "@/components/foreman/monthly-report-generator"
+import { SubscriberListManager } from "@/components/foreman/subscriber-list-manager"
 
 const generateMonthlyReports = (schemeId, totalMonths, currentMonth) => {
   const reports = []
@@ -340,140 +338,18 @@ export default function ManageSchemePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Ticket #</TableHead>
-                        <TableHead>Subscriber Name</TableHead>
-                        <TableHead>UCFSIN</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {scheme.subscribersList?.map((subscriber) => (
-                        <TableRow key={subscriber.id}>
-                          <TableCell>
-                            <div className="font-mono bg-gray-100 px-2 py-1 rounded text-center w-12">
-                              {subscriber.ticketNumber.toString().padStart(2, "0")}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium">{subscriber.name}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-mono text-sm bg-blue-50 px-2 py-1 rounded">{subscriber.ucfsin}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className="bg-green-100 text-green-800 border-green-300">{subscriber.status}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button size="sm" variant="outline" className="gap-1 bg-transparent">
-                                <Eye className="h-3 w-3" />
-                                View
-                              </Button>
-                              <Button size="sm" variant="outline" className="gap-1 bg-transparent">
-                                <Edit className="h-3 w-3" />
-                                Edit
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <SubscriberListManager schemeId={scheme.id} />
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="monthly-reports" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Subscriber Monthly Payment Reports
-                    </span>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      {monthlyReports.length} Reports
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Month Details</TableHead>
-                        <TableHead>Progress</TableHead>
-                        <TableHead>Report Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {monthlyReports.map((report) => (
-                        <TableRow key={report.id}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium text-gray-900">
-                                {scheme.id}: {report.date}
-                              </p>
-                              <p className="text-sm text-gray-500">{report.monthYear}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{report.progress}</span>
-                              {report.status === "completed" && <CheckCircle className="h-4 w-4 text-green-600" />}
-                              {report.status === "current" && <Clock className="h-4 w-4 text-blue-600" />}
-                              {report.status === "upcoming" && <AlertCircle className="h-4 w-4 text-gray-400" />}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getReportStatusColor(report.reports.subscriberPayment)}>
-                              {report.reports.subscriberPayment.replace(/_/g, " ")}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {report.reports.subscriberPayment === "uploaded" ? (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleDownloadReport(report.id, "subscriberPayment")}
-                                  className="gap-1"
-                                >
-                                  <Download className="h-3 w-3" />
-                                  Download
-                                </Button>
-                              ) : report.reports.subscriberPayment === "pending" ? (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleUploadReport(report.id, "subscriberPayment")}
-                                  className="gap-1"
-                                >
-                                  <Upload className="h-3 w-3" />
-                                  Upload
-                                </Button>
-                              ) : (
-                                <Button size="sm" variant="outline" disabled className="gap-1 bg-transparent">
-                                  <Clock className="h-3 w-3" />
-                                  Not Due
-                                </Button>
-                              )}
-                              <Button size="sm" variant="outline" className="gap-1 bg-transparent">
-                                <Eye className="h-3 w-3" />
-                                View
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+              <MonthlyReportGenerator
+                schemeId={scheme.id}
+                schemeName={scheme.name}
+                totalMonths={scheme.totalMonths}
+                currentMonth={scheme.currentMonth}
+              />
             </TabsContent>
 
             <TabsContent value="auction-reports" className="space-y-6">
