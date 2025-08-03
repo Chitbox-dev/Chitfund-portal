@@ -193,9 +193,21 @@ export default function AddForemanForm({ onSuccess, onCancel }: AddForemanFormPr
     await new Promise((resolve) => setTimeout(resolve, 2000))
     setIsSubmitting(false)
 
+    // Generate password based on first name
+    const generatedPassword = formData.firstName.toLowerCase() + "123"
+
+    // Create complete foreman data with credentials
+    const completeFormData = {
+      ...formData,
+      password: generatedPassword,
+      id: `FM${String(Date.now()).slice(-3)}`,
+      status: "active",
+      joinDate: new Date().toISOString().split("T")[0],
+    }
+
     // Call success callback with form data
     if (onSuccess) {
-      onSuccess(formData)
+      onSuccess(completeFormData)
     }
   }
 

@@ -2,428 +2,548 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { AdminSidebar } from "@/components/admin/admin-sidebar"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { FileText, Search, Filter, Eye, CheckCircle, Clock, DollarSign, BarChart3 } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Search, CheckCircle, XCircle, Clock, Eye, FileText, RefreshCw, Filter } from "lucide-react"
+import { SchemeApprovalPanel } from "@/components/admin/scheme-approval-panel"
 
-const mockSchemes = [
-  {
-    id: "SCH-001",
-    schemeId: "SCH-1736859597000",
-    name: "Gold Savings 50K",
-    chitValue: "₹10,00,000",
-    duration: "20 months",
-    subscribers: 20,
-    maxSubscribers: 20,
-    monthlyPremium: "₹50,000",
-    status: "live",
-    foremanName: "Rajesh Kumar",
-    foremanId: "FM001",
-    startDate: "2025-01-01",
-    endDate: "2025-08-01",
-    currentMonth: 1,
-    totalMonths: 20,
-    psoNumber: "PSO-2025-001",
-    form7Number: "FORM7-2025-001",
-    createdDate: "2024-12-15",
-    lastUpdated: "2025-01-14T10:30:00Z",
-  },
-  {
-    id: "SCH-002",
-    schemeId: "SCH-1736859598000",
-    name: "Business Growth 100K",
-    chitValue: "₹30,00,000",
-    duration: "30 months",
-    subscribers: 25,
-    maxSubscribers: 30,
-    monthlyPremium: "₹1,00,000",
-    status: "submitted",
-    foremanName: "Priya Sharma",
-    foremanId: "FM002",
-    startDate: "2025-02-01",
-    endDate: "2027-07-01",
-    currentMonth: 0,
-    totalMonths: 30,
-    createdDate: "2025-01-10",
-    lastUpdated: "2025-01-14T09:15:00Z",
-  },
-  {
-    id: "SCH-003",
-    schemeId: "SCH-1736859599000",
-    name: "Dream Home 200K",
-    chitValue: "₹80,00,000",
-    duration: "40 months",
-    subscribers: 35,
-    maxSubscribers: 40,
-    monthlyPremium: "₹2,00,000",
-    status: "live",
-    foremanName: "Amit Patel",
-    foremanId: "FM003",
-    startDate: "2024-06-01",
-    endDate: "2028-09-01",
-    currentMonth: 8,
-    totalMonths: 40,
-    psoNumber: "PSO-2024-003",
-    form7Number: "FORM7-2024-003",
-    createdDate: "2024-05-15",
-    lastUpdated: "2025-01-14T11:45:00Z",
-  },
-]
-
-export default function AllSchemesPage() {
-  const [schemes, setSchemes] = useState(mockSchemes)
+export default function AdminSchemesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [selectedScheme, setSelectedScheme] = useState(null)
-  const [activeTab, setActiveTab] = useState("all")
+  const [schemes, setSchemes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const loadSchemes = () => {
+    try {
+      // Load schemes from all possible sources
+      const pendingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
+      const approvedSchemes = JSON.parse(localStorage.getItem("approvedSchemes") || "[]")
+      const liveSchemes = JSON.parse(localStorage.getItem("liveSchemes") || "[]")
+      const allSchemes = JSON.parse(localStorage.getItem("allSchemes") || "[]")
+
+      console.log("Loading schemes:", { pendingSchemes, approvedSchemes, liveSchemes, allSchemes })
+
+      // Combine all schemes and remove duplicates based on schemeId
+      const combinedSchemes = [...pendingSchemes, ...approvedSchemes, ...liveSchemes, ...allSchemes]
+      const uniqueSchemes = combinedSchemes.filter(
+        (scheme, index, self) => index === self.findIndex((s) => s.schemeId === scheme.schemeId),
+      )
+
+      console.log("Unique schemes:", uniqueSchemes)
+
+      // Sort by submission date (newest first)
+      const sortedSchemes = uniqueSchemes.sort((a, b) => {
+        const dateA = new Date(a.submittedAt || a.lastUpdated || a.createdDate || 0)
+        const dateB = new Date(b.submittedAt || b.lastUpdated || b.createdDate || 0)
+        return dateB.getTime() - dateA.getTime()
+      })
+
+      setSchemes(sortedSchemes)
+    } catch (error) {
+      console.error("Error loading schemes:", error)
+      setSchemes([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate API call
+    loadSchemes()
+    setRefreshing(false)
+  }
+
+  const handleApprove = async (schemeId, comments) => {
+    try {
+      console.log("Approving scheme:", schemeId, "with comments:", comments)
+
+      // Find the scheme
+      const scheme = schemes.find((s) => s.schemeId === schemeId)
+      if (!scheme) {
+        alert("Scheme not found!")
+        return
+      }
+
+      // Update scheme status to steps_1_4_approved (not directly to pso_approved)
+      const updatedScheme = {
+        ...scheme,
+        schemeStatus: "steps_1_4_approved",
+        adminComments: {
+          ...scheme.adminComments,
+          steps_1_4_approval: {
+            comments: comments,
+            approvedBy: "Admin",
+            approvedAt: new Date().toISOString(),
+          },
+        },
+        lastUpdated: new Date().toISOString(),
+      }
+
+      // Remove from pending schemes
+      const pendingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
+      const filteredPending = pendingSchemes.filter((s) => s.schemeId !== schemeId)
+      localStorage.setItem("pendingSchemes", JSON.stringify(filteredPending))
+
+      // Add to approved schemes
+      const approvedSchemes = JSON.parse(localStorage.getItem("approvedSchemes") || "[]")
+      const filteredApproved = approvedSchemes.filter((s) => s.schemeId !== schemeId)
+      filteredApproved.push(updatedScheme)
+      localStorage.setItem("approvedSchemes", JSON.stringify(filteredApproved))
+
+      // Update allSchemes
+      const allSchemes = JSON.parse(localStorage.getItem("allSchemes") || "[]")
+      const filteredAll = allSchemes.filter((s) => s.schemeId !== schemeId)
+      filteredAll.push(updatedScheme)
+      localStorage.setItem("allSchemes", JSON.stringify(filteredAll))
+
+      // Update the scheme draft for the foreman
+      localStorage.setItem("schemeDraft", JSON.stringify(updatedScheme))
+
+      alert("Scheme approved successfully! Steps 1-4 have been approved.")
+      loadSchemes()
+      setSelectedScheme(null)
+    } catch (error) {
+      console.error("Error approving scheme:", error)
+      alert("Error approving scheme. Please try again.")
+    }
+  }
+
+  const handleReject = async (schemeId, reason) => {
+    try {
+      console.log("Rejecting scheme:", schemeId, "with reason:", reason)
+
+      // Find the scheme
+      const scheme = schemes.find((s) => s.schemeId === schemeId)
+      if (!scheme) {
+        alert("Scheme not found!")
+        return
+      }
+
+      // Update scheme status
+      const updatedScheme = {
+        ...scheme,
+        schemeStatus: "rejected",
+        rejectionReason: reason,
+        adminComments: {
+          ...scheme.adminComments,
+          rejection: {
+            reason: reason,
+            rejectedBy: "Admin",
+            rejectedAt: new Date().toISOString(),
+          },
+        },
+        lastUpdated: new Date().toISOString(),
+      }
+
+      // Update all storage locations
+      const pendingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
+      const filteredPending = pendingSchemes.filter((s) => s.schemeId !== schemeId)
+      filteredPending.push(updatedScheme) // Keep in pending for foreman to see rejection
+      localStorage.setItem("pendingSchemes", JSON.stringify(filteredPending))
+
+      // Update allSchemes
+      const allSchemes = JSON.parse(localStorage.getItem("allSchemes") || "[]")
+      const filteredAll = allSchemes.filter((s) => s.schemeId !== schemeId)
+      filteredAll.push(updatedScheme)
+      localStorage.setItem("allSchemes", JSON.stringify(filteredAll))
+
+      // Update the scheme draft for the foreman
+      localStorage.setItem("schemeDraft", JSON.stringify(updatedScheme))
+
+      alert("Scheme rejected successfully! The foreman has been notified.")
+      loadSchemes()
+      setSelectedScheme(null)
+    } catch (error) {
+      console.error("Error rejecting scheme:", error)
+      alert("Error rejecting scheme. Please try again.")
+    }
+  }
+
+  const handleApproveFinalAgreement = async (schemeId, comments) => {
+    try {
+      console.log("Approving final agreement for scheme:", schemeId)
+
+      // Find the scheme
+      const scheme = schemes.find((s) => s.schemeId === schemeId)
+      if (!scheme) {
+        alert("Scheme not found!")
+        return
+      }
+
+      // Generate Form 7 (Commencement Certificate)
+      const form7Number = `FORM7-${Date.now()}-${schemeId.slice(-4)}`
+      const commencementCertificate = {
+        name: `Form_7_Commencement_Certificate_${schemeId}.pdf`,
+        number: form7Number,
+        issuedDate: new Date().toISOString(),
+        url: `/certificates/form7/${form7Number}.pdf`, // Mock URL
+        type: "application/pdf",
+        size: 245760, // Mock size
+      }
+
+      // Update scheme status to live
+      const updatedScheme = {
+        ...scheme,
+        schemeStatus: "live",
+        commencementCertificate: commencementCertificate,
+        adminComments: {
+          ...scheme.adminComments,
+          final_approval: {
+            comments: comments,
+            approvedBy: "Admin",
+            approvedAt: new Date().toISOString(),
+            form7Generated: true,
+            form7Number: form7Number,
+          },
+        },
+        liveDate: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
+      }
+
+      // Remove from pending and approved schemes
+      const pendingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
+      const approvedSchemes = JSON.parse(localStorage.getItem("approvedSchemes") || "[]")
+      const filteredPending = pendingSchemes.filter((s) => s.schemeId !== schemeId)
+      const filteredApproved = approvedSchemes.filter((s) => s.schemeId !== schemeId)
+      localStorage.setItem("pendingSchemes", JSON.stringify(filteredPending))
+      localStorage.setItem("approvedSchemes", JSON.stringify(filteredApproved))
+
+      // Add to live schemes
+      const liveSchemes = JSON.parse(localStorage.getItem("liveSchemes") || "[]")
+      const filteredLive = liveSchemes.filter((s) => s.schemeId !== schemeId)
+      filteredLive.push(updatedScheme)
+      localStorage.setItem("liveSchemes", JSON.stringify(filteredLive))
+
+      // Update allSchemes
+      const allSchemes = JSON.parse(localStorage.getItem("allSchemes") || "[]")
+      const filteredAll = allSchemes.filter((s) => s.schemeId !== schemeId)
+      filteredAll.push(updatedScheme)
+      localStorage.setItem("allSchemes", JSON.stringify(filteredAll))
+
+      // Update the scheme draft for the foreman
+      localStorage.setItem("schemeDraft", JSON.stringify(updatedScheme))
+
+      alert(`Scheme approved and is now LIVE! Form 7 certificate generated: ${form7Number}`)
+      loadSchemes()
+      setSelectedScheme(null)
+    } catch (error) {
+      console.error("Error approving final agreement:", error)
+      alert("Error approving final agreement. Please try again.")
+    }
+  }
 
   useEffect(() => {
-    // Load schemes from localStorage
-    const storedSchemes = localStorage.getItem("allSchemes")
-    if (storedSchemes) {
-      try {
-        const parsedSchemes = JSON.parse(storedSchemes)
-        setSchemes([...mockSchemes, ...parsedSchemes])
-      } catch (error) {
-        console.error("Error parsing schemes:", error)
-      }
-    }
+    loadSchemes()
   }, [])
+
+  // Filter schemes based on search and status
+  const filteredSchemes = schemes.filter((scheme) => {
+    const matchesSearch =
+      (scheme.schemeName || scheme.schemeId || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (scheme.foremanName || "").toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesStatus = statusFilter === "all" || scheme.schemeStatus === statusFilter
+
+    return matchesSearch && matchesStatus
+  })
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "live":
-        return "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300"
       case "submitted":
-        return "bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 border-yellow-300"
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "steps_1_4_approved":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      case "pso_requested":
+        return "bg-orange-100 text-orange-800 border-orange-200"
       case "pso_approved":
-        return "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border-blue-300"
+        return "bg-green-100 text-green-800 border-green-200"
+      case "subscribers_added":
+        return "bg-purple-100 text-purple-800 border-purple-200"
+      case "final_agreement_uploaded":
+        return "bg-indigo-100 text-indigo-800 border-indigo-200"
+      case "live":
+        return "bg-emerald-100 text-emerald-800 border-emerald-200"
       case "rejected":
-        return "bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border-red-300"
+        return "bg-red-100 text-red-800 border-red-200"
       default:
-        return "bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border-gray-300"
+        return "bg-gray-100 text-gray-800 border-gray-200"
     }
   }
 
-  const filteredSchemes = schemes.filter((scheme) => {
-    const matchesSearch =
-      scheme.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      scheme.schemeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      scheme.foremanName.toLowerCase().includes(searchTerm.toLowerCase())
-
-    let matchesStatus = true
-    if (activeTab === "pending") {
-      matchesStatus = ["submitted", "pso_approved"].includes(scheme.status)
-    } else if (activeTab === "active") {
-      matchesStatus = scheme.status === "live"
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "submitted":
+        return <Clock className="h-4 w-4" />
+      case "steps_1_4_approved":
+      case "pso_approved":
+      case "live":
+        return <CheckCircle className="h-4 w-4" />
+      case "rejected":
+        return <XCircle className="h-4 w-4" />
+      default:
+        return <FileText className="h-4 w-4" />
     }
-
-    const matchesFilter = statusFilter === "all" || scheme.status === statusFilter
-    return matchesSearch && matchesStatus && matchesFilter
-  })
-
-  const handleViewDetails = (scheme) => {
-    setSelectedScheme(scheme)
   }
 
-  const handleApproveScheme = (schemeId) => {
-    const updatedSchemes = schemes.map((scheme) =>
-      scheme.id === schemeId
-        ? { ...scheme, status: "live", psoNumber: `PSO-2025-${Date.now().toString().slice(-6)}` }
-        : scheme,
+  const pendingCount = schemes.filter(
+    (s) => s.schemeStatus === "submitted" || s.schemeStatus === "final_agreement_uploaded",
+  ).length
+  const approvedCount = schemes.filter(
+    (s) => s.schemeStatus === "steps_1_4_approved" || s.schemeStatus === "pso_approved",
+  ).length
+  const liveCount = schemes.filter((s) => s.schemeStatus === "live").length
+  const rejectedCount = schemes.filter((s) => s.schemeStatus === "rejected").length
+
+  if (loading) {
+    return (
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600">Loading schemes...</p>
+          </div>
+        </div>
+      </div>
     )
-    setSchemes(updatedSchemes)
-    alert("Scheme approved successfully!")
-  }
-
-  const handleRejectScheme = (schemeId) => {
-    const updatedSchemes = schemes.map((scheme) =>
-      scheme.id === schemeId ? { ...scheme, status: "rejected" } : scheme,
-    )
-    setSchemes(updatedSchemes)
-    alert("Scheme rejected.")
-  }
-
-  const stats = {
-    total: schemes.length,
-    live: schemes.filter((s) => s.status === "live").length,
-    pending: schemes.filter((s) => ["submitted", "pso_approved"].includes(s.status)).length,
-    rejected: schemes.filter((s) => s.status === "rejected").length,
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <SidebarProvider defaultOpen={true}>
-        <AdminSidebar />
-        <SidebarInset className="content-area">
-          {/* Header */}
-          <div className="bg-white shadow-sm border-b">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-16">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">All Schemes</h1>
-                  <p className="text-sm text-gray-500">Manage and monitor all chit fund schemes</p>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    Total: {stats.total}
-                  </Badge>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    Live: {stats.live}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Scheme Management</h2>
+          <p className="text-muted-foreground">Review and approve chit fund schemes</p>
+        </div>
+        <Button onClick={handleRefresh} disabled={refreshing} variant="outline" className="gap-2 bg-transparent">
+          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </div>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Schemes</p>
-                      <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
-                    </div>
-                    <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <FileText className="h-6 w-6 text-blue-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pendingCount}</div>
+            <p className="text-xs text-muted-foreground">Awaiting review</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Approved</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{approvedCount}</div>
+            <p className="text-xs text-muted-foreground">Steps approved</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Live Schemes</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{liveCount}</div>
+            <p className="text-xs text-muted-foreground">Currently active</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+            <XCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{rejectedCount}</div>
+            <p className="text-xs text-muted-foreground">Need revision</p>
+          </CardContent>
+        </Card>
+      </div>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Live Schemes</p>
-                      <p className="text-3xl font-bold text-gray-900">{stats.live}</p>
-                    </div>
-                    <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                      <CheckCircle className="h-6 w-6 text-green-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Pending Approval</p>
-                      <p className="text-3xl font-bold text-gray-900">{stats.pending}</p>
-                    </div>
-                    <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                      <Clock className="h-6 w-6 text-yellow-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Value</p>
-                      <p className="text-3xl font-bold text-gray-900">₹120L</p>
-                    </div>
-                    <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <DollarSign className="h-6 w-6 text-purple-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="all" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  All Schemes ({stats.total})
-                </TabsTrigger>
-                <TabsTrigger value="pending" className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Pending Approval ({stats.pending})
-                </TabsTrigger>
-                <TabsTrigger value="active" className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4" />
-                  Active Schemes ({stats.live})
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value={activeTab} className="space-y-6">
-                {/* Search and Filter Controls */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Schemes List */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filter Schemes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search schemes by name, ID, or foreman..."
+                      placeholder="Search schemes..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
+                      className="pl-8"
                     />
                   </div>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-48">
-                      <Filter className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="live">Live</SelectItem>
-                      <SelectItem value="submitted">Submitted</SelectItem>
-                      <SelectItem value="pso_approved">PSO Approved</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="submitted">Submitted</SelectItem>
+                    <SelectItem value="steps_1_4_approved">Steps 1-4 Approved</SelectItem>
+                    <SelectItem value="pso_requested">PSO Requested</SelectItem>
+                    <SelectItem value="pso_approved">PSO Approved</SelectItem>
+                    <SelectItem value="subscribers_added">Subscribers Added</SelectItem>
+                    <SelectItem value="final_agreement_uploaded">Final Agreement Uploaded</SelectItem>
+                    <SelectItem value="live">Live</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
-                {/* Schemes Table */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>Schemes ({filteredSchemes.length})</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Scheme Details</TableHead>
-                          <TableHead>Foreman</TableHead>
-                          <TableHead>Value & Duration</TableHead>
-                          <TableHead>Subscribers</TableHead>
-                          <TableHead>Progress</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredSchemes.map((scheme) => (
-                          <TableRow key={scheme.id}>
-                            <TableCell>
-                              <div className="flex items-center space-x-3">
-                                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                  <FileText className="h-5 w-5 text-blue-600" />
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-900">{scheme.name}</p>
-                                  <p className="text-sm text-gray-500">ID: {scheme.schemeId}</p>
-                                </div>
+          {/* Schemes Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>All Schemes ({filteredSchemes.length})</CardTitle>
+              <CardDescription>Click on a scheme to view details and take action</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {filteredSchemes.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-semibold text-gray-900">No schemes found</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {searchTerm || statusFilter !== "all"
+                      ? "Try adjusting your search or filter criteria."
+                      : "No schemes have been submitted yet."}
+                  </p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Scheme Details</TableHead>
+                      <TableHead>Foreman</TableHead>
+                      <TableHead>Value</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSchemes.map((scheme) => (
+                      <TableRow
+                        key={scheme.schemeId}
+                        className={`cursor-pointer hover:bg-gray-50 ${
+                          selectedScheme?.schemeId === scheme.schemeId ? "bg-blue-50" : ""
+                        }`}
+                        onClick={() => setSelectedScheme(scheme)}
+                      >
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <div className="flex-shrink-0">
+                              <FileText className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {scheme.schemeName || `Scheme ${scheme.schemeId}`}
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium text-gray-900">{scheme.foremanName}</p>
-                                <p className="text-sm text-gray-500">{scheme.foremanId}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium text-gray-900">{scheme.chitValue}</p>
-                                <p className="text-sm text-gray-500">{scheme.duration}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium text-gray-900">
-                                  {scheme.subscribers}/{scheme.maxSubscribers}
-                                </p>
-                                <p className="text-sm text-gray-500">Monthly: {scheme.monthlyPremium}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {scheme.status === "live" ? (
-                                <div>
-                                  <p className="font-medium text-gray-900">
-                                    {scheme.currentMonth}/{scheme.totalMonths}
-                                  </p>
-                                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                                    <div
-                                      className="bg-blue-600 h-2 rounded-full"
-                                      style={{ width: `${(scheme.currentMonth / scheme.totalMonths) * 100}%` }}
-                                    ></div>
-                                  </div>
-                                </div>
-                              ) : (
-                                <p className="text-sm text-gray-500">Not started</p>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={getStatusColor(scheme.status)}>
-                                {scheme.status.replace(/_/g, " ").toUpperCase()}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleViewDetails(scheme)}
-                                  className="gap-1"
-                                >
-                                  <Eye className="h-3 w-3" />
-                                  View
-                                </Button>
-                                {scheme.status === "submitted" && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleApproveScheme(scheme.id)}
-                                      className="gap-1 bg-green-600 hover:bg-green-700 text-white"
-                                    >
-                                      <CheckCircle className="h-3 w-3" />
-                                      Approve
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleRejectScheme(scheme.id)}
-                                      className="gap-1 text-red-600 hover:text-red-700"
-                                    >
-                                      Reject
-                                    </Button>
-                                  </>
-                                )}
-                                {scheme.status === "live" && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => (window.location.href = `/admin/schemes/${scheme.schemeId}/reports`)}
-                                    className="gap-1"
-                                  >
-                                    <BarChart3 className="h-3 w-3" />
-                                    Reports
-                                  </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
+                              <div className="text-sm text-gray-500">ID: {scheme.schemeId}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="font-medium text-gray-900">{scheme.foremanName || "N/A"}</div>
+                            <div className="text-gray-500">{scheme.foremanEmail || "N/A"}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="font-medium">
+                              ₹{Number(scheme.chitValue || scheme.totalValue || 0).toLocaleString()}
+                            </div>
+                            <div className="text-gray-500">
+                              {scheme.numberOfSubscribers || scheme.totalSubscribers || 0} subscribers
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`${getStatusColor(scheme.schemeStatus)} text-xs`}>
+                            {getStatusIcon(scheme.schemeStatus)}
+                            <span className="ml-1">{scheme.schemeStatus?.replace(/_/g, " ").toUpperCase()}</span>
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-gray-900">
+                            {scheme.submittedAt
+                              ? new Date(scheme.submittedAt).toLocaleDateString()
+                              : scheme.lastUpdated
+                                ? new Date(scheme.lastUpdated).toLocaleDateString()
+                                : "N/A"}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedScheme(scheme)
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-                {filteredSchemes.length === 0 && (
-                  <div className="text-center py-12">
-                    <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-600 mb-2">No Schemes Found</h3>
-                    <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+        {/* Scheme Details Panel */}
+        <div className="lg:col-span-1">
+          <Card className="sticky top-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Scheme Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {selectedScheme ? (
+                <SchemeApprovalPanel
+                  scheme={selectedScheme}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
+                  onApproveFinalAgreement={handleApproveFinalAgreement}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Select a scheme to view details</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }

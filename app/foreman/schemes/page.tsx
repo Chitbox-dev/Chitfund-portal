@@ -4,57 +4,43 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ForemanSidebar } from "@/components/foreman/foreman-sidebar"
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Progress } from "@/components/ui/progress"
 import {
   Plus,
   FileText,
   Users,
-  DollarSign,
   Calendar,
+  IndianRupee,
   Eye,
+  Edit,
   Trash2,
-  Download,
-  Clock,
-  CheckCircle,
   Upload,
-  RefreshCw,
-  AlertCircle,
-  ArrowRight,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  Target,
+  Activity,
 } from "lucide-react"
+import Link from "next/link"
 
 const mockSchemes = [
   {
     id: 1,
     schemeId: "SCH-1736859597000",
-    name: "Gold Savings 50K",
-    chitValue: "₹10,00,000",
-    duration: "20 months",
-    subscribers: 20,
+    schemeName: "Gold Savings 50K",
+    schemeAmount: 1000000,
+    schemeDuration: 20,
+    currentSubscribers: 20,
     maxSubscribers: 20,
-    monthlyPremium: "₹50,000",
-    status: "live",
+    monthlyEMI: 50000,
     schemeStatus: "live",
     psoNumber: "PSO-2025-001",
-    commencementCertificate: {
-      number: "FORM7-2025-001",
-      issuedDate: "2025-01-01",
-      status: "issued",
-    },
     startDate: "2025-01-01",
     nextAuction: "2025-02-15",
-    commission: "5%",
-    collectedAmount: "₹8,50,000",
-    pendingAmount: "₹1,50,000",
+    commissionRate: 5,
+    collectedAmount: 850000,
+    pendingAmount: 150000,
     completedMonths: 17,
     createdDate: "2024-12-15",
     lastUpdated: "2025-01-14T10:30:00Z",
@@ -62,19 +48,18 @@ const mockSchemes = [
   {
     id: 2,
     schemeId: "SCH-1736859598000",
-    name: "Business Growth 100K",
-    chitValue: "₹30,00,000",
-    duration: "30 months",
-    subscribers: 25,
+    schemeName: "Business Growth 100K",
+    schemeAmount: 3000000,
+    schemeDuration: 30,
+    currentSubscribers: 25,
     maxSubscribers: 30,
-    monthlyPremium: "₹1,00,000",
-    status: "pso_approved",
+    monthlyEMI: 100000,
     schemeStatus: "pso_approved",
     psoNumber: "PSO-2025-002",
     startDate: "2025-02-01",
-    commission: "4.5%",
-    collectedAmount: "₹0",
-    pendingAmount: "₹30,00,000",
+    commissionRate: 4.5,
+    collectedAmount: 0,
+    pendingAmount: 3000000,
     completedMonths: 0,
     createdDate: "2025-01-10",
     lastUpdated: "2025-01-14T09:15:00Z",
@@ -82,17 +67,16 @@ const mockSchemes = [
   {
     id: 3,
     schemeId: "SCH-1736859599000",
-    name: "Dream Home 200K",
-    chitValue: "₹80,00,000",
-    duration: "40 months",
-    subscribers: 0,
+    schemeName: "Dream Home 200K",
+    schemeAmount: 8000000,
+    schemeDuration: 40,
+    currentSubscribers: 0,
     maxSubscribers: 40,
-    monthlyPremium: "₹2,00,000",
-    status: "steps_1_4_approved",
+    monthlyEMI: 200000,
     schemeStatus: "steps_1_4_approved",
-    commission: "5%",
-    collectedAmount: "₹0",
-    pendingAmount: "₹80,00,000",
+    commissionRate: 5,
+    collectedAmount: 0,
+    pendingAmount: 8000000,
     completedMonths: 0,
     createdDate: "2025-01-05",
     lastUpdated: "2025-01-14T11:45:00Z",
@@ -100,503 +84,443 @@ const mockSchemes = [
       steps_1_4: "Steps 1-4 approved by admin. You can now request PSO.",
     },
   },
+  // Adding some closed schemes for demonstration
+  {
+    id: 4,
+    schemeId: "SCH-1736859600000",
+    schemeName: "Completed Savings Scheme",
+    schemeAmount: 500000,
+    schemeDuration: 12,
+    currentSubscribers: 10,
+    maxSubscribers: 10,
+    monthlyEMI: 50000,
+    schemeStatus: "completed",
+    psoNumber: "PSO-2024-015",
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+    commissionRate: 4,
+    collectedAmount: 500000,
+    pendingAmount: 0,
+    completedMonths: 12,
+    createdDate: "2023-12-15",
+    lastUpdated: "2024-12-31T23:59:59Z",
+  },
+  {
+    id: 5,
+    schemeId: "SCH-1736859601000",
+    schemeName: "Terminated Emergency Fund",
+    schemeAmount: 200000,
+    schemeDuration: 8,
+    currentSubscribers: 5,
+    maxSubscribers: 8,
+    monthlyEMI: 25000,
+    schemeStatus: "terminated",
+    psoNumber: "PSO-2024-020",
+    startDate: "2024-06-01",
+    endDate: "2024-10-15",
+    commissionRate: 3,
+    collectedAmount: 125000,
+    pendingAmount: 75000,
+    completedMonths: 4,
+    terminationReason: "Insufficient participation",
+    createdDate: "2024-05-20",
+    lastUpdated: "2024-10-15T15:30:00Z",
+  },
 ]
 
-export default function SchemesPage() {
+export default function ForemanSchemes() {
   const [schemes, setSchemes] = useState([])
-  const [selectedScheme, setSelectedScheme] = useState(null)
-  const [refreshing, setRefreshing] = useState(false)
+  const [activeTab, setActiveTab] = useState("all")
 
-  // Load schemes from localStorage and merge with mock data
   useEffect(() => {
-    loadSchemes()
-  }, [])
-
-  const loadSchemes = () => {
-    try {
-      // Load from localStorage
-      const pendingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
-      const approvedSchemes = JSON.parse(localStorage.getItem("approvedSchemes") || "[]")
-      const schemeDraft = localStorage.getItem("schemeDraft")
-
-      const allSchemes = [...mockSchemes]
-
-      // Add schemes from localStorage
-      const localSchemes = [...pendingSchemes, ...approvedSchemes]
-
-      // Add draft if it exists and is not already in the lists
-      if (schemeDraft) {
-        try {
-          const draft = JSON.parse(schemeDraft)
-          const existsInLocal = localSchemes.some((s) => s.schemeId === draft.schemeId)
-          if (!existsInLocal) {
-            localSchemes.push(draft)
-          }
-        } catch (error) {
-          console.error("Error parsing draft:", error)
-        }
+    // Load schemes from localStorage
+    const storedSchemes = localStorage.getItem("foremanSchemes")
+    if (storedSchemes) {
+      try {
+        const parsedSchemes = JSON.parse(storedSchemes)
+        setSchemes(parsedSchemes)
+      } catch (error) {
+        console.error("Error parsing schemes:", error)
       }
-
-      // Merge with mock data, prioritizing localStorage data
-      localSchemes.forEach((localScheme) => {
-        const existingIndex = allSchemes.findIndex((s) => s.schemeId === localScheme.schemeId)
-        if (existingIndex >= 0) {
-          allSchemes[existingIndex] = {
-            ...allSchemes[existingIndex],
-            ...localScheme,
-            name: localScheme.name || `Scheme ${localScheme.schemeId}`,
-          }
-        } else {
-          allSchemes.push({
-            ...localScheme,
-            id: Date.now() + Math.random(),
-            name: localScheme.name || `Scheme ${localScheme.schemeId}`,
-            chitValue: `₹${localScheme.chitValue}`,
-            monthlyPremium: `₹${localScheme.monthlyPremium}`,
-            duration: `${localScheme.chitDuration} months`,
-            subscribers: localScheme.subscribers?.length || 0,
-            maxSubscribers: Number.parseInt(localScheme.numberOfSubscribers) || 0,
-            status: localScheme.schemeStatus,
-            schemeStatus: localScheme.schemeStatus,
-          })
-        }
-      })
-
-      // Sort by last updated (most recent first)
-      allSchemes.sort((a, b) => {
-        const dateA = new Date(a.lastUpdated || a.createdDate || 0)
-        const dateB = new Date(b.lastUpdated || b.createdDate || 0)
-        return dateB - dateA
-      })
-
-      setSchemes(allSchemes)
-    } catch (error) {
-      console.error("Error loading schemes:", error)
-      setSchemes(mockSchemes)
     }
-  }
 
-  const handleRefresh = async () => {
-    setRefreshing(true)
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    loadSchemes()
-    setRefreshing(false)
-  }
+    // Also check for draft scheme
+    const draftScheme = localStorage.getItem("schemeDraft")
+    if (draftScheme) {
+      try {
+        const parsedDraft = JSON.parse(draftScheme)
+        // Add draft to schemes if not already present
+        setSchemes((prevSchemes) => {
+          const existingIndex = prevSchemes.findIndex((s) => s.schemeId === parsedDraft.schemeId)
+          if (existingIndex >= 0) {
+            // Update existing scheme
+            const updatedSchemes = [...prevSchemes]
+            updatedSchemes[existingIndex] = parsedDraft
+            return updatedSchemes
+          } else {
+            // Add new scheme
+            return [...prevSchemes, parsedDraft]
+          }
+        })
+      } catch (error) {
+        console.error("Error parsing draft scheme:", error)
+      }
+    }
+  }, [])
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "live":
-        return "bg-green-100 text-green-800 border-green-200"
-      case "pso_approved":
-        return "bg-blue-100 text-blue-800 border-blue-200"
-      case "steps_1_4_approved":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
-      case "pso_requested":
-        return "bg-orange-100 text-orange-800 border-orange-200"
-      case "subscribers_added":
-        return "bg-purple-100 text-purple-800 border-purple-200"
-      case "final_agreement_uploaded":
-        return "bg-indigo-100 text-indigo-800 border-indigo-200"
-      case "submitted":
-        return "bg-blue-100 text-blue-800 border-blue-200"
       case "draft":
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-gray-100 text-gray-800 border-gray-300"
+      case "submitted":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300"
+      case "pso_approved":
+        return "bg-blue-100 text-blue-800 border-blue-300"
+      case "final_agreement_uploaded":
+        return "bg-purple-100 text-purple-800 border-purple-300"
+      case "live":
+        return "bg-green-100 text-green-800 border-green-300"
+      case "rejected":
+        return "bg-red-100 text-red-800 border-red-300"
+      case "closed":
+        return "bg-slate-100 text-slate-800 border-slate-300"
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-gray-100 text-gray-800 border-gray-300"
     }
   }
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "live":
-        return <CheckCircle className="h-4 w-4" />
+      case "draft":
+        return <Edit className="h-4 w-4" />
+      case "submitted":
+        return <Clock className="h-4 w-4" />
       case "pso_approved":
         return <CheckCircle className="h-4 w-4" />
-      case "steps_1_4_approved":
-        return <AlertCircle className="h-4 w-4" />
-      case "pso_requested":
-        return <Clock className="h-4 w-4" />
-      case "subscribers_added":
-        return <Users className="h-4 w-4" />
       case "final_agreement_uploaded":
         return <Upload className="h-4 w-4" />
-      case "submitted":
-        return <Clock className="h-4 w-4" />
-      case "draft":
-        return <FileText className="h-4 w-4" />
-      default:
-        return <FileText className="h-4 w-4" />
-    }
-  }
-
-  const getStatusMessage = (scheme) => {
-    switch (scheme.schemeStatus || scheme.status) {
-      case "steps_1_4_approved":
-        return {
-          message: "Steps 1-4 Approved! You can now request PSO.",
-          action: "Request PSO",
-          actionUrl: `/foreman/create-scheme?schemeId=${scheme.schemeId}&step=5`,
-          color: "text-blue-600",
-        }
-      case "pso_approved":
-        return {
-          message: "PSO Approved! You can now add subscribers.",
-          action: "Add Subscribers",
-          actionUrl: `/foreman/create-scheme?schemeId=${scheme.schemeId}&step=6`,
-          color: "text-green-600",
-        }
-      case "subscribers_added":
-        return {
-          message: "Subscribers added. Upload final agreement.",
-          action: "Upload Agreement",
-          actionUrl: `/foreman/create-scheme?schemeId=${scheme.schemeId}&step=7`,
-          color: "text-purple-600",
-        }
       case "live":
-        return {
-          message: "Scheme is LIVE! Manage your active scheme.",
-          action: "Manage Scheme",
-          actionUrl: `/foreman/schemes/${scheme.schemeId}/manage`,
-          color: "text-green-600",
-        }
-      case "submitted":
-        return {
-          message: "Submitted for admin review. Please wait.",
-          action: "View Status",
-          actionUrl: `/foreman/create-scheme?schemeId=${scheme.schemeId}`,
-          color: "text-orange-600",
-        }
-      case "pso_requested":
-        return {
-          message: "PSO requested. Waiting for admin approval.",
-          action: "View Status",
-          actionUrl: `/foreman/create-scheme?schemeId=${scheme.schemeId}&step=5`,
-          color: "text-orange-600",
-        }
-      case "final_agreement_uploaded":
-        return {
-          message: "Final agreement uploaded. Waiting for Form 7.",
-          action: "View Status",
-          actionUrl: `/foreman/create-scheme?schemeId=${scheme.schemeId}&step=8`,
-          color: "text-indigo-600",
-        }
+        return <Activity className="h-4 w-4" />
+      case "rejected":
+        return <AlertTriangle className="h-4 w-4" />
+      case "closed":
+        return <FileText className="h-4 w-4" />
       default:
-        return {
-          message: "Continue working on your scheme.",
-          action: "Continue",
-          actionUrl: `/foreman/create-scheme?schemeId=${scheme.schemeId}`,
-          color: "text-gray-600",
-        }
+        return <FileText className="h-4 w-4" />
     }
   }
 
-  const handleCreateScheme = () => {
-    window.location.href = "/foreman/create-scheme"
+  const filterSchemes = (status) => {
+    if (status === "all") return schemes
+    if (status === "active")
+      return schemes.filter((s) => ["live", "pso_approved", "final_agreement_uploaded"].includes(s.schemeStatus))
+    if (status === "pending") return schemes.filter((s) => ["draft", "submitted"].includes(s.schemeStatus))
+    if (status === "closed") return schemes.filter((s) => s.schemeStatus === "closed")
+    return schemes.filter((s) => s.schemeStatus === status)
   }
 
-  const handleViewScheme = (scheme) => {
-    const statusInfo = getStatusMessage(scheme)
-    window.location.href = statusInfo.actionUrl
+  const filteredSchemes = filterSchemes(activeTab)
+
+  const getActionRequiredSchemes = () => {
+    return schemes.filter((scheme) => {
+      return (
+        scheme.schemeStatus === "pso_approved" ||
+        scheme.schemeStatus === "rejected" ||
+        (scheme.schemeStatus === "draft" && scheme.lastUpdated)
+      )
+    })
   }
 
-  const handleEditScheme = (scheme) => {
-    window.location.href = `/foreman/create-scheme?schemeId=${scheme.schemeId}`
-  }
+  const actionRequiredSchemes = getActionRequiredSchemes()
 
   const handleDeleteScheme = (schemeId) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this scheme?")
-    if (confirmDelete) {
-      // Remove from localStorage
-      const pendingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
-      const approvedSchemes = JSON.parse(localStorage.getItem("approvedSchemes") || "[]")
+    if (confirm("Are you sure you want to delete this scheme?")) {
+      const updatedSchemes = schemes.filter((s) => s.schemeId !== schemeId)
+      setSchemes(updatedSchemes)
+      localStorage.setItem("foremanSchemes", JSON.stringify(updatedSchemes))
 
-      const updatedPending = pendingSchemes.filter((s) => s.schemeId !== schemeId)
-      const updatedApproved = approvedSchemes.filter((s) => s.schemeId !== schemeId)
-
-      localStorage.setItem("pendingSchemes", JSON.stringify(updatedPending))
-      localStorage.setItem("approvedSchemes", JSON.stringify(updatedApproved))
-
-      // Remove from current schemes
-      setSchemes(schemes.filter((scheme) => scheme.schemeId !== schemeId))
+      // Also remove from draft if it's the same scheme
+      const draftScheme = localStorage.getItem("schemeDraft")
+      if (draftScheme) {
+        const parsedDraft = JSON.parse(draftScheme)
+        if (parsedDraft.schemeId === schemeId) {
+          localStorage.removeItem("schemeDraft")
+        }
+      }
     }
   }
 
   return (
-    <SidebarProvider>
-      <ForemanSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white px-6">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="/foreman">Foreman Portal</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
-              <BreadcrumbItem>
-                <BreadcrumbPage>My Schemes</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="ml-auto flex gap-2">
-            <Button onClick={handleRefresh} variant="outline" className="gap-2 bg-transparent" disabled={refreshing}>
-              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-            <Button onClick={handleCreateScheme} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create New Scheme
-            </Button>
-          </div>
-        </header>
-
-        <div className="flex-1 space-y-6 p-6 bg-gray-50">
-          {/* Header */}
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">My Schemes</h1>
-              <p className="text-gray-600 mt-1">Manage and monitor your chit fund schemes</p>
+              <p className="text-sm text-gray-500">Manage your chit fund schemes</p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-4">
               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                Total Schemes: {schemes.length}
+                Total: {schemes.length}
               </Badge>
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                Live: {schemes.filter((s) => s.status === "live" || s.schemeStatus === "live").length}
-              </Badge>
-              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                Pending:{" "}
-                {
-                  schemes.filter((s) =>
-                    ["submitted", "pso_requested", "steps_1_4_approved"].includes(s.status || s.schemeStatus),
-                  ).length
-                }
-              </Badge>
+              <Link href="/foreman/create-scheme">
+                <Button className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg">
+                  <Plus className="h-4 w-4" />
+                  Create New Scheme
+                </Button>
+              </Link>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Status-based Sections */}
-          <div className="space-y-8">
-            {/* Action Required Section */}
-            {schemes.filter((s) =>
-              ["steps_1_4_approved", "pso_approved", "subscribers_added"].includes(s.schemeStatus || s.status),
-            ).length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <AlertCircle className="h-5 w-5 text-orange-500" />
-                  <h2 className="text-xl font-semibold text-gray-900">Action Required</h2>
-                  <Badge className="bg-orange-100 text-orange-800">
-                    {
-                      schemes.filter((s) =>
-                        ["steps_1_4_approved", "pso_approved", "subscribers_added"].includes(
-                          s.schemeStatus || s.status,
-                        ),
-                      ).length
-                    }
-                  </Badge>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Action Required Section */}
+        {actionRequiredSchemes.length > 0 && (
+          <div className="mb-8">
+            <Card className="border-orange-200 bg-orange-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-800">
+                  <AlertTriangle className="h-5 w-5" />
+                  Action Required ({actionRequiredSchemes.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {actionRequiredSchemes.map((scheme) => (
+                    <div
+                      key={scheme.schemeId}
+                      className="flex items-center justify-between p-4 bg-white rounded-lg border border-orange-200"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(scheme.schemeStatus)}
+                          <span className="font-medium">{scheme.schemeName || `Scheme ${scheme.schemeId}`}</span>
+                        </div>
+                        <Badge className={getStatusColor(scheme.schemeStatus)}>
+                          {scheme.schemeStatus?.replace(/_/g, " ").toUpperCase()}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {scheme.schemeStatus === "pso_approved" && (
+                          <span className="text-sm text-green-700 font-medium">Upload Final Agreement</span>
+                        )}
+                        {scheme.schemeStatus === "rejected" && (
+                          <span className="text-sm text-red-700 font-medium">Review & Resubmit</span>
+                        )}
+                        {scheme.schemeStatus === "draft" && (
+                          <span className="text-sm text-blue-700 font-medium">Complete & Submit</span>
+                        )}
+                        <Link href={`/foreman/schemes/${scheme.schemeId}`}>
+                          <Button size="sm" variant="outline" className="gap-1 bg-transparent">
+                            <Eye className="h-3 w-3" />
+                            View
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {schemes
-                    .filter((s) =>
-                      ["steps_1_4_approved", "pso_approved", "subscribers_added"].includes(s.schemeStatus || s.status),
-                    )
-                    .map((scheme) => (
-                      <SchemeCard
-                        key={scheme.schemeId}
-                        scheme={scheme}
-                        onView={handleViewScheme}
-                        onEdit={handleEditScheme}
-                        onDelete={handleDeleteScheme}
-                        getStatusColor={getStatusColor}
-                        getStatusIcon={getStatusIcon}
-                        getStatusMessage={getStatusMessage}
-                        priority={true}
-                      />
-                    ))}
-                </div>
-              </div>
-            )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-            {/* All Schemes Section */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="h-5 w-5 text-gray-500" />
-                <h2 className="text-xl font-semibold text-gray-900">All Schemes</h2>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {schemes.map((scheme) => (
-                  <SchemeCard
-                    key={scheme.schemeId}
-                    scheme={scheme}
-                    onView={handleViewScheme}
-                    onEdit={handleEditScheme}
-                    onDelete={handleDeleteScheme}
-                    getStatusColor={getStatusColor}
-                    getStatusIcon={getStatusIcon}
-                    getStatusMessage={getStatusMessage}
-                  />
+        {/* Schemes Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="all" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              All ({schemes.length})
+            </TabsTrigger>
+            <TabsTrigger value="active" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Active ({filterSchemes("active").length})
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Pending ({filterSchemes("pending").length})
+            </TabsTrigger>
+            <TabsTrigger value="live" className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Live ({filterSchemes("live").length})
+            </TabsTrigger>
+            <TabsTrigger value="closed" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Closed ({filterSchemes("closed").length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value={activeTab} className="space-y-6">
+            {filteredSchemes.length > 0 ? (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filteredSchemes.map((scheme) => (
+                  <Card key={scheme.schemeId} className="hover:shadow-lg transition-shadow duration-200">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg font-bold text-slate-800 mb-2">
+                            {scheme.schemeName || `Scheme ${scheme.schemeId}`}
+                          </CardTitle>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Badge className={getStatusColor(scheme.schemeStatus)} variant="secondary">
+                              {getStatusIcon(scheme.schemeStatus)}
+                              <span className="ml-1">{scheme.schemeStatus?.replace(/_/g, " ").toUpperCase()}</span>
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {scheme.schemeId}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <IndianRupee className="h-4 w-4 text-green-600" />
+                          <div>
+                            <p className="text-gray-500">Amount</p>
+                            <p className="font-semibold">₹{scheme.schemeAmount?.toLocaleString() || "N/A"}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-blue-600" />
+                          <div>
+                            <p className="text-gray-500">Duration</p>
+                            <p className="font-semibold">{scheme.schemeDuration || "N/A"} months</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-purple-600" />
+                          <div>
+                            <p className="text-gray-500">Subscribers</p>
+                            <p className="font-semibold">
+                              {scheme.currentSubscribers || 0}/{scheme.maxSubscribers || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Target className="h-4 w-4 text-orange-600" />
+                          <div>
+                            <p className="text-gray-500">Progress</p>
+                            <p className="font-semibold">
+                              {Math.round(((scheme.currentSubscribers || 0) / (scheme.maxSubscribers || 1)) * 100)}%
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Subscription Progress</span>
+                          <span className="font-medium">
+                            {scheme.currentSubscribers || 0}/{scheme.maxSubscribers || "N/A"}
+                          </span>
+                        </div>
+                        <Progress
+                          value={((scheme.currentSubscribers || 0) / (scheme.maxSubscribers || 1)) * 100}
+                          className="h-2"
+                        />
+                      </div>
+
+                      {/* Key Metrics */}
+                      <div className="grid grid-cols-3 gap-2 pt-2 border-t">
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500">EMI</p>
+                          <p className="font-semibold text-sm">₹{scheme.monthlyEMI?.toLocaleString() || "N/A"}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500">Commission</p>
+                          <p className="font-semibold text-sm">{scheme.commissionRate || "N/A"}%</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500">Created</p>
+                          <p className="font-semibold text-sm">
+                            {scheme.createdDate ? new Date(scheme.createdDate).toLocaleDateString() : "N/A"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center justify-between pt-4 border-t">
+                        <div className="flex items-center gap-2">
+                          <Link href={`/foreman/schemes/${scheme.schemeId}`}>
+                            <Button size="sm" variant="outline" className="gap-1 bg-transparent">
+                              <Eye className="h-3 w-3" />
+                              View
+                            </Button>
+                          </Link>
+                          {scheme.schemeStatus === "draft" && (
+                            <Link href={`/foreman/schemes/${scheme.schemeId}/edit`}>
+                              <Button size="sm" variant="outline" className="gap-1 bg-transparent">
+                                <Edit className="h-3 w-3" />
+                                Edit
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {scheme.schemeStatus === "live" && (
+                            <Link href={`/foreman/schemes/${scheme.schemeId}/manage`}>
+                              <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700">
+                                <Activity className="h-3 w-3" />
+                                Manage
+                              </Button>
+                            </Link>
+                          )}
+                          {scheme.schemeStatus === "pso_approved" && (
+                            <Link href={`/foreman/schemes/${scheme.schemeId}/publish`}>
+                              <Button size="sm" className="gap-1 bg-blue-600 hover:bg-blue-700">
+                                <Upload className="h-3 w-3" />
+                                Publish
+                              </Button>
+                            </Link>
+                          )}
+                          {(scheme.schemeStatus === "draft" || scheme.schemeStatus === "rejected") && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteScheme(scheme.schemeId)}
+                              className="gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
-            </div>
-          </div>
-
-          {/* Empty State */}
-          {schemes.length === 0 && (
-            <div className="text-center py-12">
-              <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">No Schemes Found</h3>
-              <p className="text-gray-500 mb-6">You haven't created any chit fund schemes yet.</p>
-              <Button onClick={handleCreateScheme} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Create Your First Scheme
-              </Button>
-            </div>
-          )}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
-  )
-}
-
-// Separate SchemeCard component for better organization
-function SchemeCard({
-  scheme,
-  onView,
-  onEdit,
-  onDelete,
-  getStatusColor,
-  getStatusIcon,
-  getStatusMessage,
-  priority = false,
-}) {
-  const statusInfo = getStatusMessage(scheme)
-
-  const handlePublishScheme = (scheme) => {
-    window.location.href = `/foreman/schemes/${scheme.schemeId}/publish`
-  }
-
-  return (
-    <Card
-      className={`border-0 shadow-lg hover:shadow-xl transition-shadow ${priority ? "ring-2 ring-orange-200 bg-orange-50/30" : ""}`}
-    >
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg mb-2">{scheme.name}</CardTitle>
-            <div className="flex items-center gap-2 mb-2">
-              <Badge
-                className={`${getStatusColor(scheme.schemeStatus || scheme.status)} font-medium px-2 py-1 text-xs`}
-              >
-                {getStatusIcon(scheme.schemeStatus || scheme.status)}
-                <span className="ml-1 capitalize">{(scheme.schemeStatus || scheme.status).replace(/_/g, " ")}</span>
-              </Badge>
-              {scheme.psoNumber && (
-                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                  {scheme.psoNumber}
-                </Badge>
-              )}
-            </div>
-            {scheme.adminComments?.steps_1_4 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-2">
-                <p className="text-xs text-blue-700 font-medium">Admin Comment:</p>
-                <p className="text-xs text-blue-600">{scheme.adminComments.steps_1_4}</p>
+            ) : (
+              <div className="text-center py-12">
+                <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                  {activeTab === "all"
+                    ? "No Schemes Found"
+                    : `No ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Schemes`}
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  {activeTab === "all"
+                    ? "Create your first chit fund scheme to get started."
+                    : `You don't have any ${activeTab} schemes at the moment.`}
+                </p>
+                {activeTab === "all" && (
+                  <Link href="/foreman/create-scheme">
+                    <Button className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg">
+                      <Plus className="h-4 w-4" />
+                      Create Your First Scheme
+                    </Button>
+                  </Link>
+                )}
               </div>
             )}
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
-        {/* Key Metrics */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-blue-50 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="h-4 w-4 text-blue-600" />
-              <span className="text-xs font-medium text-blue-600">Chit Value</span>
-            </div>
-            <p className="font-bold text-blue-900">{scheme.chitValue}</p>
-          </div>
-
-          <div className="bg-green-50 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Users className="h-4 w-4 text-green-600" />
-              <span className="text-xs font-medium text-green-600">Subscribers</span>
-            </div>
-            <p className="font-bold text-green-900">
-              {scheme.subscribers}/{scheme.maxSubscribers}
-            </p>
-          </div>
-
-          <div className="bg-purple-50 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Calendar className="h-4 w-4 text-purple-600" />
-              <span className="text-xs font-medium text-purple-600">Duration</span>
-            </div>
-            <p className="font-bold text-purple-900">{scheme.duration}</p>
-          </div>
-
-          <div className="bg-orange-50 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <FileText className="h-4 w-4 text-orange-600" />
-              <span className="text-xs font-medium text-orange-600">Monthly</span>
-            </div>
-            <p className="font-bold text-orange-900">{scheme.monthlyPremium}</p>
-          </div>
-        </div>
-
-        {/* Status Message */}
-        <div className={`bg-white rounded-lg p-3 border-l-4 ${priority ? "border-l-orange-500" : "border-l-blue-500"}`}>
-          <p className={`text-sm font-medium ${statusInfo.color}`}>{statusInfo.message}</p>
-          {scheme.lastUpdated && (
-            <p className="text-xs text-gray-500 mt-1">Updated: {new Date(scheme.lastUpdated).toLocaleString()}</p>
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 pt-2 border-t">
-          <Button
-            onClick={() => onView(scheme)}
-            className={`flex-1 gap-2 ${priority ? "bg-orange-600 hover:bg-orange-700" : ""}`}
-          >
-            {statusInfo.action}
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-
-          <Button variant="outline" size="sm" onClick={() => onEdit(scheme)} className="gap-2">
-            <Eye className="h-4 w-4" />
-            View
-          </Button>
-
-          {scheme.psoNumber && (
-            <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-              <Download className="h-4 w-4" />
-              PSO
-            </Button>
-          )}
-
-          {(scheme.schemeStatus === "draft" || scheme.status === "draft") && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onDelete(scheme.schemeId)}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-          {(scheme.schemeStatus === "live" || scheme.status === "live") && (
-            <Button
-              onClick={() => handlePublishScheme(scheme)}
-              className="gap-2 bg-green-600 hover:bg-green-700"
-              size="sm"
-            >
-              <Upload className="h-4 w-4" />
-              Publish
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
   )
 }

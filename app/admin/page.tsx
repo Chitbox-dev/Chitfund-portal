@@ -130,11 +130,54 @@ export default function AdminDashboard() {
 
   const handleAddForemanSuccess = (newForemanData) => {
     console.log("New Foreman Added Successfully:", newForemanData)
-    setForemen((prev) => [...prev, newForemanData])
+
+    // Generate credentials for the new foreman
+    const foremanCredentials = {
+      id: `FM${String(Date.now()).slice(-3)}`,
+      name: `${newForemanData.firstName} ${newForemanData.lastName}`,
+      firstName: newForemanData.firstName,
+      lastName: newForemanData.lastName,
+      email: newForemanData.email,
+      phone: newForemanData.phone,
+      experience: "New",
+      activeSchemes: 0,
+      totalSubscribers: 0,
+      status: "active",
+      joinDate: new Date().toISOString().split("T")[0],
+      // Generate password based on first name + "123"
+      password: newForemanData.firstName.toLowerCase() + "123",
+      companyName: newForemanData.companyName,
+      designation: newForemanData.designation,
+    }
+
+    // Add to local foremen state
+    setForemen((prev) => [...prev, foremanCredentials])
+
+    // Store in localStorage for login system - ensure we're updating the array properly
+    try {
+      const existingDynamicForemen = JSON.parse(localStorage.getItem("dynamicForemen") || "[]")
+      const updatedDynamicForemen = [...existingDynamicForemen, foremanCredentials]
+      localStorage.setItem("dynamicForemen", JSON.stringify(updatedDynamicForemen))
+
+      console.log("Stored dynamic foremen:", updatedDynamicForemen) // Debug log
+
+      // Trigger a storage event for other tabs/windows
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: "dynamicForemen",
+          newValue: JSON.stringify(updatedDynamicForemen),
+        }),
+      )
+    } catch (error) {
+      console.error("Error storing foreman data:", error)
+    }
+
     setShowAddForeman(false)
 
-    // Show success notification (you can implement toast here)
-    alert(`Foreman ${newForemanData.name} has been added successfully!`)
+    // Show success notification with credentials
+    alert(
+      `Foreman ${foremanCredentials.name} has been added successfully!\n\nLogin Credentials:\nEmail: ${foremanCredentials.email}\nPassword: ${foremanCredentials.password}\n\nPlease share these credentials with the foreman.`,
+    )
   }
 
   const handleAddForemanCancel = () => {

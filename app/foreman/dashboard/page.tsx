@@ -3,541 +3,480 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { ForemanSidebar } from "@/components/foreman/foreman-sidebar"
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { Progress } from "@/components/ui/progress"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import {
-  User,
   FileText,
+  Users,
+  IndianRupee,
+  TrendingUp,
+  Plus,
+  RefreshCw,
+  Eye,
+  ArrowRight,
+  Calendar,
+  Target,
+  Activity,
   AlertCircle,
   CheckCircle,
-  Plus,
-  Users,
-  DollarSign,
-  BarChart3,
-  Bell,
-  Target,
-  Award,
-  UserPlus,
-  Gavel,
-  ArrowUpRight,
-  LayoutDashboard,
+  Clock,
 } from "lucide-react"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 
-// Mock data for foreman dashboard
-const defaultForemanProfile = {
-  id: "FM001",
-  name: "Aakash Savant",
-  email: "aakash.savant@email.com",
-  phone: "+91 9876543210",
-  experience: "5 years",
-  joinDate: "2023-03-15",
-  address: "123 Main Street, Delhi",
-  successRate: "98.5%",
-  totalFundValue: "₹45,00,000",
-  activeSchemes: 3,
-  totalSubscribers: 85,
-  completedSchemes: 12,
-  pendingApprovals: 1,
+interface DashboardData {
+  totalSchemes: number
+  activeSchemes: number
+  totalSubscribers: number
+  monthlyCollection: number
+  lastUpdated: number
 }
 
-const mockSchemes = [
-  {
-    id: 1,
-    name: "Gold Savings 50K",
-    totalValue: "₹10,00,000",
-    subscribers: 20,
-    maxSubscribers: 20,
-    monthlyContribution: "₹50,000",
-    duration: "20 months",
-    status: "active",
-    psoNumber: "PSO-2025-001",
-    startDate: "2025-01-01",
-    nextAuction: "2025-02-15",
-    commission: "5%",
-    collectedAmount: "₹8,50,000",
-    pendingAmount: "₹1,50,000",
-    completedMonths: 17,
-  },
-  {
-    id: 2,
-    name: "Business Growth 100K",
-    totalValue: "₹30,00,000",
-    subscribers: 30,
-    maxSubscribers: 30,
-    monthlyContribution: "₹1,00,000",
-    duration: "30 months",
-    status: "pending",
-    startDate: "2025-02-01",
-    commission: "4.5%",
-    collectedAmount: "₹0",
-    pendingAmount: "₹30,00,000",
-    completedMonths: 0,
-  },
-  {
-    id: 3,
-    name: "Dream Home 200K",
-    totalValue: "₹80,00,000",
-    subscribers: 35,
-    maxSubscribers: 40,
-    monthlyContribution: "₹2,00,000",
-    duration: "40 months",
-    status: "draft",
-    commission: "5%",
-    collectedAmount: "₹0",
-    pendingAmount: "₹80,00,000",
-    completedMonths: 0,
-  },
-]
-
-const mockSubscribers = [
-  {
-    id: 1,
-    name: "Amit Sharma",
-    ucfinNumber: "UCFIN001234567890",
-    email: "amit.sharma@email.com",
-    phone: "+91 9876543201",
-    schemeName: "Gold Savings 50K",
-    joinDate: "2025-01-01",
-    status: "active",
-    paidMonths: 17,
-    pendingMonths: 3,
-    totalPaid: "₹8,50,000",
-    nextPayment: "2025-02-01",
-  },
-  {
-    id: 2,
-    name: "Priya Patel",
-    ucfinNumber: "UCFIN001234567891",
-    email: "priya.patel@email.com",
-    phone: "+91 9876543202",
-    schemeName: "Gold Savings 50K",
-    joinDate: "2025-01-01",
-    status: "active",
-    paidMonths: 17,
-    pendingMonths: 3,
-    totalPaid: "₹8,50,000",
-    nextPayment: "2025-02-01",
-  },
-  {
-    id: 3,
-    name: "Ravi Kumar",
-    ucfinNumber: "UCFIN001234567892",
-    email: "ravi.kumar@email.com",
-    phone: "+91 9876543203",
-    schemeName: "Gold Savings 50K",
-    joinDate: "2025-01-01",
-    status: "defaulter",
-    paidMonths: 15,
-    pendingMonths: 5,
-    totalPaid: "₹7,50,000",
-    nextPayment: "2024-12-01",
-  },
-]
+interface SchemeData {
+  schemeId: string
+  schemeName?: string
+  schemeStatus: string
+  schemeAmount?: number
+  currentSubscribers?: number
+  maxSubscribers?: number
+  monthlyPremium?: number
+  lastUpdated: string
+}
 
 export default function ForemanDashboard() {
-  const [activeTab, setActiveTab] = useState("overview")
-  const [showCreateScheme, setShowCreateScheme] = useState(false)
-  const [schemeStep, setSchemeStep] = useState(1)
-  const [selectedScheme, setSelectedScheme] = useState(null)
-  const [showAddSubscriber, setShowAddSubscriber] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
-
-  const [newScheme, setNewScheme] = useState({
-    name: "",
-    totalValue: "",
-    maxSubscribers: "",
-    monthlyContribution: "",
-    duration: "",
-    commission: "",
-    description: "",
-    operatorName: "",
-    operatorAddress: "",
-    operatorPhone: "",
-    operatorEmail: "",
-    bankName: "",
-    accountNumber: "",
-    ifscCode: "",
-    branchName: "",
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
+    totalSchemes: 0,
+    activeSchemes: 0,
+    totalSubscribers: 0,
+    monthlyCollection: 0,
+    lastUpdated: Date.now(),
   })
+  const [schemes, setSchemes] = useState<SchemeData[]>([])
+  const [actionRequiredSchemes, setActionRequiredSchemes] = useState<SchemeData[]>([])
+  const [recentSchemes, setRecentSchemes] = useState<SchemeData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
-  const [newSubscriber, setNewSubscriber] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    panNumber: "",
-    aadhaarNumber: "",
-    bankAccount: "",
-    ifscCode: "",
-    nomineName: "",
-    nomineRelation: "",
-    schemeId: "",
-  })
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800 border-green-200"
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
-      case "draft":
-        return "bg-gray-100 text-gray-800 border-gray-200"
-      case "defaulter":
-        return "bg-red-100 text-red-800 border-red-200"
-      default:
-        return "bg-blue-100 text-blue-800 border-blue-200"
-    }
-  }
-
-  const [foremanProfile, setForemanProfile] = useState(defaultForemanProfile)
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem("foremanToken")
-      if (!token) {
-        router.push("/auth/login")
+  const loadDashboardData = () => {
+    try {
+      const foremanToken = localStorage.getItem("foremanToken")
+      if (!foremanToken) {
+        window.location.href = "/auth/login"
         return
       }
 
-      setIsLoading(false)
-    }
+      // Load schemes with unique key to prevent duplicates
+      const uniqueKey = `foreman_schemes_${foremanToken}`
+      const storedSchemes = localStorage.getItem(uniqueKey) || localStorage.getItem("foremanSchemes") || "[]"
+      const parsedSchemes: SchemeData[] = JSON.parse(storedSchemes)
 
-    checkAuth()
-  }, [router])
+      // Remove duplicates based on schemeId
+      const uniqueSchemes = parsedSchemes.filter(
+        (scheme, index, self) => index === self.findIndex((s) => s.schemeId === scheme.schemeId),
+      )
+
+      // Update storage with deduplicated data
+      localStorage.setItem(uniqueKey, JSON.stringify(uniqueSchemes))
+      setSchemes(uniqueSchemes)
+
+      // Calculate dashboard metrics
+      const totalSchemes = uniqueSchemes.length
+      const activeSchemes = uniqueSchemes.filter((s) =>
+        ["live", "pso_approved", "subscribers_added"].includes(s.schemeStatus),
+      ).length
+      const totalSubscribers = uniqueSchemes.reduce((sum, scheme) => sum + (scheme.currentSubscribers || 0), 0)
+      const monthlyCollection = uniqueSchemes
+        .filter((s) => s.schemeStatus === "live")
+        .reduce((sum, scheme) => sum + (scheme.monthlyPremium || 0), 0)
+
+      const newDashboardData: DashboardData = {
+        totalSchemes,
+        activeSchemes,
+        totalSubscribers,
+        monthlyCollection,
+        lastUpdated: Date.now(),
+      }
+
+      setDashboardData(newDashboardData)
+
+      // Save updated dashboard data
+      localStorage.setItem(`foreman_dashboard_${foremanToken}`, JSON.stringify(newDashboardData))
+
+      // Filter schemes for different sections
+      const actionRequired = uniqueSchemes.filter((scheme) =>
+        ["pso_approved", "rejected", "steps_1_4_approved"].includes(scheme.schemeStatus),
+      )
+      setActionRequiredSchemes(actionRequired)
+
+      const recent = uniqueSchemes
+        .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+        .slice(0, 3)
+      setRecentSchemes(recent)
+    } catch (error) {
+      console.error("Error loading dashboard data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate API call
+    loadDashboardData()
+    setRefreshing(false)
+  }
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const name = localStorage.getItem("foremanName") || defaultForemanProfile.name
-      const email = localStorage.getItem("foremanEmail") || defaultForemanProfile.email
-
-      setForemanProfile((prev) => ({
-        ...prev,
-        name,
-        email,
-      }))
-    }
+    loadDashboardData()
   }, [])
 
-  const handleCreateScheme = () => {
-    router.push("/foreman/create-scheme")
-  }
-
-  const handleCreateSchemeClick = () => {
-    router.push("/foreman/create-scheme")
-  }
-
-  const handleAddSubscriber = () => {
-    const ucfinNumber = `UCFIN${Date.now().toString().slice(-10)}`
-    const subscriberData = {
-      ...newSubscriber,
-      ucfinNumber,
-      joinDate: new Date().toISOString().split("T")[0],
-      status: "active",
-      paidMonths: 0,
-      pendingMonths: 0,
-      totalPaid: "₹0",
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "live":
+        return "bg-green-100 text-green-800 border-green-200"
+      case "pso_approved":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      case "steps_1_4_approved":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "rejected":
+        return "bg-red-100 text-red-800 border-red-200"
+      case "draft":
+        return "bg-gray-100 text-gray-800 border-gray-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
     }
-    console.log("Subscriber added:", subscriberData)
-    setShowAddSubscriber(false)
-    setNewSubscriber({
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-      panNumber: "",
-      aadhaarNumber: "",
-      bankAccount: "",
-      ifscCode: "",
-      nomineName: "",
-      nomineRelation: "",
-      schemeId: "",
-    })
   }
 
-  if (isLoading) {
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "live":
+        return <Activity className="h-4 w-4" />
+      case "pso_approved":
+        return <CheckCircle className="h-4 w-4" />
+      case "steps_1_4_approved":
+        return <Clock className="h-4 w-4" />
+      case "rejected":
+        return <AlertCircle className="h-4 w-4" />
+      default:
+        return <FileText className="h-4 w-4" />
+    }
+  }
+
+  const getActionText = (status: string) => {
+    switch (status) {
+      case "pso_approved":
+        return "Add subscribers"
+      case "steps_1_4_approved":
+        return "Request PSO approval"
+      case "rejected":
+        return "Review and resubmit"
+      default:
+        return "View details"
+    }
+  }
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p>Loading dashboard...</p>
+      <div className="flex-1">
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white px-4 lg:px-6">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage>Dashboard</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </header>
+        <div className="flex items-center justify-center flex-1 p-6">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading dashboard...</p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <SidebarProvider>
-      <ForemanSidebar />
-      <SidebarInset>
-        {/* Enhanced Header with Breadcrumbs */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white px-6">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="/foreman">Foreman Portal</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Dashboard</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          <div className="ml-auto flex items-center gap-4">
-            <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-              <Bell className="h-4 w-4" />
-              <Badge variant="destructive" className="ml-1">
-                2
-              </Badge>
+    <div className="flex-1">
+      {/* Header */}
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white px-4 lg:px-6">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-2 h-4" />
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbPage>Dashboard</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            variant="outline"
+            size="sm"
+            className="gap-2 bg-transparent"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
+          <Link href="/foreman/create-scheme">
+            <Button className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Create New Scheme</span>
+              <span className="sm:hidden">Create</span>
             </Button>
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 px-3 py-1">
-              ID: {foremanProfile.id} - {foremanProfile.name}
-            </Badge>
-          </div>
-        </header>
-
-        <div className="flex-1 space-y-6 p-6 bg-gray-50">
-          {/* Welcome Section */}
-          <div className="bg-gradient-to-r from-green-600 via-green-700 to-blue-600 rounded-2xl p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold mb-2">Welcome back, {foremanProfile.name}</h1>
-                <p className="text-green-100">Manage your chit fund schemes and track performance.</p>
-                <p className="text-green-200 text-sm mt-1">Email: {foremanProfile.email}</p>
-              </div>
-              <div className="hidden md:block">
-                <User className="h-16 w-16 text-green-200" />
-              </div>
-            </div>
-          </div>
-
-          {/* Enhanced Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="relative overflow-hidden border-0 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Active Schemes</p>
-                    <p className="text-3xl font-bold text-gray-900">{foremanProfile.activeSchemes}</p>
-                    <div className="flex items-center mt-2 text-sm">
-                      <span className="text-gray-600">{foremanProfile.pendingApprovals} pending approval</span>
-                    </div>
-                  </div>
-                  <div className="h-14 w-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
-                    <FileText className="h-7 w-7 text-white" />
-                  </div>
-                </div>
-                <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-blue-600"></div>
-              </CardContent>
-            </Card>
-
-            <Card className="relative overflow-hidden border-0 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Subscribers</p>
-                    <p className="text-3xl font-bold text-gray-900">{foremanProfile.totalSubscribers}</p>
-                    <div className="flex items-center mt-2 text-sm">
-                      <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
-                      <span className="text-green-600 font-medium">+5</span>
-                      <span className="text-gray-500 ml-1">this month</span>
-                    </div>
-                  </div>
-                  <div className="h-14 w-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center">
-                    <Users className="h-7 w-7 text-white" />
-                  </div>
-                </div>
-                <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-green-600"></div>
-              </CardContent>
-            </Card>
-
-            <Card className="relative overflow-hidden border-0 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Fund Value</p>
-                    <p className="text-3xl font-bold text-gray-900">{foremanProfile.totalFundValue}</p>
-                    <div className="flex items-center mt-2 text-sm">
-                      <span className="text-gray-600">Across all schemes</span>
-                    </div>
-                  </div>
-                  <div className="h-14 w-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center">
-                    <DollarSign className="h-7 w-7 text-white" />
-                  </div>
-                </div>
-                <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-purple-600"></div>
-              </CardContent>
-            </Card>
-
-            <Card className="relative overflow-hidden border-0 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Success Rate</p>
-                    <p className="text-3xl font-bold text-gray-900">{foremanProfile.successRate}</p>
-                    <div className="flex items-center mt-2 text-sm">
-                      <Award className="h-4 w-4 text-orange-500 mr-1" />
-                      <span className="text-orange-600 font-medium">Excellent</span>
-                      <span className="text-gray-500 ml-1">rating</span>
-                    </div>
-                  </div>
-                  <div className="h-14 w-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center">
-                    <Target className="h-7 w-7 text-white" />
-                  </div>
-                </div>
-                <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-orange-600"></div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card
-              className="border-0 shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
-              onClick={handleCreateSchemeClick}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <Plus className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Create Scheme</h3>
-                    <p className="text-sm text-gray-600">Start a new chit fund scheme</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 bg-green-100 rounded-xl flex items-center justify-center">
-                    <UserPlus className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Add Subscriber</h3>
-                    <p className="text-sm text-gray-600">Register new subscribers</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <Gavel className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Schedule Auction</h3>
-                    <p className="text-sm text-gray-600">Manage auction schedules</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Content Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5 bg-white border shadow-sm">
-              <TabsTrigger value="overview" className="gap-2">
-                <LayoutDashboard className="h-4 w-4" />
-                Overview
-              </TabsTrigger>
-              <TabsTrigger value="schemes" className="gap-2">
-                <FileText className="h-4 w-4" />
-                My Schemes
-              </TabsTrigger>
-              <TabsTrigger value="subscribers" className="gap-2">
-                <Users className="h-4 w-4" />
-                Subscribers
-              </TabsTrigger>
-              <TabsTrigger value="auctions" className="gap-2">
-                <Gavel className="h-4 w-4" />
-                Auctions
-              </TabsTrigger>
-              <TabsTrigger value="reports" className="gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Reports
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-semibold">Dashboard Overview</h2>
-                  <p className="text-sm text-gray-600 mt-1">Your chit fund management summary</p>
-                </div>
-                <Button onClick={handleCreateSchemeClick} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create New Scheme
-                </Button>
-              </div>
-
-              {/* Recent Activity */}
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 p-4 bg-green-50 rounded-xl border border-green-100">
-                      <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Payment received from Amit Sharma</p>
-                        <p className="text-xs text-gray-600">Gold Savings 50K - ₹50,000</p>
-                      </div>
-                      <span className="text-xs text-gray-500">2 hours ago</span>
-                    </div>
-
-                    <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                      <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <FileText className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">New scheme submitted for approval</p>
-                        <p className="text-xs text-gray-600">Business Growth 100K - Pending admin review</p>
-                      </div>
-                      <span className="text-xs text-gray-500">1 day ago</span>
-                    </div>
-
-                    <div className="flex items-center gap-4 p-4 bg-orange-50 rounded-xl border border-orange-100">
-                      <div className="h-10 w-10 bg-orange-100 rounded-full flex items-center justify-center">
-                        <AlertCircle className="h-5 w-5 text-orange-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Payment reminder sent</p>
-                        <p className="text-xs text-gray-600">Ravi Kumar - Overdue payment</p>
-                      </div>
-                      <span className="text-xs text-gray-500">2 days ago</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Other tabs content would continue here... */}
-          </Tabs>
+          </Link>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 p-4 lg:p-6 space-y-6">
+        {/* Welcome Section */}
+        <div className="space-y-2">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Foreman Dashboard</h1>
+          <p className="text-gray-600 text-sm lg:text-base">
+            Welcome back! Here's an overview of your chit fund schemes.
+          </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100">
+            <CardContent className="p-4 lg:p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 lg:p-3 bg-blue-500 rounded-full">
+                  <FileText className="h-4 w-4 lg:h-6 lg:w-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs lg:text-sm font-medium text-blue-600 mb-1">Total Schemes</p>
+                  <p className="text-xl lg:text-3xl font-bold text-blue-900 truncate">{dashboardData.totalSchemes}</p>
+                  <p className="text-xs text-blue-700 flex items-center gap-1 mt-1">
+                    <TrendingUp className="h-3 w-3" />
+                    <span className="truncate">+2 from last month</span>
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100">
+            <CardContent className="p-4 lg:p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 lg:p-3 bg-green-500 rounded-full">
+                  <Activity className="h-4 w-4 lg:h-6 lg:w-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs lg:text-sm font-medium text-green-600 mb-1">Active Schemes</p>
+                  <p className="text-xl lg:text-3xl font-bold text-green-900 truncate">{dashboardData.activeSchemes}</p>
+                  <p className="text-xs text-green-700 flex items-center gap-1 mt-1">
+                    <Target className="h-3 w-3" />
+                    <span className="truncate">
+                      {dashboardData.totalSchemes > 0
+                        ? Math.round((dashboardData.activeSchemes / dashboardData.totalSchemes) * 100)
+                        : 0}
+                      % of total
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100">
+            <CardContent className="p-4 lg:p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 lg:p-3 bg-purple-500 rounded-full">
+                  <Users className="h-4 w-4 lg:h-6 lg:w-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs lg:text-sm font-medium text-purple-600 mb-1">Total Subscribers</p>
+                  <p className="text-xl lg:text-3xl font-bold text-purple-900 truncate">
+                    {dashboardData.totalSubscribers}
+                  </p>
+                  <p className="text-xs text-purple-700 flex items-center gap-1 mt-1">
+                    <Users className="h-3 w-3" />
+                    <span className="truncate">Across all schemes</span>
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100">
+            <CardContent className="p-4 lg:p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 lg:p-3 bg-orange-500 rounded-full">
+                  <IndianRupee className="h-4 w-4 lg:h-6 lg:w-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs lg:text-sm font-medium text-orange-600 mb-1">Monthly Collection</p>
+                  <p className="text-lg lg:text-2xl font-bold text-orange-900 truncate">
+                    ₹{dashboardData.monthlyCollection.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-orange-700 flex items-center gap-1 mt-1">
+                    <Calendar className="h-3 w-3" />
+                    <span className="truncate">Current month target</span>
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Action Required */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <AlertCircle className="h-5 w-5 text-orange-500" />
+                  Action Required
+                </CardTitle>
+                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                  {actionRequiredSchemes.length}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {actionRequiredSchemes.length > 0 ? (
+                actionRequiredSchemes.map((scheme) => (
+                  <div
+                    key={scheme.schemeId}
+                    className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-100 hover:bg-orange-100 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-gray-900 truncate">
+                        {scheme.schemeName || `Scheme ${scheme.schemeId}`}
+                      </h4>
+                      <p className="text-sm text-orange-700 font-medium">{getActionText(scheme.schemeStatus)}</p>
+                    </div>
+                    <Link href={`/foreman/schemes/${scheme.schemeId}`}>
+                      <Button size="sm" className="gap-1 bg-orange-600 hover:bg-orange-700 shrink-0">
+                        <ArrowRight className="h-3 w-3" />
+                        <span className="hidden sm:inline">Action</span>
+                      </Button>
+                    </Link>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
+                  <p className="text-gray-600">No actions required</p>
+                  <p className="text-sm text-gray-500">All schemes are up to date</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Schemes */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="h-5 w-5 text-blue-500" />
+                  Recent Schemes
+                </CardTitle>
+                <Link href="/foreman/schemes">
+                  <Button variant="outline" size="sm" className="gap-1 bg-transparent">
+                    <span className="hidden sm:inline">View All</span>
+                    <span className="sm:hidden">All</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {recentSchemes.length > 0 ? (
+                recentSchemes.map((scheme) => (
+                  <div
+                    key={scheme.schemeId}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-gray-900 truncate">
+                        {scheme.schemeName || `Scheme ${scheme.schemeId}`}
+                      </h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge className={`${getStatusColor(scheme.schemeStatus)} text-xs`}>
+                          {getStatusIcon(scheme.schemeStatus)}
+                          <span className="ml-1">{scheme.schemeStatus.replace(/_/g, " ")}</span>
+                        </Badge>
+                        <span className="text-xs text-gray-500">{scheme.currentSubscribers || 0} subscribers</span>
+                      </div>
+                    </div>
+                    <Link href={`/foreman/schemes/${scheme.schemeId}`}>
+                      <Button size="sm" variant="outline" className="gap-1 shrink-0 bg-transparent">
+                        <Eye className="h-3 w-3" />
+                        <span className="hidden sm:inline">View</span>
+                      </Button>
+                    </Link>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600">No schemes yet</p>
+                  <p className="text-sm text-gray-500 mb-4">Create your first scheme to get started</p>
+                  <Link href="/foreman/create-scheme">
+                    <Button size="sm" className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Create Scheme
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Financial Overview */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+          <Card className="border-0 shadow-lg">
+            <CardContent className="p-4 lg:p-6">
+              <div className="text-center">
+                <h3 className="text-lg lg:text-xl font-semibold text-gray-900 mb-2">Total</h3>
+                <p className="text-2xl lg:text-3xl font-bold text-blue-600">
+                  ₹{(dashboardData.monthlyCollection * 12).toLocaleString()}
+                </p>
+                <p className="text-xs lg:text-sm text-gray-500 mt-1">Annual Collection Target</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg">
+            <CardContent className="p-4 lg:p-6">
+              <div className="text-center">
+                <h3 className="text-lg lg:text-xl font-semibold text-gray-900 mb-2">Collection</h3>
+                <p className="text-2xl lg:text-3xl font-bold text-green-600">
+                  ₹{Math.round(dashboardData.monthlyCollection * 0.75).toLocaleString()}
+                </p>
+                <p className="text-xs lg:text-sm text-gray-500 mt-1">This Month (75%)</p>
+                <Progress value={75} className="mt-2 h-2" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg">
+            <CardContent className="p-4 lg:p-6">
+              <div className="text-center">
+                <h3 className="text-lg lg:text-xl font-semibold text-gray-900 mb-2">Pending</h3>
+                <p className="text-2xl lg:text-3xl font-bold text-orange-600">
+                  ₹{Math.round(dashboardData.monthlyCollection * 0.25).toLocaleString()}
+                </p>
+                <p className="text-xs lg:text-sm text-gray-500 mt-1">Remaining (25%)</p>
+                <Progress value={25} className="mt-2 h-2" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </div>
   )
 }
