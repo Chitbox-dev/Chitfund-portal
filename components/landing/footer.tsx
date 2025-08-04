@@ -1,139 +1,166 @@
 "use client"
 
 import Link from "next/link"
-import { Shield, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Facebook, Twitter, Linkedin, Mail, Phone, MapPin, ArrowRight } from "lucide-react"
+
+const footerLinks = {
+  platform: [
+    { name: "How It Works", href: "/how-it-works" },
+    { name: "System Flow", href: "/system-flow" },
+    { name: "Features", href: "/#features" },
+    { name: "Pricing", href: "/pricing" },
+  ],
+  legal: [
+    { name: "Acts & Rules", href: "/legal/acts-and-rules" },
+    { name: "Chit Funds Act 1982", href: "/legal/acts/chit-funds-act-1982/preliminary" },
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Terms of Service", href: "/terms" },
+  ],
+  support: [
+    { name: "Help Center", href: "/help" },
+    { name: "Contact Us", href: "/contact" },
+    { name: "Documentation", href: "/docs" },
+    { name: "API Reference", href: "/api-docs" },
+  ],
+  account: [
+    { name: "Register", href: "/register" },
+    { name: "Login", href: "/login" },
+    { name: "Access Request", href: "/access-request" },
+    { name: "Dashboard", href: "/dashboard" },
+  ],
+}
 
 export default function Footer() {
   return (
     <footer className="bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          {/* Brand Section */}
-          <div className="space-y-4 text-center sm:text-left">
-            <div className="flex items-center justify-center sm:justify-start space-x-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Shield className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
-              </div>
-              <div>
-                <div className="text-lg sm:text-xl font-bold">Chitfund Portal</div>
-                <div className="text-xs sm:text-sm text-gray-400">Government of India</div>
-              </div>
+      {/* Newsletter Section */}
+      <div className="border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h3 className="text-2xl font-bold mb-2">Stay Updated</h3>
+              <p className="text-gray-400">
+                Get the latest updates on chit fund regulations, platform features, and industry news.
+              </p>
             </div>
-            <p className="text-gray-400 text-sm leading-relaxed max-w-xs mx-auto sm:mx-0">
-              Your trusted platform for secure and transparent chit fund operations across India.
-            </p>
-            <div className="flex justify-center sm:justify-start space-x-4">
-              <Facebook className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
-              <Twitter className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
-              <Linkedin className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
-              <Instagram className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
-            </div>
-          </div>
-
-          {/* Quick Links */}
-          <div className="text-center sm:text-left">
-            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link href="/register" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Register
-                </Link>
-              </li>
-              <li>
-                <Link href="/how-it-works" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  How it Works
-                </Link>
-              </li>
-              <li>
-                <Link href="/legal/acts-and-rules" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Legal
-                </Link>
-              </li>
-              <li>
-                <Link href="/news-updates" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  News & Updates
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* About */}
-          <div className="text-center sm:text-left">
-            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">About</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/about-ucfsin" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  About UCFSIN
-                </Link>
-              </li>
-              <li>
-                <Link href="/about-chitfund" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  About Chitfund
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Terms & Conditions
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Contact Us
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Contact Info */}
-          <div className="text-center sm:text-left">
-            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Contact Info</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-center sm:justify-start space-x-3">
-                <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                <span className="text-gray-400 text-sm">1800-103-4786</span>
-              </div>
-              <div className="flex items-center justify-center sm:justify-start space-x-3">
-                <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                <span className="text-gray-400 text-sm">support@ucfsin.gov.in</span>
-              </div>
-              <div className="flex items-start justify-center sm:justify-start space-x-3">
-                <MapPin className="h-4 w-4 text-gray-400 mt-1 flex-shrink-0" />
-                <span className="text-gray-400 text-sm text-center sm:text-left">
-                  Ministry of Corporate Affairs
-                  <br />
-                  Government of India
-                  <br />
-                  New Delhi - 110001
-                </span>
-              </div>
+            <div className="flex gap-3">
+              <Input
+                placeholder="Enter your email"
+                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
+              />
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                Subscribe <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="border-t border-gray-800 mt-6 sm:mt-8 pt-6 sm:pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-gray-400 text-xs sm:text-sm text-center md:text-left">
-              © 2024 UCFSIN - Government of India. All rights reserved.
+      {/* Main Footer Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid lg:grid-cols-5 gap-8">
+          {/* Brand Section */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">CF</span>
+              </div>
+              <span className="font-bold text-xl">ChitFund Portal</span>
+            </div>
+
+            <p className="text-gray-400 leading-relaxed max-w-md">
+              India's leading digital platform for chit fund management. Streamline your operations with our
+              comprehensive, compliant, and secure solution.
             </p>
-            <div className="flex flex-wrap justify-center space-x-4 sm:space-x-6">
-              <Link href="/privacy" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">
+
+            {/* Contact Info */}
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3 text-gray-400">
+                <Mail className="h-5 w-5" />
+                <span>support@chitfundportal.com</span>
+              </div>
+              <div className="flex items-center space-x-3 text-gray-400">
+                <Phone className="h-5 w-5" />
+                <span>+91 1800-123-4567</span>
+              </div>
+              <div className="flex items-center space-x-3 text-gray-400">
+                <MapPin className="h-5 w-5" />
+                <span>New Delhi, India</span>
+              </div>
+            </div>
+
+            {/* Social Links */}
+            <div className="flex space-x-4">
+              <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
+                <Facebook className="h-5 w-5" />
+              </Button>
+              <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
+                <Twitter className="h-5 w-5" />
+              </Button>
+              <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
+                <Linkedin className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Links Sections */}
+          <div>
+            <h4 className="font-semibold text-white mb-4">Platform</h4>
+            <ul className="space-y-3">
+              {footerLinks.platform.map((link) => (
+                <li key={link.name}>
+                  <Link href={link.href} className="text-gray-400 hover:text-white transition-colors">
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-white mb-4">Legal</h4>
+            <ul className="space-y-3">
+              {footerLinks.legal.map((link) => (
+                <li key={link.name}>
+                  <Link href={link.href} className="text-gray-400 hover:text-white transition-colors">
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-white mb-4">Support</h4>
+            <ul className="space-y-3">
+              {footerLinks.support.map((link) => (
+                <li key={link.name}>
+                  <Link href={link.href} className="text-gray-400 hover:text-white transition-colors">
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Bar */}
+      <div className="border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <div className="text-gray-400 text-sm">© 2025 ChitFund Portal. All rights reserved.</div>
+            <div className="flex items-center space-x-6 text-sm text-gray-400">
+              <Link href="/privacy" className="hover:text-white transition-colors">
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">
+              <Link href="/terms" className="hover:text-white transition-colors">
                 Terms of Service
               </Link>
-              <Link href="/sitemap" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">
-                Sitemap
+              <Link href="/cookies" className="hover:text-white transition-colors">
+                Cookie Policy
               </Link>
             </div>
           </div>

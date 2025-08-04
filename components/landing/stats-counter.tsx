@@ -2,44 +2,56 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Users, IndianRupee, TrendingUp, Shield } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { TrendingUp, Users, Building, Shield } from "lucide-react"
 
 const stats = [
   {
     icon: Users,
-    label: "Active Members",
-    value: 50000,
+    label: "Active Users",
+    value: 12500,
     suffix: "+",
     color: "text-blue-600",
-    bgColor: "bg-blue-50",
+    bgColor: "bg-blue-100",
   },
   {
-    icon: IndianRupee,
-    label: "Funds Managed",
-    value: 500,
-    suffix: "Cr+",
+    icon: Building,
+    label: "Schemes Managed",
+    value: 850,
+    suffix: "+",
     color: "text-green-600",
-    bgColor: "bg-green-50",
+    bgColor: "bg-green-100",
   },
   {
     icon: TrendingUp,
-    label: "Success Rate",
-    value: 99.8,
-    suffix: "%",
+    label: "Total Value Managed",
+    value: 250,
+    suffix: "Cr+",
+    prefix: "₹",
     color: "text-purple-600",
-    bgColor: "bg-purple-50",
+    bgColor: "bg-purple-100",
   },
   {
     icon: Shield,
-    label: "Verified Operators",
-    value: 1200,
-    suffix: "+",
+    label: "Security Uptime",
+    value: 99.9,
+    suffix: "%",
     color: "text-orange-600",
-    bgColor: "bg-orange-50",
+    bgColor: "bg-orange-100",
   },
 ]
 
-function useCountUp(end: number, duration = 2000) {
+function CounterAnimation({
+  target,
+  duration = 2000,
+  prefix = "",
+  suffix = "",
+}: {
+  target: number
+  duration?: number
+  prefix?: string
+  suffix?: string
+}) {
   const [count, setCount] = useState(0)
 
   useEffect(() => {
@@ -50,7 +62,7 @@ function useCountUp(end: number, duration = 2000) {
       if (!startTime) startTime = currentTime
       const progress = Math.min((currentTime - startTime) / duration, 1)
 
-      setCount(Math.floor(progress * end))
+      setCount(Math.floor(progress * target))
 
       if (progress < 1) {
         animationFrame = requestAnimationFrame(animate)
@@ -60,54 +72,72 @@ function useCountUp(end: number, duration = 2000) {
     animationFrame = requestAnimationFrame(animate)
 
     return () => cancelAnimationFrame(animationFrame)
-  }, [end, duration])
+  }, [target, duration])
 
-  return count
+  return (
+    <span>
+      {prefix}
+      {count.toLocaleString()}
+      {suffix}
+    </span>
+  )
 }
 
 export default function StatsCounter() {
   return (
-    <section className="py-12 sm:py-16 bg-gradient-to-br from-gray-50 to-blue-50">
+    <section className="py-20 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Trusted by Thousands Across India
-          </h2>
-          <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto px-4">
-            Our platform has facilitated secure and transparent chit fund operations, helping members achieve their
-            financial goals with confidence.
+        {/* Section Header */}
+        <div className="text-center mb-16">
+          <Badge variant="secondary" className="mb-4 bg-white/10 text-white hover:bg-white/20">
+            Platform Statistics
+          </Badge>
+          <h2 className="text-3xl lg:text-4xl font-bold mb-4">Trusted by Thousands Across India</h2>
+          <p className="text-xl text-blue-100 max-w-3xl mx-auto">
+            Our platform has been helping individuals and organizations manage their chit fund operations efficiently
+            and securely.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* Stats Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((stat, index) => (
-            <StatCard key={index} stat={stat} />
+            <Card
+              key={index}
+              className="bg-white/10 backdrop-blur border-white/20 hover:bg-white/15 transition-all duration-300"
+            >
+              <CardContent className="p-6 text-center">
+                <div className={`w-16 h-16 ${stat.bgColor} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
+                  <stat.icon className={`h-8 w-8 ${stat.color}`} />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-3xl lg:text-4xl font-bold text-white">
+                    <CounterAnimation target={stat.value} prefix={stat.prefix} suffix={stat.suffix} />
+                  </div>
+                  <div className="text-blue-100 font-medium">{stat.label}</div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
+        </div>
+
+        {/* Additional Info */}
+        <div className="mt-16 grid md:grid-cols-3 gap-8 text-center">
+          <div className="space-y-2">
+            <div className="text-2xl font-bold text-white">24/7</div>
+            <div className="text-blue-100">Customer Support</div>
+          </div>
+          <div className="space-y-2">
+            <div className="text-2xl font-bold text-white">100%</div>
+            <div className="text-blue-100">Regulatory Compliant</div>
+          </div>
+          <div className="space-y-2">
+            <div className="text-2xl font-bold text-white">5★</div>
+            <div className="text-blue-100">Average User Rating</div>
+          </div>
         </div>
       </div>
     </section>
-  )
-}
-
-function StatCard({ stat }: { stat: (typeof stats)[0] }) {
-  const count = useCountUp(stat.value)
-
-  return (
-    <Card className="border-none shadow-lg hover:shadow-xl transition-all duration-300 group h-full">
-      <CardContent className="p-4 sm:p-6 text-center h-full flex flex-col justify-center">
-        <div
-          className={`inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 ${stat.bgColor} rounded-full mb-3 sm:mb-4 mx-auto group-hover:scale-110 transition-transform`}
-        >
-          <stat.icon className={`h-6 w-6 sm:h-8 sm:w-8 ${stat.color}`} />
-        </div>
-        <div className="space-y-1 sm:space-y-2">
-          <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-            {stat.label === "Success Rate" ? count.toFixed(1) : count.toLocaleString()}
-            <span className={stat.color}>{stat.suffix}</span>
-          </div>
-          <div className="text-xs sm:text-sm md:text-base font-medium text-gray-600">{stat.label}</div>
-        </div>
-      </CardContent>
-    </Card>
   )
 }
