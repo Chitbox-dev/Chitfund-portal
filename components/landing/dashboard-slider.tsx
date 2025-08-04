@@ -2,176 +2,213 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { BarChart3, TrendingUp, Users, IndianRupee, Calendar, Bell, ChevronLeft, ChevronRight } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { ChevronLeft, ChevronRight, BarChart3, Users, CreditCard, FileText, TrendingUp, Shield } from "lucide-react"
+import Image from "next/image"
 
-const dashboards = [
+const dashboardScreens = [
   {
+    id: 1,
     title: "Admin Dashboard",
-    description: "Comprehensive oversight of all chit fund operations",
-    features: ["Real-time Analytics", "Member Management", "Scheme Monitoring", "Financial Reports"],
-    stats: [
-      { label: "Active Schemes", value: "1,247", icon: BarChart3 },
-      { label: "Total Members", value: "45,892", icon: Users },
-      { label: "Monthly Revenue", value: "₹2.4Cr", icon: IndianRupee },
-      { label: "Success Rate", value: "99.2%", icon: TrendingUp },
-    ],
-    color: "from-blue-600 to-purple-600",
+    description: "Comprehensive overview of all chit fund operations with real-time analytics and management tools.",
+    image: "/placeholder.svg?height=400&width=600&text=Admin+Dashboard",
+    features: ["User Management", "Scheme Oversight", "Compliance Monitoring", "Financial Reports"],
+    color: "from-blue-500 to-blue-600",
+    icon: BarChart3,
   },
   {
-    title: "Foreman Dashboard",
-    description: "Manage your chit fund schemes efficiently",
-    features: ["Scheme Management", "Member Tracking", "Payment Processing", "Performance Analytics"],
-    stats: [
-      { label: "My Schemes", value: "24", icon: Calendar },
-      { label: "Active Members", value: "1,156", icon: Users },
-      { label: "This Month", value: "₹18.5L", icon: IndianRupee },
-      { label: "Completion Rate", value: "96.8%", icon: TrendingUp },
-    ],
-    color: "from-green-600 to-teal-600",
+    id: 2,
+    title: "Foreman Portal",
+    description: "Dedicated interface for foremen to create, manage, and monitor their chit fund schemes.",
+    image: "/placeholder.svg?height=400&width=600&text=Foreman+Portal",
+    features: ["Scheme Creation", "Member Management", "Auction Handling", "Monthly Reports"],
+    color: "from-green-500 to-green-600",
+    icon: Users,
   },
   {
-    title: "Member Dashboard",
-    description: "Track your investments and participate in schemes",
-    features: ["Portfolio Overview", "Payment History", "Scheme Participation", "Notifications"],
-    stats: [
-      { label: "Active Schemes", value: "8", icon: Calendar },
-      { label: "Total Investment", value: "₹2.4L", icon: IndianRupee },
-      { label: "Returns Earned", value: "₹45K", icon: TrendingUp },
-      { label: "Notifications", value: "12", icon: Bell },
-    ],
-    color: "from-orange-600 to-red-600",
+    id: 3,
+    title: "User Dashboard",
+    description: "Personal dashboard for subscribers to track investments, payments, and scheme progress.",
+    image: "/placeholder.svg?height=400&width=600&text=User+Dashboard",
+    features: ["Investment Tracking", "Payment History", "UCFSIN Card", "Notifications"],
+    color: "from-purple-500 to-purple-600",
+    icon: CreditCard,
+  },
+  {
+    id: 4,
+    title: "Registration Flow",
+    description: "Streamlined UCFSIN registration process with KYC verification and digital card issuance.",
+    image: "/placeholder.svg?height=400&width=600&text=Registration+Flow",
+    features: ["KYC Verification", "Document Upload", "UCFSIN Generation", "Card Issuance"],
+    color: "from-orange-500 to-orange-600",
+    icon: FileText,
+  },
+  {
+    id: 5,
+    title: "Analytics & Reports",
+    description: "Advanced analytics and reporting tools for comprehensive business intelligence.",
+    image: "/placeholder.svg?height=400&width=600&text=Analytics+Reports",
+    features: ["Performance Metrics", "Financial Analytics", "Compliance Reports", "Data Visualization"],
+    color: "from-indigo-500 to-indigo-600",
+    icon: TrendingUp,
   },
 ]
 
 export default function DashboardSlider() {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true)
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % dashboards.length)
+    if (!isAutoPlaying) return
+
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % dashboardScreens.length)
     }, 5000)
 
-    return () => clearInterval(timer)
-  }, [])
+    return () => clearInterval(interval)
+  }, [isAutoPlaying])
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % dashboards.length)
+    setCurrentSlide((prev) => (prev + 1) % dashboardScreens.length)
+    setIsAutoPlaying(false)
   }
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + dashboards.length) % dashboards.length)
+    setCurrentSlide((prev) => (prev - 1 + dashboardScreens.length) % dashboardScreens.length)
+    setIsAutoPlaying(false)
   }
 
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index)
+    setIsAutoPlaying(false)
+  }
+
+  const currentScreen = dashboardScreens[currentSlide]
+
   return (
-    <section className="py-16 bg-white">
+    <section className="py-12 sm:py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Powerful Dashboards for Every User</h2>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Experience tailored interfaces designed for administrators, foremen, and members with real-time insights and
-            seamless management tools.
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Powerful Dashboards for Every Role
+          </h2>
+          <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto px-4">
+            Experience our intuitive interfaces designed specifically for administrators, foremen, and subscribers. Each
+            dashboard is tailored to provide the tools and insights you need.
           </p>
         </div>
 
         <div className="relative">
-          <div className="overflow-hidden rounded-2xl">
-            <div
-              className="flex transition-transform duration-500 ease-in-out"
-              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-            >
-              {dashboards.map((dashboard, index) => (
-                <div key={index} className="w-full flex-shrink-0">
-                  <Card className="border-none shadow-2xl">
-                    <div className={`h-2 bg-gradient-to-r ${dashboard.color}`}></div>
-                    <CardContent className="p-8">
-                      <div className="grid lg:grid-cols-2 gap-8 items-center">
-                        {/* Content */}
-                        <div className="space-y-6">
-                          <div>
-                            <Badge className={`bg-gradient-to-r ${dashboard.color} text-white mb-4`}>
-                              {dashboard.title}
-                            </Badge>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-3">{dashboard.description}</h3>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            {dashboard.stats.map((stat, statIndex) => (
-                              <div key={statIndex} className="bg-gray-50 rounded-lg p-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <stat.icon className="h-4 w-4 text-gray-600" />
-                                  <span className="text-sm text-gray-600">{stat.label}</span>
-                                </div>
-                                <div className="text-xl font-bold text-gray-900">{stat.value}</div>
-                              </div>
-                            ))}
-                          </div>
-
-                          <div className="space-y-2">
-                            <h4 className="font-semibold text-gray-900">Key Features:</h4>
-                            <ul className="space-y-1">
-                              {dashboard.features.map((feature, featureIndex) => (
-                                <li key={featureIndex} className="flex items-center gap-2 text-gray-600">
-                                  <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
-                                  {feature}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-
-                        {/* Dashboard Preview */}
-                        <div className="bg-gray-100 rounded-xl p-6 min-h-[400px] flex items-center justify-center">
-                          <div className="text-center space-y-4">
-                            <div
-                              className={`w-16 h-16 bg-gradient-to-r ${dashboard.color} rounded-full flex items-center justify-center mx-auto`}
-                            >
-                              <BarChart3 className="h-8 w-8 text-white" />
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-gray-900 mb-2">Interactive Dashboard</h4>
-                              <p className="text-sm text-gray-600">Real-time data visualization and management tools</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+          {/* Main Slider */}
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Content */}
+            <div className="space-y-6 order-2 lg:order-1">
+              <div className="flex items-center gap-3">
+                <div className={`p-3 rounded-lg bg-gradient-to-r ${currentScreen.color} text-white`}>
+                  <currentScreen.icon className="h-6 w-6" />
                 </div>
-              ))}
+                <Badge variant="secondary" className="text-sm">
+                  Dashboard {currentSlide + 1} of {dashboardScreens.length}
+                </Badge>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">{currentScreen.title}</h3>
+                <p className="text-gray-600 text-base sm:text-lg leading-relaxed">{currentScreen.description}</p>
+              </div>
+
+              {/* Features */}
+              <div className="grid sm:grid-cols-2 gap-3">
+                {currentScreen.features.map((feature, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-green-500" />
+                    <span className="text-gray-700 text-sm">{feature}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Navigation Controls */}
+              <div className="flex items-center gap-4 pt-4">
+                <Button variant="outline" size="sm" onClick={prevSlide}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex gap-2">
+                  {dashboardScreens.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => goToSlide(index)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        index === currentSlide ? "bg-blue-600 w-6" : "bg-gray-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <Button variant="outline" size="sm" onClick={nextSlide}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Image */}
+            <div className="order-1 lg:order-2">
+              <Card className="border-0 shadow-2xl overflow-hidden bg-gradient-to-br from-gray-50 to-white">
+                <CardContent className="p-0">
+                  <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200">
+                    <Image
+                      src={currentScreen.image || "/placeholder.svg"}
+                      alt={currentScreen.title}
+                      fill
+                      className="object-cover transition-all duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3">
+                        <div className="text-sm font-medium text-gray-900">{currentScreen.title}</div>
+                        <div className="text-xs text-gray-600 mt-1">Live Dashboard Preview</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
-          {/* Navigation Buttons */}
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white"
-            onClick={prevSlide}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white"
-            onClick={nextSlide}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-
-          {/* Slide Indicators */}
-          <div className="flex justify-center mt-6 space-x-2">
-            {dashboards.map((_, index) => (
-              <button
-                key={index}
-                className={`w-3 h-3 rounded-full transition-colors ${
-                  index === currentSlide ? "bg-blue-600" : "bg-gray-300"
-                }`}
-                onClick={() => setCurrentSlide(index)}
-              />
-            ))}
+          {/* Thumbnail Navigation */}
+          <div className="mt-8 sm:mt-12">
+            <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4">
+              {dashboardScreens.map((screen, index) => (
+                <button
+                  key={screen.id}
+                  onClick={() => goToSlide(index)}
+                  className={`flex-shrink-0 p-3 sm:p-4 rounded-lg border-2 transition-all ${
+                    index === currentSlide
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 bg-white hover:border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div
+                      className={`p-2 rounded-md ${
+                        index === currentSlide ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      <screen.icon className="h-4 w-4" />
+                    </div>
+                    <div className="text-left min-w-0">
+                      <div
+                        className={`text-sm font-medium truncate ${
+                          index === currentSlide ? "text-blue-900" : "text-gray-900"
+                        }`}
+                      >
+                        {screen.title}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate max-w-32 sm:max-w-none">{screen.features[0]}</div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -1,161 +1,168 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import Image from "next/image"
 
-// Default brands for fallback
-const defaultBrands = [
-  { name: "Karnataka State Chit Fund", location: "Bangalore", members: "15K+", logo: null },
-  { name: "Mysore Chit Fund Ltd", location: "Mysore", members: "8K+", logo: null },
-  { name: "Hubli Chit Fund Corp", location: "Hubli", members: "12K+", logo: null },
-  { name: "Mangalore Chit Fund", location: "Mangalore", members: "6K+", logo: null },
-  { name: "Belgaum Chit Fund", location: "Belgaum", members: "9K+", logo: null },
-  { name: "Gulbarga Chit Fund", location: "Gulbarga", members: "7K+", logo: null },
-  { name: "Shimoga Chit Fund", location: "Shimoga", members: "5K+", logo: null },
-  { name: "Davangere Chit Fund", location: "Davangere", members: "4K+", logo: null },
+const brands = [
+  {
+    name: "Government of India",
+    logo: "/placeholder-logo.svg",
+    description: "Ministry of Corporate Affairs",
+  },
+  {
+    name: "Reserve Bank of India",
+    logo: "/placeholder-logo.svg",
+    description: "Central Banking Authority",
+  },
+  {
+    name: "SEBI",
+    logo: "/placeholder-logo.svg",
+    description: "Securities and Exchange Board",
+  },
+  {
+    name: "NABARD",
+    logo: "/placeholder-logo.svg",
+    description: "National Bank for Agriculture",
+  },
+  {
+    name: "SIDBI",
+    logo: "/placeholder-logo.svg",
+    description: "Small Industries Development Bank",
+  },
+  {
+    name: "MUDRA",
+    logo: "/placeholder-logo.svg",
+    description: "Micro Units Development",
+  },
+  {
+    name: "Digital India",
+    logo: "/placeholder-logo.svg",
+    description: "Government Digital Initiative",
+  },
+  {
+    name: "Make in India",
+    logo: "/placeholder-logo.svg",
+    description: "Manufacturing Initiative",
+  },
 ]
 
 export default function ClientBrandsSlider() {
-  const [brands, setBrands] = useState(defaultBrands)
+  const [currentIndex, setCurrentIndex] = useState(0)
 
   useEffect(() => {
-    // Load foremen data from localStorage and convert to brands format
-    if (typeof window !== "undefined") {
-      const storedForemen = localStorage.getItem("foremenList")
-      if (storedForemen) {
-        try {
-          const foremenList = JSON.parse(storedForemen)
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % brands.length)
+    }, 3000)
 
-          // Convert foremen data to brands format
-          const dynamicBrands = foremenList
-            .filter((foreman) => foreman.status === "active") // Only show active foremen
-            .map((foreman) => ({
-              name: foreman.companyName || foreman.name + " Chit Fund",
-              location: foreman.city || "Karnataka",
-              members: foreman.totalMembers || `${foreman.totalSubscribers || 0}+`,
-              logo: foreman.companyLogo || null,
-            }))
-
-          // Combine dynamic brands with default ones, prioritizing dynamic
-          const combinedBrands = [...dynamicBrands, ...defaultBrands]
-
-          // Remove duplicates and take first 8
-          const uniqueBrands = combinedBrands
-            .filter((brand, index, self) => index === self.findIndex((b) => b.name === brand.name))
-            .slice(0, 8)
-
-          setBrands(uniqueBrands)
-        } catch (error) {
-          console.error("Error parsing foremen data:", error)
-          setBrands(defaultBrands)
-        }
-      }
-    }
+    return () => clearInterval(interval)
   }, [])
 
-  const generateInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase()
-  }
-
   return (
-    <section className="py-12 md:py-20 bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] overflow-hidden">
+    <section className="py-12 sm:py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3 md:mb-4">
-            Client Partners Across Karnataka
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Trusted by Government Bodies
           </h2>
-          <p className="text-base md:text-lg text-blue-100 max-w-3xl mx-auto px-4">
-            Join thousands of members across Karnataka's most trusted chit fund operators
+          <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto px-4">
+            Our platform is recognized and supported by leading financial institutions and government organizations
+            across India.
           </p>
         </div>
 
-        {/* Slider Container */}
-        <div className="relative">
-          <div className="flex animate-scroll space-x-4 md:space-x-6">
-            {/* First set of brands */}
-            {brands.map((brand, index) => (
-              <Card
-                key={`first-${index}`}
-                className="flex-shrink-0 w-64 md:w-80 bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300 group"
-              >
-                <CardContent className="p-4 md:p-6">
-                  <div className="text-center">
-                    <div className="w-12 h-12 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4 group-hover:scale-110 transition-transform overflow-hidden">
-                      {brand.logo ? (
-                        <img
-                          src={brand.logo || "/placeholder.svg"}
-                          alt={`${brand.name} logo`}
-                          className="w-full h-full object-cover rounded-full"
-                        />
-                      ) : (
-                        <span className="text-lg md:text-xl font-bold text-white">{generateInitials(brand.name)}</span>
-                      )}
-                    </div>
-                    <h3 className="text-base md:text-lg font-semibold text-white mb-2 leading-tight">{brand.name}</h3>
-                    <p className="text-xs md:text-sm text-blue-200 mb-2">{brand.location}</p>
-                    <div className="inline-flex items-center px-2 md:px-3 py-1 bg-white/20 rounded-full">
-                      <span className="text-xs md:text-sm text-white font-medium">{brand.members} Members</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        {/* Desktop Grid */}
+        <div className="hidden md:grid md:grid-cols-4 lg:grid-cols-4 gap-8">
+          {brands.slice(0, 8).map((brand, index) => (
+            <div
+              key={index}
+              className="group bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-50 transition-colors">
+                  <Image
+                    src={brand.logo || "/placeholder.svg"}
+                    alt={brand.name}
+                    width={40}
+                    height={40}
+                    className="opacity-70 group-hover:opacity-100 transition-opacity"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-sm mb-1">{brand.name}</h3>
+                  <p className="text-xs text-gray-500">{brand.description}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
 
-            {/* Duplicate set for seamless loop */}
-            {brands.map((brand, index) => (
-              <Card
-                key={`second-${index}`}
-                className="flex-shrink-0 w-64 md:w-80 bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300 group"
-              >
-                <CardContent className="p-4 md:p-6">
-                  <div className="text-center">
-                    <div className="w-12 h-12 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4 group-hover:scale-110 transition-transform overflow-hidden">
-                      {brand.logo ? (
-                        <img
+        {/* Mobile Slider */}
+        <div className="md:hidden">
+          <div className="relative overflow-hidden">
+            <div
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+            >
+              {brands.map((brand, index) => (
+                <div key={index} className="w-full flex-shrink-0 px-4">
+                  <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+                    <div className="flex flex-col items-center text-center space-y-4">
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <Image
                           src={brand.logo || "/placeholder.svg"}
-                          alt={`${brand.name} logo`}
-                          className="w-full h-full object-cover rounded-full"
+                          alt={brand.name}
+                          width={40}
+                          height={40}
+                          className="opacity-70"
                         />
-                      ) : (
-                        <span className="text-lg md:text-xl font-bold text-white">{generateInitials(brand.name)}</span>
-                      )}
-                    </div>
-                    <h3 className="text-base md:text-lg font-semibold text-white mb-2 leading-tight">{brand.name}</h3>
-                    <p className="text-xs md:text-sm text-blue-200 mb-2">{brand.location}</p>
-                    <div className="inline-flex items-center px-2 md:px-3 py-1 bg-white/20 rounded-full">
-                      <span className="text-xs md:text-sm text-white font-medium">{brand.members} Members</span>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 text-sm mb-1">{brand.name}</h3>
+                        <p className="text-xs text-gray-500">{brand.description}</p>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Mobile Indicators */}
+            <div className="flex justify-center mt-6 space-x-2">
+              {brands.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentIndex(index)}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    index === currentIndex ? "bg-blue-600 w-6" : "bg-gray-300"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Trust Indicators */}
+        <div className="mt-12 sm:mt-16 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
+            <div className="space-y-2">
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900">100%</div>
+              <div className="text-sm text-gray-600">Regulatory Compliant</div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900">24/7</div>
+              <div className="text-sm text-gray-600">Government Support</div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900">99.9%</div>
+              <div className="text-sm text-gray-600">Security Uptime</div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900">ISO</div>
+              <div className="text-sm text-gray-600">Certified Platform</div>
+            </div>
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes scroll {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-        
-        .animate-scroll {
-          animation: scroll 30s linear infinite;
-        }
-        
-        .animate-scroll:hover {
-          animation-play-state: paused;
-        }
-      `}</style>
     </section>
   )
 }
