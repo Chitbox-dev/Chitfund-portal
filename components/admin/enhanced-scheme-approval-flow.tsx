@@ -42,21 +42,50 @@ interface SchemeApprovalFlow {
   duration: number
 }
 
-export function EnhancedSchemeApprovalFlow() {
-  const [schemes, setSchemes] = useState<SchemeApprovalFlow[]>([])
-  const [selectedScheme, setSelectedScheme] = useState<SchemeApprovalFlow | null>(null)
+interface EnhancedSchemeApprovalFlowProps {
+  schemes?: any[]
+  setSchemes?: (schemes: any[]) => void
+  searchTerm?: string
+  setSearchTerm?: (term: string) => void
+  statusFilter?: string
+  setStatusFilter?: (filter: string) => void
+  selectedScheme?: any
+  setSelectedScheme?: (scheme: any) => void
+  loadSchemes?: () => void
+}
+
+export function EnhancedSchemeApprovalFlow({
+  schemes: propSchemes,
+  setSchemes: propSetSchemes,
+  searchTerm: propSearchTerm,
+  setSearchTerm: propSetSearchTerm,
+  statusFilter: propStatusFilter,
+  setStatusFilter: propSetStatusFilter,
+  selectedScheme: propSelectedScheme,
+  setSelectedScheme: propSetSelectedScheme,
+  loadSchemes: propLoadSchemes,
+}: EnhancedSchemeApprovalFlowProps = {}) {
+  const [schemes, setSchemes] = useState<SchemeApprovalFlow[]>(propSchemes || [])
+  const [selectedScheme, setSelectedScheme] = useState<SchemeApprovalFlow | null>(propSelectedScheme || null)
   const [activeTab, setActiveTab] = useState("pending")
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [searchTerm, setSearchTerm] = useState(propSearchTerm || "")
+  const [statusFilter, setStatusFilter] = useState(propStatusFilter || "all")
   const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false)
   const [approvalComments, setApprovalComments] = useState("")
   const [approvalAction, setApprovalAction] = useState<"approve" | "reject">("approve")
 
   useEffect(() => {
-    loadSchemes()
-  }, [])
+    if (!propSchemes) {
+      loadSchemes()
+    }
+  }, [propSchemes])
 
   const loadSchemes = () => {
+    if (propLoadSchemes) {
+      propLoadSchemes()
+      return
+    }
+
     // Sample data representing different stages of approval
     const sampleSchemes: SchemeApprovalFlow[] = [
       {
@@ -147,7 +176,9 @@ export function EnhancedSchemeApprovalFlow() {
   }
 
   const handleStageApproval = (schemeId: string, stage: string, action: "approve" | "reject", comments: string) => {
-    setSchemes((prev) =>
+    const updateFunction = propSetSchemes || setSchemes
+
+    updateFunction((prev: any[]) =>
       prev.map((scheme) => {
         if (scheme.id === schemeId) {
           const updatedScheme = { ...scheme }
@@ -344,11 +375,21 @@ export function EnhancedSchemeApprovalFlow() {
               <Input
                 placeholder="Search by scheme name, foreman, or ID..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  const newValue = e.target.value
+                  setSearchTerm(newValue)
+                  if (propSetSearchTerm) propSetSearchTerm(newValue)
+                }}
                 className="pl-10"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
+                setStatusFilter(value)
+                if (propSetStatusFilter) propSetStatusFilter(value)
+              }}
+            >
               <SelectTrigger className="w-48">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filter by status" />
@@ -423,7 +464,14 @@ export function EnhancedSchemeApprovalFlow() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" onClick={() => setSelectedScheme(scheme)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedScheme(scheme)
+                              if (propSetSelectedScheme) propSetSelectedScheme(scheme)
+                            }}
+                          >
                             <Eye className="h-3 w-3 mr-1" />
                             Review
                           </Button>
