@@ -33,6 +33,21 @@ The Chit Fund Management Portal is a modern web application that digitizes tradi
 - **Reporting**: Generate scheme performance reports
 - **Communication**: Send notifications to subscribers
 
+
+
+**Scheme Creation**: 8-step process for launching a new chit fund scheme:
+  1. **Chit Details**: Enter basic scheme information (name, type, category, description).
+  2. **Auction Rules**: Set auction timing, frequency, and rules.
+  3. **Bidding Rules**: Configure bidding parameters (min/max bid, increments, penalties).
+  4. **Terms & FDR Upload**: Upload legal documents and Fixed Deposit Receipt (FDR).
+  5. **PSO Generation**: Auto-generate Principal Security Officer (PSO) certificate for the scheme.
+  6. **Subscriber Enrollment**: Add subscribers and assign ticket numbers.
+  7. **Final Agreement Upload**: Upload signed final agreement for the scheme.
+  8. **Commencement Certificate**: Admin reviews and issues final approval and Form 7 (commencement certificate).
+
+
+
+
 #### 🛡️ **Admin Portal**
 - **System Oversight**: Monitor all schemes and transactions
 - **User Management**: Approve registrations and manage user accounts

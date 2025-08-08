@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { ForemanSidebar } from "@/components/foreman/foreman-sidebar"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
+import { CertificatePreviewModal } from "@/components/shared/certificate-preview-modal"
+import { CertificateTemplateSelector } from "@/components/shared/certificate-template-selector"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -33,13 +35,60 @@ import {
   Share2,
   Globe,
   Settings,
+  Eye,
 } from "lucide-react"
+
+// Define the Scheme interface based on the properties used in this component
+interface Subscriber {
+  id: string;
+  name: string;
+  mobile: string;
+  ucfsin: string;
+  ticketNumber: string;
+}
+
+interface CommencementCertificate {
+  number: string;
+}
+
+interface Scheme {
+  schemeId: string;
+  name?: string;
+  schemeStatus?: string;
+  status?: string;
+  chitValue: string | number;
+  chitDuration: string | number;
+  numberOfSubscribers: string | number;
+  monthlyPremium: string | number;
+  chitStartDate: string;
+  chitEndDate: string;
+  auctionFrequency: string;
+  auctionStartTime: string;
+  auctionEndTime: string;
+  minimumBid: string | number;
+  maximumBid: string | number;
+  bidIncrement: string | number;
+  manualIncrement?: string | number;
+  subscribers?: Subscriber[];
+  psoNumber?: string;
+  commencementCertificate?: CommencementCertificate;
+  finalAgreement?: any;
+  createdDate?: string;
+  lastUpdated?: string;
+  submittedAt?: string;
+  psoRequestedAt?: string;
+  liveDate?: string;
+  schemeName?: string;
+}
 
 export default function SchemeDetailsPage() {
   const params = useParams()
-  const schemeId = params?.schemeId
-  const [scheme, setScheme] = useState(null)
+  const schemeId = params?.schemeId as string
+  const [scheme, setScheme] = useState<Scheme | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showCertificatePreview, setShowCertificatePreview] = useState(false)
+  const [previewType, setPreviewType] = useState<"pso" | "commencement">("pso")
+  const [certificateTemplate, setCertificateTemplate] = useState("template2")
 
   useEffect(() => {
     if (schemeId) {
@@ -47,20 +96,20 @@ export default function SchemeDetailsPage() {
     }
   }, [schemeId])
 
-  const loadSchemeDetails = (id) => {
+  const loadSchemeDetails = (id: string) => {
     try {
       // Check all possible locations for the scheme
       const pendingSchemes = JSON.parse(localStorage.getItem("pendingSchemes") || "[]")
       const approvedSchemes = JSON.parse(localStorage.getItem("approvedSchemes") || "[]")
       const liveSchemes = JSON.parse(localStorage.getItem("liveSchemes") || "[]")
 
-      let foundScheme = null
+      let foundScheme: Scheme | null = null
 
       // Find scheme in any of the lists
       foundScheme =
-        pendingSchemes.find((s) => s.schemeId === id) ||
-        approvedSchemes.find((s) => s.schemeId === id) ||
-        liveSchemes.find((s) => s.schemeId === id)
+        pendingSchemes.find((s: Scheme) => s.schemeId === id) ||
+        approvedSchemes.find((s: Scheme) => s.schemeId === id) ||
+        liveSchemes.find((s: Scheme) => s.schemeId === id)
 
       // Also check draft
       if (!foundScheme) {
@@ -68,7 +117,7 @@ export default function SchemeDetailsPage() {
         if (schemeDraft) {
           const draft = JSON.parse(schemeDraft)
           if (draft.schemeId === id) {
-            foundScheme = draft
+            foundScheme = draft as Scheme
           }
         }
       }
@@ -85,7 +134,7 @@ export default function SchemeDetailsPage() {
     }
   }
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case "live":
         return "bg-green-100 text-green-800 border-green-200"
@@ -116,9 +165,18 @@ export default function SchemeDetailsPage() {
     window.location.href = `/foreman/schemes/${scheme.schemeId}/publish`
   }
 
-  const handleDownloadDocument = (docType) => {
+  const handleDownloadDocument = (docType: string) => {
     // Simulate document download
     alert(`Downloading ${docType} document...`)
+  }
+
+  const handlePreviewCertificate = (type: "pso" | "commencement") => {
+    setPreviewType(type)
+    setShowCertificatePreview(true)
+  }
+  
+  const handleTemplateChange = (template: string) => {
+    setCertificateTemplate(template)
   }
 
   if (loading) {
@@ -357,7 +415,7 @@ export default function SchemeDetailsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {scheme.subscribers.map((subscriber, index) => (
+                      {scheme.subscribers?.map((subscriber: Subscriber, index: number) => (
                         <div
                           key={subscriber.id}
                           className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
@@ -402,21 +460,42 @@ export default function SchemeDetailsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {/* Certificate Template Selector */}
+                  {(scheme.psoNumber || scheme.commencementCertificate) && (
+                    <div className="mb-4">
+                      <CertificateTemplateSelector
+                        id="certificate-template"
+                        value={certificateTemplate}
+                        onChange={setCertificateTemplate}
+                      />
+                    </div>
+                  )}
                   {scheme.psoNumber && (
                     <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                       <div>
                         <p className="font-medium text-blue-900">PSO Certificate</p>
                         <p className="text-sm text-blue-600">{scheme.psoNumber}</p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownloadDocument("PSO")}
-                        className="gap-1"
-                      >
-                        <Download className="h-3 w-3" />
-                        Download
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePreviewCertificate("pso")}
+                          className="gap-1"
+                        >
+                          <Eye className="h-3 w-3" />
+                          Preview
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadDocument("PSO")}
+                          className="gap-1"
+                        >
+                          <Download className="h-3 w-3" />
+                          Download
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -426,15 +505,26 @@ export default function SchemeDetailsPage() {
                         <p className="font-medium text-green-900">Form 7 Certificate</p>
                         <p className="text-sm text-green-600">{scheme.commencementCertificate.number}</p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownloadDocument("Form7")}
-                        className="gap-1"
-                      >
-                        <Download className="h-3 w-3" />
-                        Download
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePreviewCertificate("commencement")}
+                          className="gap-1"
+                        >
+                          <Eye className="h-3 w-3" />
+                          Preview
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadDocument("Form7")}
+                          className="gap-1"
+                        >
+                          <Download className="h-3 w-3" />
+                          Download
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -544,6 +634,22 @@ export default function SchemeDetailsPage() {
           </div>
         </div>
       </SidebarInset>
+
+      {/* Certificate Preview Modal */}
+      {showCertificatePreview && scheme && (
+        <CertificatePreviewModal
+          scheme={scheme}
+          type={previewType}
+          template={certificateTemplate}
+          isOpen={showCertificatePreview}
+          onClose={() => setShowCertificatePreview(false)}
+          onDownload={() => {
+            // Handle certificate download
+            alert(`Downloading ${previewType === "pso" ? "PSO" : "Commencement"} Certificate for ${scheme.schemeName || scheme.name || "Scheme"}`)
+            // In a real implementation, this would trigger a download of the certificate
+          }}
+        />
+      )}
     </SidebarProvider>
   )
 }

@@ -1,3 +1,16 @@
+/**
+ * The code defines a React component that displays a navigation menu for different acts and rules
+ * related to chit funds in India, allowing users to expand and view chapters under each act.
+ * @property {string} id - The `id` property in the code snippet you provided is used to uniquely
+ * identify each entry in the `ACTS_AND_RULES` array. It serves as a key to distinguish one Act or Rule
+ * from another. Each `id` value corresponds to a specific Act or Rule within the array and is
+ * @property {string} title - The properties in the code snippet you provided are related to different
+ * acts and rules governing chit funds in India. Each act or rule has the following properties:
+ * @property {string} path - The `path` property in the `ChapterType` and `ActType` interfaces
+ * represents the URL path or route associated with a specific chapter or act. It is used for
+ * navigation within the application, allowing users to access detailed information or content related
+ * to that particular chapter or act when clicked on a link
+ */
 "use client"
 
 import type React from "react"

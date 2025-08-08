@@ -1,0 +1,26 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Karnataka State Emblem - Simplified Version -->
+  <circle cx="100" cy="100" r="95" fill="#F8F8F8" stroke="#1E3A8A" stroke-width="2"/>
+  
+  <!-- Ashoka Pillar -->
+  <rect x="95" y="40" width="10" height="120" fill="#1E3A8A"/>
+  <circle cx="100" cy="35" r="15" fill="#1E3A8A"/>
+  
+  <!-- Lions -->
+  <path d="M70 60C65 65 60 75 65 85C70 95 80 95 85 90" stroke="#1E3A8A" stroke-width="3" fill="none"/>
+  <path d="M130 60C135 65 140 75 135 85C130 95 120 95 115 90" stroke="#1E3A8A" stroke-width="3" fill="none"/>
+  
+  <!-- Wheel -->
+  <circle cx="100" cy="100" r="25" stroke="#1E3A8A" stroke-width="2" fill="none"/>
+  <circle cx="100" cy="100" r="20" stroke="#1E3A8A" stroke-width="1" fill="none"/>
+  
+  <!-- Spokes -->
+  <line x1="100" y1="75" x2="100" y2="125" stroke="#1E3A8A" stroke-width="1"/>
+  <line x1="75" y1="100" x2="125" y2="100" stroke="#1E3A8A" stroke-width="1"/>
+  <line x1="82" y1="82" x2="118" y2="118" stroke="#1E3A8A" stroke-width="1"/>
+  <line x1="82" y1="118" x2="118" y2="82" stroke="#1E3A8A" stroke-width="1"/>
+  
+  <!-- Text -->
+  <path d="M40 150C60 140 140 140 160 150" stroke="#1E3A8A" stroke-width="1" fill="none"/>
+  <text x="100" y="165" text-anchor="middle" font-family="Arial" font-size="8" fill="#1E3A8A">ಕರ್ನಾಟಕ ಸರ್ಕಾರ</text>
+</svg>

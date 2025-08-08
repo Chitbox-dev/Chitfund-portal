@@ -2,6 +2,176 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Certificate Print Styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  .print-mode,
+  .print-mode * {
+    visibility: visible;
+  }
+  
+  .print-mode {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    z-index: 9999;
+  }
+  
+  .certificate {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
+
+/* Certificate Styles */
+.certificate {
+  font-family: 'Times New Roman', Times, serif;
+  padding: 2rem;
+  background-color: white;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.certificate-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.certificate-logo img {
+  height: 80px;
+  margin-bottom: 0.5rem;
+}
+
+.certificate-department {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.certificate-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  margin: 1.5rem 0;
+  text-transform: uppercase;
+}
+
+.certificate-reference {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.certificate-body {
+  line-height: 1.6;
+}
+
+.certificate-body p {
+  margin-bottom: 1rem;
+  text-align: justify;
+}
+
+.certificate-section {
+  margin: 1.5rem 0;
+}
+
+.certificate-section h3 {
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.25rem;
+}
+
+.certificate-section ul,
+.certificate-section ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.certificate-section li {
+  margin-bottom: 0.5rem;
+  display: flex;
+}
+
+.certificate-section li span:first-child {
+  font-weight: 600;
+  min-width: 200px;
+  margin-right: 1rem;
+}
+
+.certificate-note {
+  font-style: italic;
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+/* Template Variations */
+.certificate-template-1 {
+  border: 5px double #1e3a8a;
+}
+
+.certificate-template-2 {
+  border: 1px solid #1e3a8a;
+  background-image: linear-gradient(to bottom, rgba(30, 58, 138, 0.05), white 15%, white 85%, rgba(30, 58, 138, 0.05));
+}
+
+.certificate-template-3 {
+  border: 2px solid #1e3a8a;
+  background-image: url('/certificate-watermark.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 50%;
+  background-blend-mode: lighten;
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+/* Certificate Footer */
+.certificate-footer {
+  margin-top: 3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.certificate-signature {
+  text-align: center;
+  margin-right: 2rem;
+}
+
+.signature-placeholder {
+  font-style: italic;
+  color: #1e3a8a;
+  margin-bottom: 0.5rem;
+}
+
+.signature-name {
+  font-weight: bold;
+}
+
+.signature-designation {
+  font-size: 0.9rem;
+}
+
+.certificate-seal {
+  width: 100px;
+  height: 100px;
+  border: 1px dashed #1e3a8a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1e3a8a;
+  font-size: 0.8rem;
+  font-weight: bold;
+  opacity: 0.7;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -665,4 +835,289 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
+}
+
+/* Certificate Styles */
+.certificate {
+  font-family: 'Times New Roman', Times, serif;
+  color: #000;
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23f0f0f0' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+  background-size: 300px;
+  padding: 2rem;
+  border: 1px solid #ccc;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Certificate Header Styles */
+.certificate-header {
+  text-align: center;
+  border-bottom: 2px solid #000;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.certificate-header h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+}
+
+.certificate-header h2 {
+  font-size: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.certificate-header h3 {
+  font-size: 1.75rem;
+  font-weight: bold;
+  margin: 1rem 0;
+  text-decoration: underline;
+}
+
+.govt-logo {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Certificate Body Styles */
+.certificate-body {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.certificate-reference {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.certificate-addressee {
+  margin-bottom: 1.5rem;
+}
+
+.certificate-subject {
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+}
+
+.certificate-content {
+  margin-bottom: 1.5rem;
+}
+
+.certificate-content ul {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.certificate-content ul li {
+  margin-bottom: 0.5rem;
+}
+
+.certificate-signature {
+  margin-top: 2rem;
+  text-align: right;
+}
+
+.office-seal {
+  width: 100px;
+  height: 100px;
+  margin-left: auto;
+  margin-bottom: 1rem;
+  border: 1px dashed #999;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: #666;
+  text-align: center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/%3E%3Cpath d='M2 12h20'/%3E%3C/svg%3E");
+  background-size: 80%;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.7;
+}
+
+.certificate-footer {
+  margin-top: 2rem;
+  font-size: 0.875rem;
+  color: #666;
+  border-top: 1px solid #ccc;
+  padding-top: 1rem;
+}
+
+/* Modern Template Styles */
+.certificate-header.modern {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-bottom: none;
+  margin-bottom: 2rem;
+}
+
+.certificate-header.modern .govt-logo {
+  margin: 0 1.5rem 0 0;
+}
+
+.certificate-header.modern .header-text {
+  text-align: left;
+}
+
+.certificate-header.modern h1 {
+  font-size: 1.75rem;
+  color: #1a56db;
+  margin: 0;
+}
+
+.certificate-header.modern h2 {
+  font-size: 1rem;
+  color: #4b5563;
+  margin: 0.25rem 0 0;
+  font-weight: normal;
+}
+
+.certificate-body.modern {
+  padding: 0 1rem;
+}
+
+.certificate-reference.modern {
+  display: flex;
+  justify-content: space-between;
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.reference-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.reference-item span {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.reference-item strong {
+  font-size: 1rem;
+}
+
+.entity-details,
+.scheme-details,
+.verification-details {
+  margin-bottom: 2rem;
+}
+
+.entity-details h3,
+.scheme-details h3,
+.verification-details h3 {
+  font-size: 1.25rem;
+  color: #1a56db;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.details-grid,
+.verification-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.detail-item,
+.verification-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-item span,
+.verification-item span {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.detail-item strong {
+  font-size: 1rem;
+}
+
+.verified {
+  display: inline-flex;
+  align-items: center;
+  color: #059669;
+  font-weight: 500;
+}
+
+.certificate-notice {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  font-size: 0.875rem;
+  color: #4b5563;
+  border-left: 4px solid #1a56db;
+}
+
+.certificate-signature.modern {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 3rem;
+}
+
+.signature-content {
+  text-align: left;
+}
+
+.digital-seal {
+  width: 120px;
+  height: 120px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231a56db' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.7;
+}
+
+.certificate-footer.modern {
+  text-align: center;
+  margin-top: 3rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Certificate Container Styles */
+.certificate-container {
+  transform-origin: top center;
+  transition: transform 0.3s ease;
+}
+
+@media print {
+  .certificate {
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+  }
 }
