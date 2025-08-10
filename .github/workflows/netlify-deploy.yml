@@ -1,0 +1,54 @@
+name: Deploy to Netlify
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  PUBLISH_DIR: 'out'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # For PRs: create a preview deploy (non-prod)
+      - name: Deploy Preview to Netlify
+        if: github.event_name == 'pull_request'
+        uses: netlify/actions/cli@v3
+        with:
+          args: deploy --dir=${{ env.PUBLISH_DIR }} --message "Preview deploy PR #${{ github.event.number }} @ ${{ github.sha }}" --alias pr-${{ github.event.number }}
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      # For pushes to main: deploy to production
+      - name: Deploy Production to Netlify
+        if: github.event_name == 'push'
+        uses: netlify/actions/cli@v3
+        with:
+          args: deploy --dir=${{ env.PUBLISH_DIR }} --prodIfUnlocked --message "Prod deploy ${{ github.sha }}"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
