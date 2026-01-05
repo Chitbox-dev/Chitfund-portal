@@ -16,11 +16,11 @@ It does not change app functionality; it only describes how to deploy.
 
 ## 2) Build locally (optional but recommended)
 
-```bash
+\`\`\`bash
 npm install
 npm run build
 # Static site will be generated into the ./out directory
-```
+\`\`\`
 
 If the build succeeds, you are ready to deploy.
 
@@ -43,34 +43,34 @@ Netlify will build your site and publish the static output from `out/`.
 
 If you prefer using the CLI but do not want to install it globally, use `npx`:
 
-```bash
+\`\`\`bash
 # One‑off usage without global install
 npx netlify login
 npm run build
 npx netlify deploy --dir=out          # Preview deployment
 npx netlify deploy --dir=out --prod   # Production deployment
-```
+\`\`\`
 
 If you want the CLI installed globally:
 
-```bash
+\`\`\`bash
 npm install -g netlify-cli
 netlify login
 npm run build
 netlify deploy --dir=out
 netlify deploy --dir=out --prod
-```
+\`\`\`
 
 If `netlify` is not found after a global install, ensure your global npm bin is in PATH
 (macOS/zsh example):
 
-```bash
+\`\`\`bash
 mkdir -p ~/.npm-global/bin
 npm config set prefix ~/.npm-global
 echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 netlify --version
-```
+\`\`\`
 
 ## 5) SPA routing and redirects
 
@@ -118,4 +118,3 @@ After Netlify finishes the build and deploy:
 ---
 
 You can now deploy this repository safely as a static website on Netlify without changing app functionality.
-

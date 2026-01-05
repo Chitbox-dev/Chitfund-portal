@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
-import { AlertCircle, CheckCircle2, Smartphone, ArrowRight } from "lucide-react"
+import { AlertCircle, CheckCircle2, ArrowRight, Loader2, MessageCircle } from "lucide-react"
 import { motion } from "framer-motion"
 
 export default function MobileVerification({ formData, updateFormData, onNext }) {
@@ -15,6 +15,8 @@ export default function MobileVerification({ formData, updateFormData, onNext })
   const [otpVerified, setOtpVerified] = useState(false)
   const [error, setError] = useState("")
   const [timer, setTimer] = useState(0)
+  const [sendingOTP, setSendingOTP] = useState(false)
+  const [verifyingOTP, setVerifyingOTP] = useState(false)
 
   useEffect(() => {
     let interval
@@ -26,21 +28,60 @@ export default function MobileVerification({ formData, updateFormData, onNext })
     return () => clearInterval(interval)
   }, [timer, otpSent])
 
-  const handleSendOtp = () => {
-    // Validate mobile number
-    if (!mobile || mobile.length !== 10 || !/^\d+$/.test(mobile)) {
-      setError("Please enter a valid 10-digit mobile number")
+  const handleSendOtp = async () => {
+    if (!mobile || mobile.length < 10 || !/^\d+$/.test(mobile)) {
+      setError("Please enter a valid mobile number (at least 10 digits)")
       return
     }
 
     setError("")
-    // In a real app, this would send an OTP to the mobile number
-    // For demo purposes, we'll just set a dummy OTP
-    setOtpSent(true)
-    setTimer(30) // 30 seconds countdown
+    setSendingOTP(true)
+
+    console.log("[v0] Frontend: Sending OTP request for mobile:", mobile)
+
+    try {
+      const response = await fetch("/api/otp/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phoneNumber: mobile,
+        }),
+      })
+
+      const data = await response.json()
+
+      console.log("[v0] Frontend: OTP send response:", {
+        status: response.status,
+        data: data,
+      })
+
+      if (data.success) {
+        setOtpSent(true)
+        setTimer(60) // 60 seconds countdown
+        console.log("[v0] Frontend: OTP sent successfully via WhatsApp, messageId:", data.messageId)
+      } else {
+        let errorMessage = data.error || "Failed to send OTP"
+
+        if (errorMessage.includes("WhatsApp number not opted into sandbox")) {
+          errorMessage = `WhatsApp Setup Required: Please send "join" to +14155238886 on WhatsApp first, then try again.`
+        } else if (errorMessage.includes("Invalid WhatsApp number")) {
+          errorMessage = "Invalid phone number format. Please check your number and try again."
+        }
+
+        setError(errorMessage)
+        console.error("[v0] Frontend: OTP send failed:", data.error)
+      }
+    } catch (error) {
+      console.error("[v0] Frontend: Send OTP Error:", error)
+      setError("Failed to send OTP. Please check your connection and try again.")
+    } finally {
+      setSendingOTP(false)
+    }
   }
 
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
     // Validate OTP
     if (!otp || otp.length !== 6 || !/^\d+$/.test(otp)) {
       setError("Please enter a valid 6-digit OTP")
@@ -48,12 +89,43 @@ export default function MobileVerification({ formData, updateFormData, onNext })
     }
 
     setError("")
-    // In a real app, this would verify the OTP with the server
-    // For demo purposes, we'll just set it as verified
-    setOtpVerified(true)
+    setVerifyingOTP(true)
 
-    // Update form data
-    updateFormData({ mobile, otp })
+    console.log("[v0] Frontend: Verifying OTP for mobile:", mobile)
+
+    try {
+      const response = await fetch("/api/otp/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phoneNumber: mobile,
+          otp: otp,
+        }),
+      })
+
+      const data = await response.json()
+
+      console.log("[v0] Frontend: OTP verify response:", {
+        status: response.status,
+        data: data,
+      })
+
+      if (data.success) {
+        setOtpVerified(true)
+        updateFormData({ mobile, otp })
+        console.log("[v0] Frontend: OTP verified successfully")
+      } else {
+        setError(data.error || "Invalid OTP")
+        console.error("[v0] Frontend: OTP verify failed:", data.error)
+      }
+    } catch (error) {
+      console.error("[v0] Frontend: Verify OTP Error:", error)
+      setError("Failed to verify OTP. Please try again.")
+    } finally {
+      setVerifyingOTP(false)
+    }
   }
 
   const handleContinue = () => {
@@ -66,15 +138,30 @@ export default function MobileVerification({ formData, updateFormData, onNext })
     <div className="space-y-6">
       <div className="space-y-2">
         <div className="flex items-center gap-3 mb-4">
-          <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-            <Smartphone className="h-6 w-6 text-blue-600" />
+          <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+            <MessageCircle className="h-6 w-6 text-green-600" />
           </div>
           <div>
-            <h3 className="text-lg font-medium">Mobile Number Verification</h3>
-            <p className="text-sm text-gray-500">We'll send a one-time password (OTP) to verify your mobile number</p>
+            <h3 className="text-lg font-medium">WhatsApp Verification</h3>
+            <p className="text-sm text-gray-500">We'll send a verification code to your WhatsApp number</p>
           </div>
         </div>
       </div>
+
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <MessageCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-blue-800">WhatsApp Setup Required</p>
+              <p className="text-xs text-blue-700">
+                Before receiving OTP, please send <strong>"join"</strong> to <strong>+14155238886</strong> on WhatsApp
+                to activate the service.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {error && (
         <motion.div
@@ -83,7 +170,10 @@ export default function MobileVerification({ formData, updateFormData, onNext })
           className="bg-red-50 p-4 rounded-xl flex items-start gap-3 text-red-800"
         >
           <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-          <p className="text-sm">{error}</p>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Error</p>
+            <p className="text-xs">{error}</p>
+          </div>
         </motion.div>
       )}
 
@@ -99,11 +189,11 @@ export default function MobileVerification({ formData, updateFormData, onNext })
               </div>
               <Input
                 id="mobile"
-                placeholder="Enter your 10-digit mobile number"
+                placeholder="Enter your mobile number"
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
                 disabled={otpSent && otpVerified}
-                maxLength={10}
+                maxLength={15}
                 className="pl-12 h-12 text-base"
               />
             </div>
@@ -111,10 +201,23 @@ export default function MobileVerification({ formData, updateFormData, onNext })
               <Button
                 type="button"
                 onClick={handleSendOtp}
-                disabled={otpVerified || timer > 0}
+                disabled={otpVerified || timer > 0 || sendingOTP}
                 className="whitespace-nowrap h-12 px-5 bg-blue-600 hover:bg-blue-700"
               >
-                {otpSent ? (timer > 0 ? `Resend in ${timer}s` : "Resend OTP") : "Send OTP"}
+                {sendingOTP ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Sending...
+                  </>
+                ) : otpSent ? (
+                  timer > 0 ? (
+                    `Resend in ${timer}s`
+                  ) : (
+                    "Resend OTP"
+                  )
+                ) : (
+                  "Send OTP"
+                )}
               </Button>
             )}
           </div>
@@ -127,7 +230,7 @@ export default function MobileVerification({ formData, updateFormData, onNext })
             className="space-y-3"
           >
             <Label htmlFor="otp" className="text-gray-700">
-              Enter OTP
+              Enter WhatsApp OTP
             </Label>
             <div className="flex gap-3">
               <Input
@@ -141,12 +244,22 @@ export default function MobileVerification({ formData, updateFormData, onNext })
               <Button
                 type="button"
                 onClick={handleVerifyOtp}
+                disabled={verifyingOTP}
                 className="whitespace-nowrap h-12 px-5 bg-blue-600 hover:bg-blue-700"
               >
-                Verify OTP
+                {verifyingOTP ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Verifying...
+                  </>
+                ) : (
+                  "Verify OTP"
+                )}
               </Button>
             </div>
-            <p className="text-xs text-gray-500">OTP sent to +91 {mobile}. It will expire in 10 minutes.</p>
+            <p className="text-xs text-gray-500">
+              OTP sent to your WhatsApp (+91 {mobile}). It will expire in 1 minute.
+            </p>
           </motion.div>
         )}
 

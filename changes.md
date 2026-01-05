@@ -76,4 +76,3 @@ Removed:
 
 ---
 No functional features were changed; modifications were limited to routing cleanup, static-export shims, and deployment configuration.
-
